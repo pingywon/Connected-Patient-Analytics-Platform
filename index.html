@@ -1,0 +1,2280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CalmCPAP — Fullscreen Draft 3.4</title>
+
+  <!-- Unzip -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- Charts -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+          integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <style>
+    :root{
+      --bg0:#071a1f; --bg1:#0b252c;
+      --card:#0f323a; --card2:#0b2a31;
+      --text:#e7f6f6; --muted:#b7d7d7; --muted2:#89b8b8;
+      --accent:#61d4c3; --accent2:#7aa7ff;
+      --warn:#ffcc66; --bad:#ff6b7a; --good:#6ee7a6;
+      --line: rgba(255,255,255,.10);
+      --shadow: 0 18px 40px rgba(0,0,0,.40);
+      --radius: 20px; --radius2: 14px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 520px at 20% 10%, rgba(97,212,195,.18), transparent 60%),
+        radial-gradient(1000px 620px at 82% 12%, rgba(122,167,255,.14), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    .app{ height:100%; display:grid; grid-template-rows: auto 1fr; }
+
+    header{
+      padding:18px 18px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(11,42,49,.35);
+      backdrop-filter: blur(10px);
+    }
+    .brand{ display:flex; gap:12px; align-items:center; min-width:260px; }
+    .logo{
+      width:46px;height:46px;border-radius:16px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.35), transparent 70%),
+        linear-gradient(135deg, rgba(97,212,195,.95), rgba(122,167,255,.85));
+      box-shadow: var(--shadow);
+    }
+    h1{ margin:0; font-size:18px; letter-spacing:.2px; }
+    .subtitle{ margin:2px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35; }
+
+    .top-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .badge{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      color: rgba(231,246,246,.9);
+      background: rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .btn{
+      cursor:pointer;
+      border:none;
+      border-radius:999px;
+      padding:10px 12px;
+      font-weight:850;
+      color:#062026;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 22px rgba(97,212,195,.12);
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); filter:brightness(1.03); }
+    .btn:active{ transform: translateY(0px); filter:brightness(.98); }
+    .btn.ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      box-shadow:none;
+    }
+    input[type="file"]{ display:none; }
+
+    main{
+      height:100%;
+      display:grid;
+      grid-template-columns: 430px 1fr;
+      gap:14px;
+      padding:14px;
+      overflow:hidden;
+    }
+    @media (max-width: 1050px){
+      body{ overflow:auto; }
+      main{ grid-template-columns:1fr; height:auto; overflow:visible; }
+      .app{ height:auto; }
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,50,58,.55);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .card .hd{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card .hd h2{
+      margin:0;
+      font-size: 13px;
+      letter-spacing:.35px;
+      color: rgba(231,246,246,.92);
+      text-transform: uppercase;
+    }
+    .card .bd{
+      padding:14px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    .drop{
+      border:1px dashed rgba(255,255,255,.25);
+      border-radius: var(--radius2);
+      background: rgba(11,42,49,.55);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      cursor:pointer;
+      transition: border-color .12s ease, transform .12s ease, filter .12s ease;
+    }
+    .drop:hover{
+      border-color: rgba(97,212,195,.65);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+    .drop strong{ font-size: 14px; }
+    .drop p{ margin:0; color:var(--muted); font-size:12.5px; line-height: 1.35; }
+    .drop .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .drop .row .left{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .hr{ height:1px; background: rgba(255,255,255,.08); margin:12px 0; }
+    .tiny{ font-size:12px; color:var(--muted2); }
+
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    .kpi{
+      padding:12px;
+      border-radius: var(--radius2);
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .kpi .label{ font-size: 11px; color: var(--muted2); text-transform: uppercase; letter-spacing:.25px; }
+    .kpi .value{ margin-top:6px; font-size: 18px; font-weight: 900; }
+    .kpi .note{ margin-top:6px; font-size: 12px; color: var(--muted); line-height:1.35; }
+
+    .callout{
+      padding:12px 12px;
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(11,42,49,.55);
+      color: var(--muted);
+      line-height:1.45;
+      font-size: 13px;
+    }
+    .callout b{ color: rgba(231,246,246,.94); }
+
+    .progressWrap{
+      padding:12px;
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(7,26,31,.35);
+    }
+    .progressTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(97,212,195,.85), rgba(122,167,255,.85));
+      transition: width .08s linear;
+    }
+
+    .kv{ display:grid; grid-template-columns: 1fr; gap:8px; margin-top:10px; }
+    .kv .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px;
+      border-radius: 12px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .kv .row b{ color: rgba(231,246,246,.93); font-weight:850; }
+
+    .picker{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding:10px;
+      border-radius: 14px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      margin-top:12px;
+    }
+    .picker label{ font-size:12px; color: var(--muted2); }
+    .picker input[type="date"], .picker select{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding:8px 10px;
+      color: var(--text);
+      outline:none;
+    }
+
+    .mapGrid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px; }
+    .mapRow{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-radius:12px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:12.5px;
+    }
+    .mapRow label{ color:var(--muted2); font-size:12px; }
+    .mapRow select{
+      width:100%;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding:8px 10px;
+      color: var(--text);
+      outline:none;
+    }
+
+    .tabs{
+      display:flex; flex-wrap:wrap; gap:8px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(11,42,49,.25);
+      flex:0 0 auto;
+    }
+    .tab{
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(231,246,246,.9);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size: 12.5px;
+      user-select:none;
+      transition: filter .12s ease, transform .12s ease;
+    }
+    .tab:hover{ filter:brightness(1.07); transform: translateY(-1px); }
+    .tab.active{
+      border-color: rgba(97,212,195,.55);
+      background: linear-gradient(135deg, rgba(97,212,195,.18), rgba(122,167,255,.14));
+      box-shadow: 0 10px 18px rgba(0,0,0,.18);
+    }
+    .report{ min-height:0; overflow:auto; }
+    .panel{ display:none; padding:14px; }
+    .panel.active{ display:block; }
+
+    .explain{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 1050px){ .explain{ grid-template-columns:1fr; } }
+
+    .plot{
+      width:100%;
+      height:min(560px, 58vh);
+      border-radius: var(--radius2);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(7,26,31,.35);
+    }
+    pre.log{
+      white-space:pre-wrap;
+      max-height: 320px;
+      overflow:auto;
+      margin:0;
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:16px;
+      left:50%;
+      transform:translateX(-50%);
+      background: rgba(15,50,58,.92);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+      padding:10px 12px;
+      border-radius: 999px;
+      color: rgba(231,246,246,.95);
+      font-size: 12.5px;
+      display:none;
+      max-width: 92vw;
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>CalmCPAP <span class="badge">Draft 3.4</span></h1>
+        <div class="subtitle">Upload SD ZIP → index DATALOG/YYYYMMDD → Identification.json (short keys) + EDF charts + PDF.</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <span class="badge" id="statusBadge">Waiting</span>
+      <span class="badge" id="fileBadge">No file</span>
+      <button class="btn ghost" id="pdfBtn" disabled>Share report (PDF)</button>
+      <button class="btn ghost" id="clearBtn">Clear</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT -->
+    <section class="card">
+      <div class="hd">
+        <h2>Upload & Session</h2>
+        <span class="badge">Local only ✔️</span>
+      </div>
+
+      <div class="bd">
+        <div class="drop" id="dropZone" role="button" tabindex="0" aria-label="Upload zip">
+          <div class="row">
+            <div class="left">
+              <strong>Drop your CPAP SD ZIP here</strong>
+              <span class="badge" id="zipStats">—</span>
+            </div>
+            <div class="left">
+              <button class="btn" id="chooseZipBtn" type="button">Choose ZIP</button>
+              <input id="zipInput" type="file" accept=".zip,application/zip" />
+              <button class="btn ghost" id="demoBtn" type="button">Load demo</button>
+            </div>
+          </div>
+          <p>
+            This runs completely in your browser.
+            You’ll see a progress counter while EDF files are scanned/parsed.
+          </p>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="progressWrap">
+          <div class="progressTop">
+            <div class="tiny"><b id="progressStep">Idle</b></div>
+            <div class="badge" id="progressPct">0%</div>
+          </div>
+          <div class="bar"><div id="progressBar"></div></div>
+          <div class="tiny" style="margin-top:8px;" id="progressDetail">Upload a ZIP to begin.</div>
+        </div>
+
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="label">Usage (hours)</div>
+            <div class="value" id="kpiUsage">—</div>
+            <div class="note" id="kpiUsageNote">Select a session.</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Leak (95th %)</div>
+            <div class="value" id="kpiLeak95">—</div>
+            <div class="note" id="kpiLeak95Note">Needs leak signal.</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Pressure (median)</div>
+            <div class="value" id="kpiP50">—</div>
+            <div class="note" id="kpiP50Note">Needs pressure signal.</div>
+          </div>
+          <div class="kpi">
+            <div class="label">AHI (estimate)</div>
+            <div class="value" id="kpiAHI">—</div>
+            <div class="note" id="kpiAHINote">From annotations if found.</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="tiny"><b>Device & Profile (Identification.json)</b></div>
+        <div class="kv" id="idArea" style="margin-top:10px;">
+          <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
+        </div>
+
+        <div class="picker">
+          <label for="datePicker"><b>Calendar</b></label>
+          <input id="datePicker" type="date" disabled />
+          <select id="sessionSelect" disabled>
+            <option value="">Session</option>
+          </select>
+          <button class="btn ghost" id="loadSessionBtn" disabled>Load</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="callout">
+          <b>Signal mapping (if auto-detect misses your labels)</b><br/>
+          Real SD-card EDF labels vary. If charts are empty, pick signals here.
+          <div class="mapGrid" id="mapGrid"></div>
+          <button class="btn ghost" id="applyMappingBtn" disabled style="margin-top:10px;">Apply mapping</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="tiny">Debug log</div>
+        <pre class="callout log" id="log"></pre>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="leaks">Leaks</div>
+        <div class="tab" data-tab="pressure">Pressure</div>
+        <div class="tab" data-tab="flow">Flow</div>
+        <div class="tab" data-tab="events">Events</div>
+        <div class="tab" data-tab="raw">Raw</div>
+      </div>
+
+      <div class="report" id="reportArea">
+        <div class="panel active" id="panel-overview">
+          <div class="explain">
+            <div class="callout" id="overviewExplain">
+              <b>How this report works</b><br/>
+              We index sessions by the SD folder structure (DATALOG/YYYYMMDD), then parse EDF channels.
+              If labels differ, you can map them on the left.
+            </div>
+            <div class="callout" id="overviewSummary">
+              <b>Status</b><br/>Upload a ZIP to begin.
+            </div>
+          </div>
+          <div class="plot" id="plotOverview"></div>
+          <div class="callout" style="margin-top:12px" id="overviewNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-leaks">
+          <div class="plot" id="plotLeak"></div>
+          <div class="callout" style="margin-top:12px" id="leakNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-pressure">
+          <div class="plot" id="plotPressure"></div>
+          <div class="callout" style="margin-top:12px" id="pressureNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-flow">
+          <div class="plot" id="plotFlow"></div>
+          <div class="callout" style="margin-top:12px" id="flowNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-events">
+          <div class="plot" id="plotEvents"></div>
+          <div class="callout" style="margin-top:12px" id="eventsNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-raw">
+          <div class="callout" id="rawSummary"></div>
+          <pre class="callout log" id="rawDump" style="max-height:580px"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================
+   CalmCPAP Draft 3.4
+   Change requested:
+   - "FlowGenerator.Identification..." keys shown as short logical names in the UI.
+   We DO NOT mutate the original JSON meaning; only the labels displayed are shortened.
+   Examples:
+     FlowGenerator.IdentificationProfiles[0].SerialNumber  ->  FG.P1.SN
+     _CalmCPAP.IdentificationProfileBest.Model             ->  FG.Best.Model
+     FlowGenerator.SomethingElse                           ->  FG.SomethingElse
+   ============================ */
+
+const els = {
+  zipInput: document.getElementById('zipInput'),
+  chooseZipBtn: document.getElementById('chooseZipBtn'),
+  dropZone: document.getElementById('dropZone'),
+  statusBadge: document.getElementById('statusBadge'),
+  fileBadge: document.getElementById('fileBadge'),
+  zipStats: document.getElementById('zipStats'),
+
+  pdfBtn: document.getElementById('pdfBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  demoBtn: document.getElementById('demoBtn'),
+
+  progressStep: document.getElementById('progressStep'),
+  progressPct: document.getElementById('progressPct'),
+  progressBar: document.getElementById('progressBar'),
+  progressDetail: document.getElementById('progressDetail'),
+
+  idArea: document.getElementById('idArea'),
+  datePicker: document.getElementById('datePicker'),
+  sessionSelect: document.getElementById('sessionSelect'),
+  loadSessionBtn: document.getElementById('loadSessionBtn'),
+
+  mapGrid: document.getElementById('mapGrid'),
+  applyMappingBtn: document.getElementById('applyMappingBtn'),
+
+  kpiUsage: document.getElementById('kpiUsage'),
+  kpiUsageNote: document.getElementById('kpiUsageNote'),
+  kpiLeak95: document.getElementById('kpiLeak95'),
+  kpiLeak95Note: document.getElementById('kpiLeak95Note'),
+  kpiP50: document.getElementById('kpiP50'),
+  kpiP50Note: document.getElementById('kpiP50Note'),
+  kpiAHI: document.getElementById('kpiAHI'),
+  kpiAHINote: document.getElementById('kpiAHINote'),
+
+  overviewSummary: document.getElementById('overviewSummary'),
+  overviewNarrative: document.getElementById('overviewNarrative'),
+  leakNarrative: document.getElementById('leakNarrative'),
+  pressureNarrative: document.getElementById('pressureNarrative'),
+  flowNarrative: document.getElementById('flowNarrative'),
+  eventsNarrative: document.getElementById('eventsNarrative'),
+
+  rawSummary: document.getElementById('rawSummary'),
+  rawDump: document.getElementById('rawDump'),
+
+  plotOverview: document.getElementById('plotOverview'),
+  plotLeak: document.getElementById('plotLeak'),
+  plotPressure: document.getElementById('plotPressure'),
+  plotFlow: document.getElementById('plotFlow'),
+  plotEvents: document.getElementById('plotEvents'),
+
+  log: document.getElementById('log'),
+  toast: document.getElementById('toast'),
+};
+
+const state = {
+  zip: null,
+  entries: [],          // { pathRaw, pathNorm, entry }
+  zipMeta: {
+    rootPrefix: '',
+    counts: { total:0, edf:0, id:0 },
+    datalogDates: [],
+    edfPaths: [],
+    rootSTR: null
+  },
+  identification: null,
+  sessionsByDate: new Map(),
+  selectedDateISO: null,
+  current: {
+    session: null,
+    edfFiles: [],
+    signalCatalog: [],
+    mapping: { leak:null, pressure:null, flow:null, annotations:null },
+    signals: {},
+    events: null,
+    stats: {},
+    raw: {}
+  },
+  notes: []
+};
+
+/* ---------- UI helpers ---------- */
+function toast(msg){
+  els.toast.textContent = msg;
+  els.toast.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> els.toast.style.display = 'none', 2400);
+}
+function setStatus(text, tone='neutral'){
+  els.statusBadge.textContent = text;
+  const map = {
+    neutral: 'rgba(255,255,255,.06)',
+    good: 'rgba(110,231,166,.12)',
+    warn: 'rgba(255,204,102,.14)',
+    bad: 'rgba(255,107,122,.14)',
+  };
+  els.statusBadge.style.background = map[tone] || map.neutral;
+  els.statusBadge.style.borderColor = 'rgba(255,255,255,.14)';
+}
+function log(line){
+  state.notes.push(line);
+  els.log.textContent = state.notes.join('\n');
+}
+function progress(step, pct, detail=''){
+  const clamped = Math.max(0, Math.min(100, pct));
+  els.progressStep.textContent = step;
+  els.progressPct.textContent = `${Math.round(clamped)}%`;
+  els.progressBar.style.width = `${clamped}%`;
+  els.progressDetail.textContent = detail || '';
+}
+function tick(){ return new Promise(r => setTimeout(r, 0)); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localDateISO(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+
+/* ---------- Plotly helpers ---------- */
+function CALM_LAYOUT(title){
+  return {
+    title: { text: title, font: { color: 'rgba(231,246,246,.95)', size: 14 } },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: 'rgba(231,246,246,.9)' },
+    margin: { l: 55, r: 22, t: 45, b: 55 },
+    xaxis: {
+      gridcolor: 'rgba(255,255,255,.08)',
+      zerolinecolor: 'rgba(255,255,255,.08)',
+      tickcolor: 'rgba(255,255,255,.25)',
+      rangeslider: { visible: true, bgcolor: 'rgba(255,255,255,.04)', bordercolor: 'rgba(255,255,255,.10)' },
+    },
+    yaxis: {
+      gridcolor: 'rgba(255,255,255,.08)',
+      zerolinecolor: 'rgba(255,255,255,.08)',
+      tickcolor: 'rgba(255,255,255,.25)',
+    },
+    legend: { bgcolor: 'rgba(0,0,0,0)' }
+  };
+}
+const plotConfig = { responsive:true, displayModeBar:true, modeBarButtonsToRemove:['autoScale2d'] };
+function purgePlots(){
+  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotEvents].forEach(p => Plotly.purge(p));
+}
+function placeholderPlots(){
+  const data = [{ x:[0,1,2,3], y:[0,1,0.4,0.8], type:'scatter', mode:'lines', hoverinfo:'skip',
+    line:{ color:'rgba(97,212,195,.55)', width:3 }}];
+  Plotly.newPlot(els.plotOverview, data, {...CALM_LAYOUT('Upload a ZIP to see your report'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotLeak, data, {...CALM_LAYOUT('Leaks'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotEvents, data, {...CALM_LAYOUT('Events'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+}
+
+/* ---------- Reset ---------- */
+function resetAll(){
+  state.zip = null;
+  state.entries = [];
+  state.zipMeta = { rootPrefix:'', counts:{total:0, edf:0, id:0}, datalogDates:[], edfPaths:[], rootSTR:null };
+  state.identification = null;
+  state.sessionsByDate.clear();
+  state.selectedDateISO = null;
+  state.current = {
+    session:null, edfFiles:[], signalCatalog:[],
+    mapping:{ leak:null, pressure:null, flow:null, annotations:null },
+    signals:{}, events:null, stats:{}, raw:{}
+  };
+  state.notes = [];
+
+  els.zipInput.value = '';
+  els.fileBadge.textContent = 'No file';
+  els.zipStats.textContent = '—';
+
+  els.idArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
+
+  els.datePicker.disabled = true;
+  els.sessionSelect.disabled = true;
+  els.loadSessionBtn.disabled = true;
+  els.sessionSelect.innerHTML = `<option value="">Session</option>`;
+  els.datePicker.value = '';
+
+  els.mapGrid.innerHTML = '';
+  els.applyMappingBtn.disabled = true;
+
+  els.kpiUsage.textContent = '—'; els.kpiUsageNote.textContent = 'Select a session.';
+  els.kpiLeak95.textContent = '—'; els.kpiLeak95Note.textContent = 'Needs leak signal.';
+  els.kpiP50.textContent = '—'; els.kpiP50Note.textContent = 'Needs pressure signal.';
+  els.kpiAHI.textContent = '—'; els.kpiAHINote.textContent = 'From annotations if found.';
+
+  els.overviewSummary.innerHTML = `<b>Status</b><br/>Upload a ZIP to begin.`;
+  els.overviewNarrative.innerHTML = '';
+  els.leakNarrative.innerHTML = '';
+  els.pressureNarrative.innerHTML = '';
+  els.flowNarrative.innerHTML = '';
+  els.eventsNarrative.innerHTML = '';
+
+  els.rawSummary.innerHTML = '';
+  els.rawDump.textContent = '';
+
+  progress('Idle', 0, 'Upload a ZIP to begin.');
+  setStatus('Waiting','neutral');
+  els.pdfBtn.disabled = true;
+
+  purgePlots();
+  placeholderPlots();
+  log('Ready.');
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=> t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=> p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- Upload handling (no duplicate triggers) ---------- */
+els.dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+els.dropZone.addEventListener('drop', (e)=>{
+  e.preventDefault();
+  const f = e.dataTransfer.files?.[0];
+  if (f) handleZip(f);
+});
+els.dropZone.addEventListener('click', (e)=>{
+  const isInteractive = !!e.target.closest('button, input, select, a, label');
+  if (isInteractive) return;
+  els.zipInput.click();
+});
+els.dropZone.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.zipInput.click(); }
+});
+els.chooseZipBtn.addEventListener('click', (e)=>{ e.stopPropagation(); els.zipInput.click(); });
+els.zipInput.addEventListener('change', ()=>{
+  const f = els.zipInput.files?.[0];
+  if (f) handleZip(f);
+});
+els.clearBtn.addEventListener('click', ()=>{ resetAll(); toast('Cleared.'); });
+
+/* ---------- PDF export ---------- */
+els.pdfBtn.addEventListener('click', ()=>{
+  const element = document.getElementById('reportArea');
+  const title = state.current?.session?.label ? state.current.session.label.replace(/[^\w\-]+/g,'_') : 'CalmCPAP_Report';
+  toast('Creating PDF…');
+  html2pdf().set({
+    margin: 0.35,
+    filename: `${title}.pdf`,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+  }).from(element).save().then(()=> toast('PDF saved ✔️'));
+});
+
+/* ---------- Picker ---------- */
+els.datePicker.addEventListener('change', ()=>{
+  state.selectedDateISO = els.datePicker.value || null;
+  populateSessionSelect(state.selectedDateISO);
+});
+els.loadSessionBtn.addEventListener('click', async ()=>{
+  const key = els.sessionSelect.value || null;
+  if (!state.selectedDateISO || !key) return;
+  await loadSession(state.selectedDateISO, key);
+});
+els.applyMappingBtn.addEventListener('click', ()=>{
+  applyMappingFromUI();
+  extractSignalsAndRender();
+});
+
+/* ---------- Demo ---------- */
+els.demoBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  resetAll();
+  setStatus('Demo','good');
+  els.fileBadge.textContent = 'demo.zip';
+  els.zipStats.textContent = 'demo';
+  progress('Demo', 100, 'Loaded synthetic data for layout + charts.');
+
+  // Demo identification with FlowGenerator-ish nesting
+  state.identification = normalizeIdentification({
+    FlowGenerator: {
+      IdentificationProfiles: [
+        { Manufacturer:"ResMed", Model:"AirSense 11", SerialNumber:"DEMO-12345", PAPMode:"AutoSet", FirmwareVersion:"0.0-demo" }
+      ]
+    }
+  });
+  renderIdentification(state.identification);
+
+  const start = new Date(); start.setHours(23,0,0,0);
+  const dateISO = localDateISO(start);
+  const end = new Date(start.getTime() + 7*3600*1000);
+
+  const sess = {
+    key: `${dateISO}__main`,
+    label: `${dateISO} — Night`,
+    dateISO,
+    groupKey: 'main',
+    files: [{ path:'demo/STR.edf', entry:null }],
+    meta: { start, end }
+  };
+  state.sessionsByDate.set(dateISO, { dateISO, sessions:[sess] });
+  enablePicker();
+  state.selectedDateISO = dateISO;
+  els.datePicker.value = dateISO;
+  populateSessionSelect(dateISO);
+  els.sessionSelect.value = sess.key;
+
+  const t = [], leak = [], pressure = [], flow = [];
+  const mins = 7*60;
+  for (let i=0;i<=mins;i++){
+    const d = new Date(start.getTime() + i*60*1000);
+    t.push(d);
+    const baseLeak = 6 + 2*Math.sin(i/33);
+    const spike = (i>180 && i<210) ? 18 + 7*Math.sin(i/2) : 0;
+    const spike2 = (i>330 && i<360) ? 26 + 7*Math.sin(i/3) : 0;
+    leak.push(Math.max(0, baseLeak + spike + spike2 + (Math.random()-0.5)*1.0));
+    const baseP = 8 + 0.6*Math.sin(i/70);
+    const bump = (i>120 && i<260) ? 2.4 : 0;
+    const bump2 = (i>320 && i<420) ? 1.6 : 0;
+    pressure.push(baseP + bump + bump2 + (Math.random()-0.5)*0.25);
+    flow.push(Math.sin(i/2) * (0.5 + Math.random()*0.2));
+  }
+  const evtT = [], evtType = [];
+  for (let k=0;k<22;k++){
+    const m = Math.floor(Math.random()*mins);
+    evtT.push(new Date(start.getTime() + m*60*1000));
+    const r = Math.random();
+    evtType.push(r < 0.5 ? 'H' : r < 0.85 ? 'OA' : r < 0.95 ? 'RERA' : 'CA');
+  }
+  evtT.sort((a,b)=>a-b);
+
+  state.current.session = sess;
+  state.current.signals = {
+    leak: { t:[...t], y:leak, unit:'L/min', label:'Leak', _source:'demo' },
+    pressure: { t:[...t], y:pressure, unit:'cmH₂O', label:'Pressure', _source:'demo' },
+    flow: { t:[...t], y:flow, unit:'a.u.', label:'Flow', _source:'demo' }
+  };
+  state.current.events = { t: evtT, type: evtType };
+
+  analyzeAndRender();
+  els.pdfBtn.disabled = false;
+  toast('Demo ready ✔️');
+});
+
+/* ============================
+   ZIP → scan → index by folder
+   ============================ */
+
+async function handleZip(file){
+  resetAll();
+
+  els.fileBadge.textContent = file.name;
+  setStatus('Reading ZIP…','neutral');
+  progress('Reading ZIP', 2, `${file.name} — ${(file.size/1024/1024).toFixed(2)} MB`);
+  log(`ZIP: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`);
+
+  try{
+    const buf = await readFileAsArrayBufferWithProgress(file, (loaded, total)=>{
+      const pct = total ? (loaded/total)*20 : 5;
+      progress('Reading ZIP', pct, `Reading file… ${(loaded/1024/1024).toFixed(2)} / ${(total/1024/1024).toFixed(2)} MB`);
+    });
+
+    progress('Unzipping', 22, 'Unzipping archive…');
+    setStatus('Unzipping…','neutral');
+    await tick();
+
+    state.zip = await JSZip.loadAsync(buf);
+
+    progress('Scanning ZIP', 30, 'Scanning file list…');
+    await tick();
+
+    const rawEntries = [];
+    let totalFiles = 0, edfCount = 0, idCount = 0;
+
+    state.zip.forEach((pathRaw, entry)=>{
+      if (entry.dir) return;
+      totalFiles++;
+      const lower = pathRaw.toLowerCase();
+      if (lower.endsWith('.edf')) edfCount++;
+      if (lower.endsWith('identification.json')) idCount++;
+      rawEntries.push({ pathRaw, entry });
+    });
+
+    const rootPrefix = detectRootPrefix(rawEntries.map(e=>e.pathRaw));
+    state.zipMeta.rootPrefix = rootPrefix;
+
+    const entries = rawEntries.map(e => ({ ...e, pathNorm: stripRootPrefix(e.pathRaw, rootPrefix) }));
+    state.entries = entries;
+
+    state.zipMeta.counts = { total: totalFiles, edf: edfCount, id: idCount };
+    els.zipStats.textContent = `${totalFiles} files • ${edfCount} edf • id:${idCount? 'yes':'no'}`;
+    log(`Files: ${totalFiles} | EDF: ${edfCount} | Identification.json: ${idCount? 'yes':'no'} | rootPrefix: ${rootPrefix || '(none)'}`);
+    progress('Scanning ZIP', 34, `Found ${totalFiles} files. EDF: ${edfCount}. ID: ${idCount? 'yes':'no'}.`);
+    await tick();
+
+    await readIdentification(entries);
+
+    const edfs = entries.filter(e => e.pathNorm.toLowerCase().endsWith('.edf'));
+    state.zipMeta.edfPaths = edfs.map(e=>e.pathNorm);
+
+    if (!edfs.length){
+      setStatus('No EDF found','warn');
+      progress('No EDF', 100, 'This ZIP does not contain .edf files (needed for charts).');
+      els.overviewSummary.innerHTML = `<b>Status</b><br/>No <b>.edf</b> files found in this ZIP.`;
+      els.rawSummary.innerHTML = `<b>Raw:</b> ZIP contains no EDF.`;
+      els.rawDump.textContent = state.entries.slice(0,600).map(e=>e.pathNorm).join('\n');
+      return;
+    }
+
+    setStatus('Indexing sessions…','neutral');
+    progress('Indexing sessions', 38, `Scanning DATALOG folders… (0/${edfs.length})`);
+    await indexSessionsByFolderWithProgress(edfs);
+
+    if (!state.sessionsByDate.size){
+      setStatus('No sessions','warn');
+      progress('Indexing sessions', 100, 'No DATALOG/YYYYMMDD folders detected. See Raw tab for file list.');
+      els.overviewSummary.innerHTML = `<b>Status</b><br/>Couldn’t index sessions from SD folder structure.`;
+      return;
+    }
+
+    enablePicker();
+
+    const dates = Array.from(state.sessionsByDate.keys()).sort();
+    const latest = dates[dates.length-1];
+    state.selectedDateISO = latest;
+    els.datePicker.value = latest;
+    populateSessionSelect(latest);
+
+    setStatus('Auto-loading…','neutral');
+    progress('Auto-loading', 80, `Loading most recent day: ${latest}…`);
+    await tick();
+
+    const firstKey = els.sessionSelect.value || state.sessionsByDate.get(latest)?.sessions?.[0]?.key;
+    if (firstKey){
+      await loadSession(latest, firstKey);
+    }
+
+    setStatus('Ready','good');
+    progress('Ready', 100, 'Report ready. You can export to PDF.');
+    els.overviewSummary.innerHTML = `<b>Status</b><br/>Auto-loaded most recent day: <b>${escapeHtml(latest)}</b>.`;
+    toast('ZIP ready ✔️');
+    els.pdfBtn.disabled = false;
+
+  }catch(err){
+    console.error(err);
+    setStatus('Error','bad');
+    progress('Error', 100, err?.message || String(err));
+    log('❌ ' + (err?.message || String(err)));
+  }
+}
+
+function readFileAsArrayBufferWithProgress(file, onProgress){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onprogress = (e)=>{
+      if (e.lengthComputable) onProgress?.(e.loaded, e.total);
+      else onProgress?.(e.loaded, file.size);
+    };
+    reader.onload = () => resolve(reader.result);
+    reader.readAsArrayBuffer(file);
+  });
+}
+function detectRootPrefix(paths){
+  const segs = paths
+    .map(p => p.replace(/\\/g,'/').split('/').filter(Boolean))
+    .filter(a => a.length > 1);
+  if (!segs.length) return '';
+  const first = segs[0][0];
+  if (!first) return '';
+  const anyRoot = paths.some(p => !p.replace(/\\/g,'/').split('/').filter(Boolean).slice(0,-1).length);
+  if (anyRoot) return '';
+  const allSame = segs.every(a => a[0] === first);
+  if (!allSame) return '';
+  return first + '/';
+}
+function stripRootPrefix(path, prefix){
+  const p = path.replace(/\\/g,'/');
+  if (!prefix) return p;
+  return p.startsWith(prefix) ? p.slice(prefix.length) : p;
+}
+
+/* ============================
+   Identification.json (with short FlowGenerator keys)
+   ============================ */
+
+async function readIdentification(entries){
+  progress('Reading Identification', 36, 'Looking for Identification.json…');
+  const idEntry = entries.find(e => e.pathNorm.toLowerCase().endsWith('identification.json'));
+  if (!idEntry){
+    log('Identification.json not found.');
+    state.identification = null;
+    els.idArea.innerHTML = `<div class="row"><span>No Identification.json found</span><span class="badge">info</span></div>`;
+    progress('Reading Identification', 38, 'No Identification.json found.');
+    return;
+  }
+  try{
+    progress('Reading Identification', 37, `Reading ${idEntry.pathNorm}…`);
+    await tick();
+    const txt = await idEntry.entry.async('text');
+    const json = JSON.parse(txt);
+
+    const normalized = normalizeIdentification(json);
+    state.identification = normalized;
+
+    log(`Identification.json loaded: ${idEntry.pathNorm}`);
+    renderIdentification(normalized);
+    progress('Reading Identification', 39, 'Identification.json loaded.');
+  }catch(e){
+    log('Identification.json present but failed to parse.');
+    els.idArea.innerHTML = `<div class="row"><span>Identification.json parse failed</span><span class="badge">warn</span></div>`;
+    progress('Reading Identification', 39, 'Identification.json parse failed.');
+  }
+}
+
+function structuredCloneSafe(x){
+  try{ return structuredClone(x); }catch(e){ return JSON.parse(JSON.stringify(x)); }
+}
+function objectDensityScore(o){
+  if (!o || typeof o !== 'object') return 0;
+  let score = 0;
+  for (const [k,v] of Object.entries(o)){
+    if (v == null) continue;
+    if (typeof v === 'string' && !v.trim()) continue;
+    if (typeof v === 'object') continue;
+    score += 1;
+    if (String(v).length > 2) score += 0.2;
+    if (/serial|model|mode|manuf|brand/i.test(k)) score += 0.6;
+  }
+  return score;
+}
+
+function normalizeIdentification(obj){
+  const out = structuredCloneSafe(obj);
+
+  try{
+    const fg = out?.FlowGenerator || out?.flowGenerator || out?.FLOWGENERATOR;
+    const profiles = fg?.IdentificationProfiles || fg?.identificationProfiles || fg?.IDENTIFICATIONPROFILES;
+    const arr = Array.isArray(profiles) ? profiles : null;
+
+    if (arr && arr.length){
+      const scored = arr.map((p, idx)=>({ idx, p, score: objectDensityScore(p) }))
+                        .sort((a,b)=>b.score-a.score);
+      const best = scored[0]?.p;
+
+      out._CalmCPAP = out._CalmCPAP || {};
+      out._CalmCPAP.IdentificationProfileBest = best;
+
+      // Promote common fields for downstream code
+      const promote = [
+        ['Manufacturer','Manufacturer'],
+        ['Brand','Brand'],
+        ['Model','Model'],
+        ['MachineModel','MachineModel'],
+        ['SerialNumber','SerialNumber'],
+        ['DeviceSerial','DeviceSerial'],
+        ['Mode','Mode'],
+        ['PAPMode','PAPMode'],
+      ];
+      for (const [kRoot,kProf] of promote){
+        if (out[kRoot] == null && best?.[kProf] != null) out[kRoot] = best[kProf];
+      }
+    }
+  }catch(_){}
+
+  return out;
+}
+
+/* ---- Short key formatter for FlowGenerator identification paths ---- */
+
+const FIELD_ABBREV = {
+  Manufacturer: 'Mfr',
+  Brand: 'Brand',
+  Model: 'Model',
+  MachineModel: 'Model',
+  ProductName: 'Model',
+  DeviceSerial: 'SN',
+  SerialNumber: 'SN',
+  Serial: 'SN',
+  PAPMode: 'Mode',
+  TherapyMode: 'Mode',
+  Mode: 'Mode',
+  FirmwareVersion: 'FW',
+  SoftwareVersion: 'SW',
+  HardwareVersion: 'HW',
+  Humidifier: 'Humid',
+  HumidifierType: 'Humid',
+  ClimateLine: 'Tube',
+  HeatedTube: 'Tube',
+  DateTime: 'Time',
+  TimeStamp: 'Time',
+  Timestamp: 'Time',
+  PatientId: 'Patient',
+  PatientID: 'Patient',
+  ProfileName: 'Profile',
+  Name: 'Name',
+};
+
+function splitCamel(s){
+  return String(s||'')
+    .replace(/[_\-]+/g,' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .trim();
+}
+function abbreviateFieldName(field){
+  if (!field) return field;
+  if (FIELD_ABBREV[field]) return FIELD_ABBREV[field];
+  const words = splitCamel(field).split(/\s+/).filter(Boolean);
+
+  // If it's already short, keep it
+  if (field.length <= 10 && words.length <= 2) return field;
+
+  // Prefer known abbreviations inside multi-word
+  const mapped = words.map(w => FIELD_ABBREV[w] || w);
+  const joined = mapped.join('');
+
+  // If still long, compress to initials + last word
+  if (joined.length > 14 && mapped.length >= 3){
+    const initials = mapped.slice(0, mapped.length-1).map(w => w[0].toUpperCase()).join('');
+    const last = mapped[mapped.length-1];
+    return `${initials}${last}`;
+  }
+  return joined.length > 18 ? joined.slice(0,18) : joined;
+}
+
+function shortenFlowGeneratorKeyPath(k){
+  const key = String(k||'');
+
+  // Best profile promoted by us:
+  if (key.startsWith('_CalmCPAP.IdentificationProfileBest.')){
+    const rest = key.slice('_CalmCPAP.IdentificationProfileBest.'.length);
+    const parts = rest.split('.');
+    const head = abbreviateFieldName(parts[0]);
+    const tail = parts.slice(1).map(abbreviateFieldName).join('.');
+    return `FG.Best.${head}${tail?'.'+tail:''}`;
+  }
+
+  // Typical array-flatten format: FlowGenerator.IdentificationProfiles[0].Field
+  let m = key.match(/^FlowGenerator\.IdentificationProfiles\[(\d+)\]\.(.+)$/);
+  if (m){
+    const idx = Number(m[1]) + 1;
+    const rest = m[2];
+    const parts = rest.split('.');
+    const head = abbreviateFieldName(parts[0]);
+    const tail = parts.slice(1).map(abbreviateFieldName).join('.');
+    return `FG.P${idx}.${head}${tail?'.'+tail:''}`;
+  }
+
+  // Sometimes flatteners do FlowGenerator.IdentificationProfiles.0.Field
+  m = key.match(/^FlowGenerator\.IdentificationProfiles\.(\d+)\.(.+)$/);
+  if (m){
+    const idx = Number(m[1]) + 1;
+    const rest = m[2];
+    const parts = rest.split('.');
+    const head = abbreviateFieldName(parts[0]);
+    const tail = parts.slice(1).map(abbreviateFieldName).join('.');
+    return `FG.P${idx}.${head}${tail?'.'+tail:''}`;
+  }
+
+  // Any other FlowGenerator.* path
+  if (key.startsWith('FlowGenerator.')){
+    const rest = key.slice('FlowGenerator.'.length);
+    const parts = rest.split('.').map(abbreviateFieldName);
+    return `FG.${parts.join('.')}`;
+  }
+
+  return key;
+}
+
+function renderIdentification(obj){
+  // Flatten deeper so we can reach into FlowGenerator profiles
+  const flat = flattenObject(obj, 5);
+  const keys = Object.keys(flat).sort((a,b)=>a.localeCompare(b));
+
+  // Priority keys (use original key paths; UI will shorten them)
+  const priority = [
+    '_CalmCPAP.IdentificationProfileBest.Manufacturer',
+    '_CalmCPAP.IdentificationProfileBest.Brand',
+    '_CalmCPAP.IdentificationProfileBest.Model',
+    '_CalmCPAP.IdentificationProfileBest.MachineModel',
+    '_CalmCPAP.IdentificationProfileBest.Mode',
+    '_CalmCPAP.IdentificationProfileBest.PAPMode',
+    '_CalmCPAP.IdentificationProfileBest.SerialNumber',
+    '_CalmCPAP.IdentificationProfileBest.DeviceSerial',
+    'Manufacturer','Brand','Model','MachineModel','Mode','PAPMode',
+    'SerialNumber','DeviceSerial','Patient','Profile','Name','User'
+  ];
+
+  const rows = [];
+  const used = new Set();
+
+  for (const pk of priority){
+    const hit = keys.find(k => k.toLowerCase() === pk.toLowerCase()) || keys.find(k => k.toLowerCase().includes(pk.toLowerCase()));
+    if (hit && !used.has(hit)){
+      used.add(hit);
+      rows.push([hit, flat[hit]]);
+    }
+  }
+
+  // Add other useful scalar fields
+  for (const k of keys){
+    if (rows.length >= 12) break;
+    if (used.has(k)) continue;
+    const v = flat[k];
+    if (v == null) continue;
+    if (typeof v === 'object') continue;
+    const s = String(v).trim();
+    if (!s) continue;
+    rows.push([k, v]);
+    used.add(k);
+  }
+
+  // Device headline tries best-profile first
+  const make = pickLike(keys, flat, '_CalmCPAP.IdentificationProfileBest.Manufacturer')
+            || pickLike(keys, flat, 'Manufacturer')
+            || pickLike(keys, flat, 'Brand') || '';
+  const model = pickLike(keys, flat, '_CalmCPAP.IdentificationProfileBest.Model')
+             || pickLike(keys, flat, '_CalmCPAP.IdentificationProfileBest.MachineModel')
+             || pickLike(keys, flat, 'Model')
+             || pickLike(keys, flat, 'MachineModel') || '';
+
+  const headerRow = `
+    <div class="row">
+      <span><b>Detected device</b></span>
+      <span class="badge">${escapeHtml((make + ' ' + model).trim() || 'Unknown')}</span>
+    </div>
+  `;
+
+  // Shorten FlowGenerator-ish keys for display
+  const list = rows.map(([k,v])=>{
+    const shortKey = shortenFlowGeneratorKeyPath(k);
+    return `
+      <div class="row">
+        <span title="${escapeHtml(k)}">${escapeHtml(shortKey)}</span>
+        <span><b>${escapeHtml(shortValue(v))}</b></span>
+      </div>
+    `;
+  }).join('');
+
+  els.idArea.innerHTML = headerRow + (list || `<div class="row"><span>No readable fields</span><span class="badge">json</span></div>`);
+}
+
+function pickLike(keys, flat, needle){
+  const n = needle.toLowerCase();
+  const hit = keys.find(k => k.toLowerCase() === n) || keys.find(k => k.toLowerCase().includes(n));
+  return hit ? String(flat[hit] ?? '') : '';
+}
+function shortValue(v){
+  if (v == null) return '—';
+  if (typeof v === 'object') return '[object]';
+  const s = String(v);
+  return s.length > 54 ? s.slice(0, 51) + '…' : s;
+}
+function flattenObject(obj, depth=3){
+  const out = {};
+  function rec(o, d, p){
+    if (o == null) return;
+    if (typeof o !== 'object'){ out[p] = o; return; }
+    if (Array.isArray(o)){
+      out[p] = `[array x${o.length}]`;
+      if (d > 0){
+        for (let i=0;i<Math.min(o.length, 20);i++){
+          rec(o[i], d-1, p ? `${p}[${i}]` : `[${i}]`);
+        }
+      }
+      return;
+    }
+    for (const [k,v] of Object.entries(o)){
+      const np = p ? `${p}.${k}` : k;
+      if (typeof v === 'object' && v !== null && d > 0) rec(v, d-1, np);
+      else out[np] = v;
+    }
+  }
+  rec(obj, depth, '');
+  return out;
+}
+
+/* ============================
+   EDF parsing + session indexing + charts
+   (same as previous Draft 3.3 logic)
+   ============================ */
+
+function readAscii(view, offset, length){
+  let s = '';
+  for (let i=0;i<length;i++) s += String.fromCharCode(view.getUint8(offset+i));
+  return s;
+}
+function trim(s){ return String(s).trim(); }
+function parseIntSafe(s){ const n = parseInt(String(s).trim(), 10); return Number.isFinite(n) ? n : null; }
+function parseFloatSafe(s){ const n = parseFloat(String(s).trim().replace(',', '.')); return Number.isFinite(n) ? n : null; }
+
+function parseEDFStartDateTime(ddmmyy, hhmmss){
+  const d = trim(ddmmyy), t = trim(hhmmss);
+  const dm = d.split('.'); const tm = t.split('.');
+  if (dm.length < 3 || tm.length < 3) return null;
+  const dd = parseIntSafe(dm[0]), mm = parseIntSafe(dm[1]), yy = parseIntSafe(dm[2]);
+  const HH = parseIntSafe(tm[0]), MM = parseIntSafe(tm[1]), SS = parseIntSafe(tm[2]);
+  if ([dd,mm,yy,HH,MM,SS].some(x => x == null)) return null;
+  const fullY = (yy <= 84) ? (2000 + yy) : (1900 + yy);
+  return new Date(fullY, mm-1, dd, HH, MM, SS);
+}
+
+function parseEDFHeader(buffer){
+  const view = new DataView(buffer);
+  const version = trim(readAscii(view, 0, 8));
+  const patientId = trim(readAscii(view, 8, 80));
+  const recordingId = trim(readAscii(view, 88, 80));
+  const startDate = trim(readAscii(view, 168, 8));
+  const startTime = trim(readAscii(view, 176, 8));
+  const headerBytes = parseIntSafe(readAscii(view, 184, 8)) || 0;
+  const reserved = trim(readAscii(view, 192, 44));
+  const numRecords = parseIntSafe(readAscii(view, 236, 8));
+  const recordDuration = parseFloatSafe(readAscii(view, 244, 8)) || 1;
+  const numSignals = parseIntSafe(readAscii(view, 252, 4)) || 0;
+  const start = parseEDFStartDateTime(startDate, startTime);
+
+  let off = 256;
+  const readFieldArr = (len) => {
+    const arr = [];
+    for (let i=0;i<numSignals;i++){
+      arr.push(trim(readAscii(view, off + i*len, len)));
+    }
+    off += numSignals * len;
+    return arr;
+  };
+
+  const labels      = readFieldArr(16);
+  const transducer  = readFieldArr(80);
+  const physDim     = readFieldArr(8);
+  const physMinS    = readFieldArr(8);
+  const physMaxS    = readFieldArr(8);
+  const digMinS     = readFieldArr(8);
+  const digMaxS     = readFieldArr(8);
+  const prefilter   = readFieldArr(80);
+  const sprS        = readFieldArr(8);
+  const sigReserved = readFieldArr(32);
+
+  const signals = [];
+  for (let i=0;i<numSignals;i++){
+    const physMin = parseFloatSafe(physMinS[i]);
+    const physMax = parseFloatSafe(physMaxS[i]);
+    const digMin  = parseFloatSafe(digMinS[i]);
+    const digMax  = parseFloatSafe(digMaxS[i]);
+    const spr     = parseIntSafe(sprS[i]) || 0;
+
+    const scale = (digMax != null && digMin != null && physMax != null && physMin != null && (digMax - digMin) !== 0)
+      ? ( (physMax - physMin) / (digMax - digMin) )
+      : null;
+    const offset = (scale != null && digMin != null && physMin != null) ? (physMin - scale * digMin) : null;
+    const sampleRate = spr / recordDuration;
+
+    signals.push({
+      index:i,
+      label: labels[i],
+      physDim: physDim[i] || '',
+      physMin, physMax, digMin, digMax,
+      scale, offset,
+      samplesPerRecord: spr,
+      sampleRate,
+      transducer: transducer[i] || '',
+      prefilter: prefilter[i] || '',
+      reserved: sigReserved[i] || ''
+    });
+  }
+
+  return { version, patientId, recordingId, startDate, startTime, start, headerBytes, reserved, numRecords, recordDuration, numSignals, signals };
+}
+
+function estimateDurationSeconds(buffer, header){
+  const nRec = (header.numRecords != null && header.numRecords >= 0) ? header.numRecords : null;
+  const dataStart = header.headerBytes || 0;
+  const recordBytes = header.signals.reduce((sum, s) => sum + s.samplesPerRecord*2, 0);
+  if (recordBytes <= 0) return 0;
+  if (nRec != null) return nRec * (header.recordDuration || 1);
+  const approx = Math.floor((buffer.byteLength - dataStart) / recordBytes) * (header.recordDuration || 1);
+  return Math.max(0, approx);
+}
+
+function normalizeLabel(s){
+  return String(s||'')
+    .toLowerCase()
+    .replace(/[\u00b2]/g,'2')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+function normalizeUnit(u){
+  return String(u||'')
+    .toLowerCase()
+    .replace(/[\u00b2]/g,'2')
+    .replace(/\s+/g,'')
+    .trim();
+}
+
+/* EDF+ annotations best-effort */
+function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec){
+  const view = new DataView(buffer);
+  const dataStart = header.headerBytes || 0;
+  const start = header.start || new Date(0);
+
+  const bytes = [];
+  for (let r=0;r<nRec;r++){
+    const recBase = dataStart + r * recordBytes;
+    const sigBase = recBase + sigByteOffset[annSig.index];
+    for (let i=0;i<annSig.samplesPerRecord;i++){
+      const off = sigBase + i*2;
+      if (off + 2 > buffer.byteLength) break;
+      const v = view.getInt16(off, true);
+      bytes.push(v & 0xFF);
+    }
+  }
+
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+
+  const blocks = s.split(String.fromCharCode(0x14)).map(x => x.trim()).filter(Boolean);
+  const evtT = [];
+  const evtType = [];
+
+  for (const blk of blocks){
+    const parts = blk.split(String.fromCharCode(0x15)).filter(p => p && p.trim().length);
+    if (!parts.length) continue;
+    const head = parts[0].trim();
+    const m = head.match(/([+-]?\d+(\.\d+)?)/);
+    const onset = m ? parseFloat(m[1]) : null;
+    if (!Number.isFinite(onset)) continue;
+    const text = parts.slice(1).join(' | ').trim();
+    if (!text) continue;
+
+    evtT.push(new Date(start.getTime() + onset*1000));
+    evtType.push(text.length > 50 ? text.slice(0,47)+'…' : text);
+  }
+
+  if (!evtT.length) return null;
+  return { t: evtT, type: evtType, source: annSig.label };
+}
+
+function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
+  const buffer = file.buffer;
+  const header = file.header;
+  const view = new DataView(buffer);
+  const dataStart = header.headerBytes || 0;
+
+  const ns = header.numSignals;
+  const recordBytes = header.signals.reduce((sum, s) => sum + s.samplesPerRecord*2, 0);
+  if (recordBytes <= 0) throw new Error('EDF recordBytes computed as 0');
+
+  const nRec = header.numRecords != null && header.numRecords >= 0
+    ? header.numRecords
+    : Math.floor((buffer.byteLength - dataStart) / recordBytes);
+
+  const sigByteOffset = new Array(ns).fill(0);
+  {
+    let acc = 0;
+    for (let i=0;i<ns;i++){
+      sigByteOffset[i] = acc;
+      acc += header.signals[i].samplesPerRecord * 2;
+    }
+  }
+
+  const wanted = {};
+  for (const [k, normLabel] of Object.entries(mappingKeys)){
+    if (!normLabel) continue;
+    const sig = header.signals.find(s => normalizeLabel(s.label) === normLabel);
+    if (sig) wanted[k] = sig;
+  }
+
+  const out = {};
+  for (const [k, sig] of Object.entries(wanted)){
+    if (k === 'annotations') continue;
+    out[k] = { t:[], y:[], unit: sig.physDim || '', label: sig.label, sampleRate: sig.sampleRate, _source: file.path };
+  }
+
+  const start = header.start || new Date(0);
+
+  const ds = {};
+  for (const [k, sig] of Object.entries(wanted)){
+    if (k === 'annotations') continue;
+    const totalSamples = nRec * sig.samplesPerRecord;
+    ds[k] = Math.max(1, Math.floor(totalSamples / maxPoints));
+  }
+
+  for (let r=0;r<nRec;r++){
+    const recBase = dataStart + r * recordBytes;
+    for (const [k, sig] of Object.entries(wanted)){
+      if (k === 'annotations') continue;
+      const sigBase = recBase + sigByteOffset[sig.index];
+      for (let i=0;i<sig.samplesPerRecord;i++){
+        const sampleIndex = r * sig.samplesPerRecord + i;
+        if (sampleIndex % ds[k] !== 0) continue;
+
+        const off = sigBase + i*2;
+        if (off + 2 > buffer.byteLength) break;
+
+        const dig = view.getInt16(off, true);
+        let phys = dig;
+        if (sig.scale != null && sig.offset != null) phys = sig.scale * dig + sig.offset;
+
+        const seconds = sampleIndex / (sig.sampleRate || 1);
+        out[k].t.push(new Date(start.getTime() + seconds*1000));
+        out[k].y.push(phys);
+      }
+    }
+  }
+
+  let events = null;
+  if (wanted.annotations){
+    try{ events = readEDFAnnotations(buffer, header, wanted.annotations, sigByteOffset, recordBytes, nRec); }catch(e){}
+  }
+
+  return { series: out, events };
+}
+
+function mergeSeriesPickBest(existing, incoming){
+  if (!incoming?.t?.length) return existing;
+  if (!existing?.t?.length) return incoming;
+  return incoming.t.length > existing.t.length ? incoming : existing;
+}
+
+/* ============================
+   Session indexing by folder (DATALOG/YYYYMMDD)
+   ============================ */
+
+function yyyymmddToISO(s){
+  if (!/^\d{8}$/.test(s)) return null;
+  return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+}
+function yyyy_mm_ddToISO(s){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  return s;
+}
+function extractDatalogDateISO(pathNorm){
+  const parts = pathNorm.replace(/\\/g,'/').split('/').filter(Boolean);
+  if (parts.length < 3) return null;
+  if (parts[0].toUpperCase() !== 'DATALOG') return null;
+  const raw = parts[1];
+  return yyyymmddToISO(raw) || yyyy_mm_ddToISO(raw);
+}
+function isRootSTR(pathNorm){
+  const p = pathNorm.replace(/\\/g,'/').split('/').filter(Boolean);
+  return p.length === 1 && p[0].toLowerCase() === 'str.edf';
+}
+
+async function indexSessionsByFolderWithProgress(edfs){
+  const byDateGroup = new Map();
+  let scanned = 0;
+  const total = edfs.length;
+
+  for (const e of edfs){
+    scanned++;
+    if ((scanned % 25) === 0){
+      const pct = 38 + (scanned/Math.max(1,total))*10;
+      progress('Indexing sessions', pct, `Scanning EDF paths… (${scanned}/${total})`);
+      await tick();
+    }
+
+    const dateISO = extractDatalogDateISO(e.pathNorm);
+    if (!dateISO){
+      if (isRootSTR(e.pathNorm)) state.zipMeta.rootSTR = e.pathNorm;
+      continue;
+    }
+
+    const parts = e.pathNorm.replace(/\\/g,'/').split('/').filter(Boolean);
+    const groupKey = (parts.length >= 4 && !parts[2].toLowerCase().endsWith('.edf')) ? parts[2] : 'main';
+    const key = `${dateISO}|${groupKey}`;
+
+    if (!byDateGroup.has(key)){
+      byDateGroup.set(key, { dateISO, groupKey, files: [] });
+    }
+    byDateGroup.get(key).files.push({ path: e.pathNorm, entry: e.entry });
+  }
+
+  const sessionsByDate = new Map();
+  for (const {dateISO, groupKey, files} of byDateGroup.values()){
+    if (!sessionsByDate.has(dateISO)) sessionsByDate.set(dateISO, { dateISO, sessions: [] });
+
+    files.sort((a,b)=>{
+      const aa = a.path.toLowerCase().split('/').pop();
+      const bb = b.path.toLowerCase().split('/').pop();
+      const rank = (name)=>{
+        if (name === 'str.edf') return 0;
+        if (name === 'eve.edf') return 1;
+        if (name === 'flw.edf') return 2;
+        return 9;
+      };
+      const ra = rank(aa), rb = rank(bb);
+      return ra !== rb ? ra - rb : aa.localeCompare(bb);
+    });
+
+    const sessionKey = `${dateISO}__${groupKey}`;
+    sessionsByDate.get(dateISO).sessions.push({
+      key: sessionKey,
+      label: groupKey === 'main' ? `${dateISO} — Night` : `${dateISO} — ${groupKey}`,
+      dateISO,
+      groupKey,
+      files,
+      meta: { start:null, end:null }
+    });
+  }
+
+  for (const pack of sessionsByDate.values()){
+    pack.sessions.sort((a,b)=>a.groupKey.localeCompare(b.groupKey));
+  }
+
+  const rootSTR = state.zipMeta.rootSTR;
+  if (rootSTR){
+    progress('Indexing sessions', 52, 'Found root STR.edf — assigning to a date…');
+    await tick();
+
+    const rootEntry = edfs.find(x=>x.pathNorm===rootSTR)?.entry;
+    let assignedISO = null;
+
+    if (rootEntry){
+      try{
+        const buf = await rootEntry.async('arraybuffer');
+        const header = parseEDFHeader(buf);
+        if (header?.start) assignedISO = localDateISO(header.start);
+      }catch(e){}
+    }
+
+    if (!assignedISO){
+      const dates = Array.from(sessionsByDate.keys()).sort();
+      assignedISO = dates[dates.length-1] || null;
+    }
+
+    if (assignedISO){
+      if (!sessionsByDate.has(assignedISO)){
+        sessionsByDate.set(assignedISO, { dateISO: assignedISO, sessions: [] });
+      }
+      for (const s of sessionsByDate.get(assignedISO).sessions){
+        const hasSTR = s.files.some(f=>f.path.toLowerCase().endsWith('/str.edf') || f.path.toLowerCase()==='str.edf');
+        if (!hasSTR && rootEntry){
+          s.files.unshift({ path: rootSTR, entry: rootEntry, _root:true });
+        }
+      }
+      log(`Root STR.edf assigned to: ${assignedISO} (attached if missing STR within that day).`);
+    } else {
+      log('Root STR.edf found but could not assign to any date.');
+    }
+  }
+
+  state.sessionsByDate = sessionsByDate;
+  state.zipMeta.datalogDates = Array.from(state.sessionsByDate.keys()).sort();
+
+  els.rawSummary.innerHTML = `<b>ZIP scan:</b><br/>
+    rootPrefix: <b>${escapeHtml(state.zipMeta.rootPrefix || '(none)')}</b><br/>
+    DATALOG dates found: <b>${state.zipMeta.datalogDates.length}</b><br/>
+    EDF files: <b>${state.zipMeta.counts.edf}</b>${state.zipMeta.rootSTR ? ` • root STR: <b>yes</b>` : ''}`;
+
+  els.rawDump.textContent = JSON.stringify({
+    rootPrefix: state.zipMeta.rootPrefix || null,
+    counts: state.zipMeta.counts,
+    rootSTR: state.zipMeta.rootSTR,
+    dates: state.zipMeta.datalogDates,
+    exampleEdfPaths: state.zipMeta.edfPaths.slice(0, 120),
+    sessionsByDate: Object.fromEntries(Array.from(state.sessionsByDate.entries()).map(([d, pack]) => ([
+      d,
+      pack.sessions.map(s => ({
+        key: s.key,
+        label: s.label,
+        fileCount: s.files.length,
+        filesPreview: s.files.slice(0,10).map(f=>f.path)
+      }))
+    ])))
+  }, null, 2);
+
+  log(`Indexed dates (folder-based): ${state.sessionsByDate.size}`);
+  progress('Indexing sessions', 58, `Indexed ${state.sessionsByDate.size} day(s) from DATALOG/YYYYMMDD folders.`);
+  await tick();
+}
+
+/* ============================
+   Picker enable
+   ============================ */
+
+function enablePicker(){
+  const dates = Array.from(state.sessionsByDate.keys()).sort();
+  const min = dates[0], max = dates[dates.length-1];
+
+  els.datePicker.disabled = false;
+  els.datePicker.min = min;
+  els.datePicker.max = max;
+  els.datePicker.value = max;
+  state.selectedDateISO = max;
+
+  populateSessionSelect(max);
+}
+function formatHours(sec){ return `${(sec/3600).toFixed(2)}h`; }
+function populateSessionSelect(dateISO){
+  els.sessionSelect.innerHTML = `<option value="">Session</option>`;
+  const pack = state.sessionsByDate.get(dateISO);
+  if (!pack){
+    els.sessionSelect.disabled = true;
+    els.loadSessionBtn.disabled = true;
+    return;
+  }
+
+  for (const s of pack.sessions){
+    const opt = document.createElement('option');
+    opt.value = s.key;
+    const dur = (s.meta?.start && s.meta?.end) ? ` (${formatHours((s.meta.end - s.meta.start)/1000)})` : '';
+    opt.textContent = `${s.label}${dur}`;
+    els.sessionSelect.appendChild(opt);
+  }
+
+  els.sessionSelect.disabled = false;
+  els.sessionSelect.value = pack.sessions[0]?.key || '';
+  els.loadSessionBtn.disabled = !els.sessionSelect.value;
+}
+
+/* ============================
+   Load session + mapping + charts
+   ============================ */
+
+async function loadSession(dateISO, sessionKey){
+  const pack = state.sessionsByDate.get(dateISO);
+  const sess = pack?.sessions?.find(s => s.key === sessionKey);
+  if (!sess) return;
+
+  state.current.session = sess;
+  state.current.edfFiles = [];
+  state.current.signalCatalog = [];
+  state.current.mapping = { leak:null, pressure:null, flow:null, annotations:null };
+  state.current.signals = {};
+  state.current.events = null;
+  state.current.stats = {};
+  state.current.raw = {};
+
+  setStatus('Loading session…','neutral');
+  toast('Loading session…');
+  log(`Loading session: ${sess.label} (${sess.files.length} EDF file(s))`);
+
+  const n = sess.files.length;
+  for (let i=0;i<n;i++){
+    const seg = sess.files[i];
+    const pct = 60 + ((i)/Math.max(1,n))*22;
+    progress('Loading EDF', pct, `Reading EDF ${i+1}/${n}: ${seg.path.split('/').pop()}`);
+    if ((i % 2) === 0) await tick();
+
+    const buffer = await seg.entry.async('arraybuffer');
+    const header = parseEDFHeader(buffer);
+
+    state.current.edfFiles.push({ path: seg.path, header, buffer });
+
+    const durSec = estimateDurationSeconds(buffer, header);
+    const start = header.start || null;
+    const end = start ? new Date(start.getTime() + durSec*1000) : null;
+
+    if (start && (!sess.meta.start || start < sess.meta.start)) sess.meta.start = start;
+    if (end && (!sess.meta.end || end > sess.meta.end)) sess.meta.end = end;
+
+    state.current.raw[seg.path] = {
+      start: header.start?.toISOString?.() || null,
+      patientId: header.patientId,
+      recordingId: header.recordingId,
+      reserved: header.reserved,
+      signals: header.signals.map(s => ({
+        label:s.label, unit:s.physDim,
+        norm: normalizeLabel(s.label),
+        sr:+(s.sampleRate||0).toFixed(3),
+        spr:s.samplesPerRecord
+      }))
+    };
+  }
+
+  populateSessionSelect(dateISO);
+  els.sessionSelect.value = sessionKey;
+
+  progress('Cataloging signals', 84, 'Building signal catalog…');
+  await tick();
+
+  const catalog = [];
+  for (const f of state.current.edfFiles){
+    const fileName = f.path.split('/').pop().toLowerCase();
+    for (const s of f.header.signals){
+      catalog.push({
+        key: normalizeLabel(s.label),
+        label: s.label,
+        unit: s.physDim,
+        unitNorm: normalizeUnit(s.physDim),
+        sr: s.sampleRate,
+        spr: s.samplesPerRecord,
+        file: f.path,
+        fileName
+      });
+    }
+  }
+  const seen = new Set();
+  const uniq = [];
+  for (const c of catalog){
+    const k = `${c.key}__${c.unitNorm||''}__${Math.round((c.sr||0)*1000)}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniq.push(c);
+  }
+  state.current.signalCatalog = uniq;
+
+  progress('Auto-mapping', 87, `Found ${uniq.length} unique signals. Auto-detecting…`);
+  await tick();
+
+  autoMapSignalsRobust();
+  renderMappingUI();
+
+  progress('Extracting signals', 90, 'Reading samples for mapped signals…');
+  await tick();
+
+  await extractSignalsAndRender();
+
+  setStatus('Ready','good');
+  toast('Session ready ✔️');
+  els.pdfBtn.disabled = false;
+}
+
+/* Robust auto-mapping */
+function scoreCandidateFor(kind, c){
+  const label = c.key;
+  const unit = c.unitNorm;
+  const sr = c.sr || 0;
+  const fileName = c.fileName || '';
+  let score = 0;
+
+  const has = (...tokens) => tokens.some(t => label.includes(normalizeLabel(t)));
+  const uhas = (...tokens) => tokens.some(t => unit.includes(normalizeUnit(t)));
+  const fileBonus = (names, pts) => names.some(n=>fileName.includes(n)) ? pts : 0;
+
+  if (kind === 'leak'){
+    score += has('leak') ? 6 : 0;
+    score += has('total leak','mask leak','unintentional leak','unintent leak','unintent') ? 4 : 0;
+    score += uhas('l/min','lpm','lmin') ? 4 : 0;
+    score += (sr > 0 && sr <= 2) ? 2 : 0;
+    score += fileBonus(['str','pld','lks','lk'], 1.5);
+    score -= has('flow') ? 2 : 0;
+    score -= has('pressure','pres') ? 1 : 0;
+  }
+
+  if (kind === 'pressure'){
+    score += has('pressure','pres') ? 4 : 0;
+    score += has('mask pressure','therapy pressure') ? 4 : 0;
+    score += has('epap','ipap') ? 3 : 0;
+    score += uhas('cmh2o','cmh20','cmh₂o','cmh2') ? 5 : 0;
+    score += (sr > 0 && sr <= 2) ? 2 : 0;
+    score += fileBonus(['str','prs','pre','ps'], 1.5);
+    score -= has('leak') ? 1.5 : 0;
+    score -= has('flow') ? 2 : 0;
+  }
+
+  if (kind === 'flow'){
+    score += has('flow','flow rate','airflow','resp flow','air flow') ? 6 : 0;
+    score += uhas('l/min','lpm') ? 1 : 0;
+    score += (sr >= 10) ? 5 : (sr >= 2 ? 2 : 0);
+    score += fileBonus(['flw','flow'], 2.0);
+    score -= has('leak') ? 2 : 0;
+    score -= has('pressure','pres','epap','ipap') ? 2 : 0;
+  }
+
+  if (kind === 'annotations'){
+    score += has('edf annotations','annotations','annotation') ? 10 : 0;
+    score += has('event','events') ? 4 : 0;
+    score += fileBonus(['eve','event'], 2.0);
+    score += (sr <= 1) ? 2 : 0;
+  }
+
+  return score;
+}
+function pickBest(kind, catalog){
+  let best = null;
+  for (const c of catalog){
+    const s = scoreCandidateFor(kind, c);
+    if (!best || s > best.score) best = { score:s, key:c.key };
+  }
+  const min = (kind === 'annotations') ? 4 : 3;
+  if (!best || best.score < min) return null;
+  return best.key;
+}
+function autoMapSignalsRobust(){
+  const cat = state.current.signalCatalog;
+  state.current.mapping.leak = pickBest('leak', cat);
+  state.current.mapping.pressure = pickBest('pressure', cat);
+  state.current.mapping.flow = pickBest('flow', cat);
+  state.current.mapping.annotations = pickBest('annotations', cat);
+  log(`Auto-map: ${JSON.stringify(state.current.mapping)}`);
+}
+
+function renderMappingUI(){
+  const cat = state.current.signalCatalog;
+  const opts = [
+    { value:'', text:'(not set)' },
+    ...cat
+      .slice()
+      .sort((a,b)=>{
+        const scoreA = Math.max(
+          scoreCandidateFor('leak', a),
+          scoreCandidateFor('pressure', a),
+          scoreCandidateFor('flow', a),
+          scoreCandidateFor('annotations', a)
+        );
+        const scoreB = Math.max(
+          scoreCandidateFor('leak', b),
+          scoreCandidateFor('pressure', b),
+          scoreCandidateFor('flow', b),
+          scoreCandidateFor('annotations', b)
+        );
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return a.label.localeCompare(b.label);
+      })
+      .map(c => ({
+        value: c.key,
+        text: `${c.label}${c.unit ? ` [${c.unit}]` : ''} • sr:${(c.sr||0).toFixed(2)} • ${c.file.split('/').pop()}`
+      }))
+  ];
+
+  const mkSelect = (id, value) => {
+    const sel = document.createElement('select');
+    sel.id = id;
+    for (const o of opts){
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.text;
+      if (o.value === value) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    return sel;
+  };
+
+  els.mapGrid.innerHTML = '';
+  const rows = [
+    { label:'Leak', key:'leak' },
+    { label:'Pressure', key:'pressure' },
+    { label:'Flow', key:'flow' },
+    { label:'Events', key:'annotations' },
+  ];
+
+  for (const r of rows){
+    const wrap = document.createElement('div');
+    wrap.className = 'mapRow';
+    const lab = document.createElement('label');
+    lab.textContent = r.label;
+    const sel = mkSelect(`map_${r.key}`, state.current.mapping[r.key] || '');
+    wrap.appendChild(lab);
+    wrap.appendChild(sel);
+    els.mapGrid.appendChild(wrap);
+  }
+
+  els.applyMappingBtn.disabled = false;
+
+  els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signals found across ${state.current.edfFiles.length} EDF file(s).`;
+  els.rawDump.textContent = JSON.stringify({
+    device: state.identification,
+    session: { label: state.current.session?.label, files: state.current.edfFiles.map(f=>f.path) },
+    mapping: state.current.mapping,
+    signalCatalogTop: cat.slice(0, 60),
+    edfHeaders: state.current.raw
+  }, null, 2);
+}
+
+function applyMappingFromUI(){
+  const leak = document.getElementById('map_leak')?.value || '';
+  const pressure = document.getElementById('map_pressure')?.value || '';
+  const flow = document.getElementById('map_flow')?.value || '';
+  const annotations = document.getElementById('map_annotations')?.value || '';
+  state.current.mapping = { leak: leak||null, pressure: pressure||null, flow: flow||null, annotations: annotations||null };
+  log(`Applied manual mapping: ${JSON.stringify(state.current.mapping)}`);
+}
+
+/* Extract signals + render */
+async function extractSignalsAndRender(){
+  setStatus('Processing…','neutral');
+
+  const mapping = state.current.mapping;
+  const merged = { leak:null, pressure:null, flow:null };
+  let mergedEvents = { t:[], type:[] };
+
+  const files = state.current.edfFiles;
+  const n = files.length;
+
+  for (let i=0;i<n;i++){
+    const f = files[i];
+    const pct = 90 + ((i)/Math.max(1,n))*8;
+    progress('Extracting signals', pct, `Parsing EDF ${i+1}/${n}: ${f.path.split('/').pop()}`);
+    if ((i % 1) === 0) await tick();
+
+    const { series, events } = readSelectedSignalsFromEDF(f, mapping, 90000);
+    merged.leak = mergeSeriesPickBest(merged.leak, series.leak);
+    merged.pressure = mergeSeriesPickBest(merged.pressure, series.pressure);
+    merged.flow = mergeSeriesPickBest(merged.flow, series.flow);
+
+    if (events?.t?.length){
+      mergedEvents.t.push(...events.t);
+      mergedEvents.type.push(...events.type);
+    }
+  }
+
+  let eventsOut = null;
+  if (mergedEvents.t.length){
+    const idx = mergedEvents.t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    eventsOut = { t: idx.map(i=>mergedEvents.t[i]), type: idx.map(i=>mergedEvents.type[i]) };
+  }
+
+  state.current.signals = { leak: merged.leak, pressure: merged.pressure, flow: merged.flow };
+  state.current.events = eventsOut;
+
+  progress('Analyzing', 99, 'Computing stats + writing explanations…');
+  await tick();
+
+  analyzeAndRender();
+
+  progress('Done', 100, 'Report ready. You can export to PDF.');
+  setStatus('Ready','good');
+  els.pdfBtn.disabled = false;
+}
+
+/* Analysis + charts */
+function cleanNums(arr){ return (arr||[]).filter(v => Number.isFinite(v)); }
+function percentile(arr, p){
+  const a = cleanNums(arr).slice().sort((x,y)=>x-y);
+  if (!a.length) return null;
+  const idx = (a.length-1) * p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return a[lo];
+  const w = idx - lo;
+  return a[lo]*(1-w) + a[hi]*w;
+}
+function timeSpanHours(series){
+  if (!series?.t?.length) return null;
+  return (series.t[series.t.length-1] - series.t[0]) / 1000 / 3600;
+}
+function deviceHeadline(){
+  const id = state.identification;
+  if (!id) return 'Unknown device';
+  const flat = flattenObject(id, 5);
+  const keys = Object.keys(flat);
+  const pick = (n) => {
+    const nn = n.toLowerCase();
+    const hit = keys.find(k=>k.toLowerCase()===nn) || keys.find(k=>k.toLowerCase().includes(nn));
+    return hit ? String(flat[hit] ?? '') : '';
+  };
+  const make = pick('_CalmCPAP.IdentificationProfileBest.Manufacturer') || pick('Manufacturer') || pick('Brand');
+  const model = pick('_CalmCPAP.IdentificationProfileBest.Model') || pick('Model') || pick('MachineModel');
+  const mode = pick('_CalmCPAP.IdentificationProfileBest.Mode') || pick('Mode') || pick('PAPMode');
+  const serial = pick('_CalmCPAP.IdentificationProfileBest.SerialNumber') || pick('SerialNumber') || pick('DeviceSerial');
+  return [ [make,model].filter(Boolean).join(' ').trim() || 'Unknown',
+           [mode?`Mode: ${mode}`:'', serial?`SN: ${serial}`:''].filter(Boolean).join(' • ')
+         ].filter(Boolean).join(' — ');
+}
+function analyzeAndRender(){
+  const s = state.current.signals;
+  const ev = state.current.events;
+  const sess = state.current.session;
+
+  const stats = {};
+  const usage = Math.max(
+    timeSpanHours(s.leak) ?? 0,
+    timeSpanHours(s.pressure) ?? 0,
+    timeSpanHours(s.flow) ?? 0,
+    (sess?.meta?.start && sess?.meta?.end) ? (sess.meta.end - sess.meta.start)/1000/3600 : 0
+  );
+  stats.usageHrs = usage || null;
+
+  if (s.leak?.y?.length){
+    stats.leakP50 = percentile(s.leak.y, 0.50);
+    stats.leakP95 = percentile(s.leak.y, 0.95);
+    stats.largeLeakThreshold = 24;
+    const thr = stats.largeLeakThreshold;
+    stats.largeLeakPct = s.leak.y.filter(v => v >= thr).length / s.leak.y.length * 100;
+  }
+  if (s.pressure?.y?.length){
+    stats.p50 = percentile(s.pressure.y, 0.50);
+    stats.p95 = percentile(s.pressure.y, 0.95);
+  }
+  if (ev?.t?.length && stats.usageHrs && stats.usageHrs > 0.1){
+    stats.ahiEst = ev.t.length / stats.usageHrs;
+  }
+  state.current.stats = stats;
+
+  els.kpiUsage.textContent = stats.usageHrs != null ? `${stats.usageHrs.toFixed(2)} h` : '—';
+  els.kpiUsageNote.textContent = stats.usageHrs != null ? 'Based on detected signal time span.' : 'No usable time span.';
+  els.kpiLeak95.textContent = stats.leakP95 != null ? stats.leakP95.toFixed(1) : '—';
+  els.kpiLeak95Note.textContent = stats.leakP95 != null ? '95% of the night was at/below this leak.' : 'Leak not mapped.';
+  els.kpiP50.textContent = stats.p50 != null ? stats.p50.toFixed(1) : '—';
+  els.kpiP50Note.textContent = stats.p50 != null ? 'Median pressure.' : 'Pressure not mapped.';
+  els.kpiAHI.textContent = stats.ahiEst != null ? stats.ahiEst.toFixed(2) : '—';
+  els.kpiAHINote.textContent = stats.ahiEst != null ? 'Estimated from annotations.' : 'No annotations mapped/found.';
+
+  renderPlotsAndText();
+}
+
+function renderPlotsAndText(){
+  const s = state.current.signals;
+  const ev = state.current.events;
+  const st = state.current.stats;
+  const sess = state.current.session;
+
+  const traces = [];
+  let needY2 = false;
+
+  if (s.leak?.t?.length){
+    traces.push({
+      x: s.leak.t, y: s.leak.y, type:'scatter', mode:'lines',
+      name:`Leak${s.leak.unit?` (${s.leak.unit})`:''}`,
+      line:{ color:'rgba(255,107,122,.85)', width:2.3 },
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{y:.1f}</b><extra></extra>'
+    });
+  }
+  if (s.pressure?.t?.length){
+    needY2 = traces.length > 0;
+    traces.push({
+      x: s.pressure.t, y: s.pressure.y, type:'scatter', mode:'lines',
+      name:`Pressure${s.pressure.unit?` (${s.pressure.unit})`:''}`,
+      yaxis: needY2 ? 'y2' : 'y',
+      line:{ color:'rgba(97,212,195,.92)', width:2.3 },
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{y:.1f}</b><extra></extra>'
+    });
+  }
+
+  if (!traces.length){
+    Plotly.newPlot(els.plotOverview, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Overview (no mapped signals)')}, plotConfig);
+  } else {
+    const layout = CALM_LAYOUT(`Overview — ${sess?.label || ''}`);
+    if (needY2){
+      layout.yaxis.title = { text:'Leak', font:{ color:'rgba(255,107,122,.85)' } };
+      layout.yaxis2 = {
+        title:{ text:'Pressure', font:{ color:'rgba(97,212,195,.92)' } },
+        overlaying:'y', side:'right',
+        gridcolor:'rgba(255,255,255,.02)',
+        zerolinecolor:'rgba(255,255,255,.06)',
+        tickcolor:'rgba(255,255,255,.25)',
+      };
+    }
+    Plotly.newPlot(els.plotOverview, traces, layout, plotConfig);
+  }
+
+  els.overviewSummary.innerHTML = `
+    <b>Status</b><br/>
+    Loaded: <b>${escapeHtml(sess?.label || '—')}</b><br/>
+    Day: <b>${escapeHtml(sess?.dateISO || '—')}</b><br/>
+    Device: <b>${escapeHtml(deviceHeadline())}</b>
+  `;
+  els.overviewNarrative.innerHTML = `
+    <b>What you’re looking at:</b><br/>
+    Leak vs pressure helps spot seal breaks vs machine responses.<br/><br/>
+    <b>Targets (practical):</b><br/>
+    • Many treated users aim for <b>AHI &lt; 5</b>, often <b>&lt; 1–2</b> when optimized.<br/>
+    • Long “large leak” periods can make therapy feel worse even if AHI looks okay.
+  `;
+
+  // Leaks
+  if (s.leak?.t?.length){
+    const thr = st.largeLeakThreshold ?? 24;
+    const lay = CALM_LAYOUT('Mask leak rate');
+    lay.yaxis.title = { text: s.leak.unit ? `Leak (${s.leak.unit})` : 'Leak' };
+    lay.shapes = [{
+      type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:thr, y1:thr,
+      line:{ color:'rgba(255,204,102,.75)', width:2, dash:'dot' }
+    }];
+    Plotly.newPlot(els.plotLeak, [{
+      x:s.leak.t, y:s.leak.y, type:'scatter', mode:'lines',
+      name:'Leak', line:{ color:'rgba(255,107,122,.85)', width:2.5 }
+    }], lay, plotConfig);
+
+    els.leakNarrative.innerHTML = `
+      <b>Your leak:</b><br/>
+      • Median: <b>${st.leakP50 != null ? st.leakP50.toFixed(1) : '—'}</b><br/>
+      • 95th%: <b>${st.leakP95 != null ? st.leakP95.toFixed(1) : '—'}</b><br/>
+      • Above ${thr}: <b>${st.largeLeakPct != null ? st.largeLeakPct.toFixed(1)+'%' : '—'}</b>
+    `;
+  } else {
+    Plotly.newPlot(els.plotLeak, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Leaks (not mapped)')}, plotConfig);
+    els.leakNarrative.innerHTML = `<b>No leak signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+  // Pressure
+  if (s.pressure?.t?.length){
+    Plotly.newPlot(els.plotPressure, [{
+      x:s.pressure.t, y:s.pressure.y, type:'scatter', mode:'lines',
+      name:'Pressure', line:{ color:'rgba(97,212,195,.92)', width:2.5 }
+    }], {
+      ...CALM_LAYOUT('Therapy pressure'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.pressure.unit ? `Pressure (${s.pressure.unit})` : 'Pressure' } }
+    }, plotConfig);
+
+    els.pressureNarrative.innerHTML = `
+      <b>Your pressure:</b><br/>
+      • Median: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
+      • 95th%: <b>${st.p95 != null ? st.p95.toFixed(1) : '—'}</b>
+    `;
+  } else {
+    Plotly.newPlot(els.plotPressure, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Pressure (not mapped)')}, plotConfig);
+    els.pressureNarrative.innerHTML = `<b>No pressure signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+  // Flow
+  if (s.flow?.t?.length){
+    Plotly.newPlot(els.plotFlow, [{
+      x:s.flow.t, y:s.flow.y, type:'scatter', mode:'lines',
+      name:'Flow', line:{ color:'rgba(122,167,255,.92)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Flow'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.flow.unit ? `Flow (${s.flow.unit})` : 'Flow' } }
+    }, plotConfig);
+
+    els.flowNarrative.innerHTML = `<b>Flow:</b> waveform context (patterns) rather than a single “good number”.`;
+  } else {
+    Plotly.newPlot(els.plotFlow, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Flow (not mapped)')}, plotConfig);
+    els.flowNarrative.innerHTML = `<b>No flow signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+  // Events
+  if (ev?.t?.length){
+    const uniq = Array.from(new Set(ev.type)).slice(0, 14);
+    const y = ev.type.map(t => Math.max(0, uniq.indexOf(t)));
+    const colors = [
+      'rgba(122,167,255,.92)','rgba(97,212,195,.92)','rgba(255,204,102,.90)',
+      'rgba(255,107,122,.90)','rgba(110,231,166,.90)','rgba(231,246,246,.85)',
+    ];
+    const layout = CALM_LAYOUT('Event markers (annotations)');
+    layout.yaxis = {
+      ...layout.yaxis,
+      title: { text: 'Event type' },
+      tickmode: 'array',
+      tickvals: uniq.map((_,i)=>i),
+      ticktext: uniq,
+    };
+    Plotly.newPlot(els.plotEvents, [{
+      x: ev.t, y, type:'scatter', mode:'markers',
+      marker:{ size:8, color: y.map(i => colors[i % colors.length]), line:{width:1,color:'rgba(0,0,0,.35)'} },
+      text: ev.type,
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
+    }], layout, plotConfig);
+
+    els.eventsNarrative.innerHTML = `
+      <b>Events:</b><br/>
+      • Count: <b>${ev.t.length}</b><br/>
+      • AHI (estimate): <b>${st.ahiEst != null ? st.ahiEst.toFixed(2) : '—'}</b>
+    `;
+  } else {
+    Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
+    els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
+  }
+}
+
+/* ============================
+   Startup
+   ============================ */
+resetAll();
+</script>
+</body>
+</html>
