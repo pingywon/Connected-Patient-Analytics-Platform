@@ -254,10 +254,7 @@
     }
     .picker label{ font-size:12px; color: var(--muted2); }
 
-    .rangeControls{ margin-top:10px; display:grid; gap:8px; transition:filter .2s ease, opacity .2s ease; }
-    .rangeControls.disabled{ opacity:.55; filter:saturate(.7); }
-    .rangeControls.ready .seg, .rangeControls.ready .calendarWrap{ background: rgba(18,58,68,.72); border-color: rgba(122,167,255,.35); }
-    .rangeControls.ready .rangeHint{ color: var(--muted); }
+    .rangeControls{ margin-top:10px; display:grid; gap:8px; }
     .seg{
       display:flex; gap:6px; flex-wrap:wrap;
       background: rgba(11,42,49,.45);
@@ -639,7 +636,16 @@
           <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
         </div>
 
-        <div class="rangeControls disabled" id="rangeControls">
+        <div class="picker">
+          <label for="datePicker"><b>Calendar</b></label>
+          <input id="datePicker" type="date" disabled />
+          <select id="sessionSelect" disabled>
+            <option value="">Session</option>
+          </select>
+          <button class="btn ghost" id="loadSessionBtn" disabled>Load Night</button>
+        </div>
+
+        <div class="rangeControls">
           <div class="seg" id="rangeModeSeg" aria-label="Range mode">
             <button type="button" id="modeNight" class="active">Night</button>
             <button type="button" id="modeWeek">Week</button>
@@ -767,7 +773,9 @@ const els = {
   progressDetail: document.getElementById('progressDetail'),
 
   idArea: document.getElementById('idArea'),
-  rangeControls: document.getElementById('rangeControls'),
+  datePicker: document.getElementById('datePicker'),
+  sessionSelect: document.getElementById('sessionSelect'),
+  loadSessionBtn: document.getElementById('loadSessionBtn'),
   rangeModeSeg: document.getElementById('rangeModeSeg'),
   modeNight: document.getElementById('modeNight'),
   modeWeek: document.getElementById('modeWeek'),
@@ -890,7 +898,6 @@ function humanizeWords(s){
   return String(s||'')
     .replace(/[._\-]+/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/FG Identification Profiles/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -977,10 +984,13 @@ function resetAll(){
 
   els.idArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
 
+  els.datePicker.disabled = true;
+  els.sessionSelect.disabled = true;
+  els.loadSessionBtn.disabled = true;
   els.loadRangeBtn.disabled = true;
+  els.sessionSelect.innerHTML = `<option value="">Session</option>`;
+  els.datePicker.value = '';
   els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
-  els.rangeControls.classList.add('disabled');
-  els.rangeControls.classList.remove('ready');
 
   els.mapGrid.innerHTML = '';
   els.applyMappingBtn.disabled = true;
@@ -1122,6 +1132,17 @@ els.pdfBtn.addEventListener('click', async ()=>{
 });
 
 /* ---------- Picker ---------- */
+els.datePicker.addEventListener('change', ()=>{
+  state.selectedDateISO = els.datePicker.value || null;
+  populateSessionSelect(state.selectedDateISO);
+  applyRangeMode(state.selectedRange.mode || 'night');
+  renderCalendar();
+});
+els.loadSessionBtn.addEventListener('click', async ()=>{
+  const key = els.sessionSelect.value || null;
+  if (!state.selectedDateISO || !key) return;
+  await loadSession(state.selectedDateISO, key);
+});
 els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
 els.modeWeek.addEventListener('click', ()=> applyRangeMode('week'));
 els.modeMonth.addEventListener('click', ()=> applyRangeMode('month'));
@@ -1886,26 +1907,30 @@ function enablePicker(autoSelectMostRecent){
   const min = dates[0] || '';
   const max = dates[dates.length-1] || '';
 
+  els.datePicker.disabled = !max;
+  els.sessionSelect.disabled = !max;
+  els.loadSessionBtn.disabled = !max;
   els.loadRangeBtn.disabled = !max;
 
   if (!max){
+    els.datePicker.value = '';
+    els.sessionSelect.innerHTML = `<option value="">Session</option>`;
     state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
-    state.selectedDateISO = null;
     els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
-    els.rangeControls.classList.add('disabled');
-    els.rangeControls.classList.remove('ready');
     renderCalendar();
     return;
   }
 
-  state.selectedDateISO = autoSelectMostRecent ? max : (state.selectedDateISO || max);
+  els.datePicker.min = min;
+  els.datePicker.max = max;
+  els.datePicker.value = autoSelectMostRecent ? max : (els.datePicker.value || max);
+  state.selectedDateISO = els.datePicker.value;
   state.selectedRange.startISO = state.selectedDateISO;
   state.selectedRange.endISO = state.selectedDateISO;
   state.calendarView = state.calendarView || new Date(`${state.selectedDateISO}T00:00:00`);
 
+  populateSessionSelect(state.selectedDateISO);
   applyRangeMode(state.selectedRange.mode || 'night');
-  els.rangeControls.classList.remove('disabled');
-  els.rangeControls.classList.add('ready');
   renderCalendar();
 }
 
@@ -1949,9 +1974,8 @@ function applyRangeMode(mode){
     state.selectedRange.startISO = state.selectedRange.startISO || anchor;
     state.selectedRange.endISO = state.selectedRange.endISO || anchor;
   }
-  const dates = Array.from(state.sessionsByDate.keys()).filter(d => d !== 'unknown').sort();
-  const min = dates[0] || '';
-  const max = dates[dates.length-1] || '';
+  const min = els.datePicker.min;
+  const max = els.datePicker.max;
   if (min && state.selectedRange.startISO < min) state.selectedRange.startISO = min;
   if (max && state.selectedRange.endISO > max) state.selectedRange.endISO = max;
   if (state.selectedRange.startISO > state.selectedRange.endISO){
@@ -1999,6 +2023,8 @@ function renderCalendar(){
     b.disabled = !dates.has(iso);
     b.addEventListener('click', ()=>{
       state.selectedDateISO = iso;
+      els.datePicker.value = iso;
+      populateSessionSelect(iso);
       if (state.selectedRange.mode === 'custom'){
         if (state.selectedRange.pickingStart){
           state.selectedRange.startISO = iso;
@@ -2021,6 +2047,25 @@ function renderCalendar(){
     });
     els.calGrid.appendChild(b);
   }
+}
+
+function populateSessionSelect(dateISO){
+  els.sessionSelect.innerHTML = `<option value="">Session</option>`;
+  const pack = state.sessionsByDate.get(dateISO);
+  if (!pack){
+    els.sessionSelect.disabled = true;
+    els.loadSessionBtn.disabled = true;
+    return;
+  }
+  for (const s of pack.sessions){
+    const opt = document.createElement('option');
+    opt.value = s.key;
+    opt.textContent = `${s.label} (${formatHours((s.end-s.start)/1000)})`;
+    els.sessionSelect.appendChild(opt);
+  }
+  els.sessionSelect.disabled = false;
+  els.sessionSelect.value = pack.sessions[0]?.key || '';
+  els.loadSessionBtn.disabled = !els.sessionSelect.value;
 }
 
 async function loadRange(){
