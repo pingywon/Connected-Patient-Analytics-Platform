@@ -6,9 +6,9 @@
   <title>CalmCPAP — 0.1-alpha</title>
 
   <!-- Unzip -->
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- Charts -->
-  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
           integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
@@ -253,6 +253,28 @@
       margin-top:12px;
     }
     .picker label{ font-size:12px; color: var(--muted2); }
+
+    .rangeControls{ margin-top:10px; display:grid; gap:8px; }
+    .seg{
+      display:flex; gap:6px; flex-wrap:wrap;
+      background: rgba(11,42,49,.45);
+      border:1px solid rgba(255,255,255,.08);
+      padding:8px; border-radius:12px;
+    }
+    .seg button{ padding:7px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); color:var(--text); cursor:pointer; font-weight:700; }
+    .seg button.active{ background:linear-gradient(135deg, rgba(97,212,195,.24), rgba(122,167,255,.25)); border-color:rgba(97,212,195,.65); }
+    .calendarWrap{ border:1px solid rgba(255,255,255,.10); background:rgba(11,42,49,.45); border-radius:14px; padding:10px; }
+    .calHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .calHead .month{ font-size:12px; color:var(--muted); font-weight:700; }
+    .calNav{ display:flex; gap:6px; }
+    .calNav button{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); color:var(--text); border-radius:10px; padding:4px 8px; cursor:pointer; }
+    .dow, .calGrid{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+    .dow div{ text-align:center; font-size:10.5px; color:var(--muted2); text-transform:uppercase; }
+    .day{ min-height:32px; border-radius:10px; border:1px solid rgba(255,255,255,.08); font-size:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.03); color:var(--muted); }
+    .day.muted{ opacity:.45; }
+    .day.hasData{ color:var(--text); border-color:rgba(97,212,195,.45); }
+    .day.selected{ background:linear-gradient(135deg, rgba(97,212,195,.25), rgba(122,167,255,.26)); color:var(--text); border-color:rgba(97,212,195,.72); }
+    .rangeHint{ font-size:11.5px; color:var(--muted2); }
     .picker input[type="date"], .picker select{
       background: rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.12);
@@ -620,7 +642,32 @@
           <select id="sessionSelect" disabled>
             <option value="">Session</option>
           </select>
-          <button class="btn ghost" id="loadSessionBtn" disabled>Load</button>
+          <button class="btn ghost" id="loadSessionBtn" disabled>Load Night</button>
+        </div>
+
+        <div class="rangeControls">
+          <div class="seg" id="rangeModeSeg" aria-label="Range mode">
+            <button type="button" id="modeNight" class="active">Night</button>
+            <button type="button" id="modeWeek">Week</button>
+            <button type="button" id="modeMonth">Month</button>
+            <button type="button" id="modeCustom">Custom</button>
+            <button type="button" id="loadRangeBtn">Load Range</button>
+          </div>
+          <div class="calendarWrap">
+            <div class="calHead">
+              <div class="calNav">
+                <button type="button" id="calPrev" aria-label="Previous month">◀</button>
+                <button type="button" id="calToday" aria-label="Jump to selected month">Today</button>
+              </div>
+              <div class="month" id="calMonthLabel">Calendar</div>
+              <div class="calNav">
+                <button type="button" id="calNext" aria-label="Next month">▶</button>
+              </div>
+            </div>
+            <div class="dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+            <div class="calGrid" id="calGrid"></div>
+          </div>
+          <div class="rangeHint" id="rangeHint">Upload a ZIP to enable calendar range selection.</div>
         </div>
 
         <div class="hr"></div>
@@ -729,6 +776,18 @@ const els = {
   datePicker: document.getElementById('datePicker'),
   sessionSelect: document.getElementById('sessionSelect'),
   loadSessionBtn: document.getElementById('loadSessionBtn'),
+  rangeModeSeg: document.getElementById('rangeModeSeg'),
+  modeNight: document.getElementById('modeNight'),
+  modeWeek: document.getElementById('modeWeek'),
+  modeMonth: document.getElementById('modeMonth'),
+  modeCustom: document.getElementById('modeCustom'),
+  loadRangeBtn: document.getElementById('loadRangeBtn'),
+  calPrev: document.getElementById('calPrev'),
+  calNext: document.getElementById('calNext'),
+  calToday: document.getElementById('calToday'),
+  calMonthLabel: document.getElementById('calMonthLabel'),
+  calGrid: document.getElementById('calGrid'),
+  rangeHint: document.getElementById('rangeHint'),
 
   mapGrid: document.getElementById('mapGrid'),
   applyMappingBtn: document.getElementById('applyMappingBtn'),
@@ -774,6 +833,8 @@ const state = {
   identification: null,
   sessionsByDate: new Map(),
   selectedDateISO: null,
+  selectedRange: { mode:'night', startISO:null, endISO:null, pickingStart:true },
+  calendarView: null,
   current: {
     session: null,
     edfFiles: [],
@@ -832,6 +893,13 @@ function escapeHtml(s){
   return String(s ?? '').replace(/[&<>"']/g, ch => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
+}
+function humanizeWords(s){
+  return String(s||'')
+    .replace(/[._\-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 function newJob(){ state.jobId++; return state.jobId; }
 function assertActive(jobId){
@@ -901,6 +969,8 @@ function resetAll(){
   state.identification = null;
   state.sessionsByDate.clear();
   state.selectedDateISO = null;
+  state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
+  state.calendarView = null;
   state.current = {
     session:null, edfFiles:[], signalCatalog:[],
     mapping:{ leak:null, pressure:null, flow:null, annotations:null },
@@ -917,8 +987,10 @@ function resetAll(){
   els.datePicker.disabled = true;
   els.sessionSelect.disabled = true;
   els.loadSessionBtn.disabled = true;
+  els.loadRangeBtn.disabled = true;
   els.sessionSelect.innerHTML = `<option value="">Session</option>`;
   els.datePicker.value = '';
+  els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
 
   els.mapGrid.innerHTML = '';
   els.applyMappingBtn.disabled = true;
@@ -937,6 +1009,8 @@ function resetAll(){
 
   els.rawSummary.innerHTML = '';
   els.rawDump.textContent = '';
+  applyRangeMode('night');
+  renderCalendar();
 
   progress('Idle', 0, 'Upload a ZIP to begin.');
   setStatus('Waiting','neutral');
@@ -1061,15 +1135,25 @@ els.pdfBtn.addEventListener('click', async ()=>{
 els.datePicker.addEventListener('change', ()=>{
   state.selectedDateISO = els.datePicker.value || null;
   populateSessionSelect(state.selectedDateISO);
+  applyRangeMode(state.selectedRange.mode || 'night');
+  renderCalendar();
 });
 els.loadSessionBtn.addEventListener('click', async ()=>{
   const key = els.sessionSelect.value || null;
   if (!state.selectedDateISO || !key) return;
   await loadSession(state.selectedDateISO, key);
 });
-els.applyMappingBtn.addEventListener('click', ()=>{
+els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
+els.modeWeek.addEventListener('click', ()=> applyRangeMode('week'));
+els.modeMonth.addEventListener('click', ()=> applyRangeMode('month'));
+els.modeCustom.addEventListener('click', ()=> applyRangeMode('custom'));
+els.loadRangeBtn.addEventListener('click', async ()=>{ await loadRange(); });
+els.calPrev.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()-1); state.calendarView = d; renderCalendar(); });
+els.calNext.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()+1); state.calendarView = d; renderCalendar(); });
+els.calToday.addEventListener('click', ()=>{ state.calendarView = isoToDate(state.selectedDateISO || localDateISO(new Date())); renderCalendar(); });
+els.applyMappingBtn.addEventListener('click', async ()=>{
   applyMappingFromUI();
-  extractSignalsAndRender();
+  await extractSignalsAndRender();
 });
 
 /* ---------- Demo ---------- */
@@ -1486,7 +1570,7 @@ function renderIdentification(obj){
   const serial = getLike('SerialNumber') || getLike('DeviceSerial') || getLike('FG P1.SerialNumber') || getLike('FG P1.DeviceSerial') || '';
 
   const headline = (make + ' ' + model).trim() || 'Unknown';
-  const sub = [mode ? `Mode: ${mode}` : '', serial ? `SN: ${serial}` : ''].filter(Boolean).join(' • ');
+  const sub = [mode ? `Mode: ${humanizeWords(mode)}` : '', serial ? `Serial Number: ${serial}` : ''].filter(Boolean).join(' • ');
 
   const headerRow = `
     <div class="row">
@@ -1510,7 +1594,7 @@ function renderIdentification(obj){
     if (typeof it.val === 'object') continue;
     rows.push(`
       <div class="row">
-        <span>${escapeHtml(sk)}</span>
+        <span>${escapeHtml(humanizeWords(sk))}</span>
         <span><b>${escapeHtml(shortValue(it.val))}</b></span>
       </div>
     `);
@@ -1690,13 +1774,16 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
     for (let i=0;i<annSig.samplesPerRecord;i++){
       const off = sigBase + i*2;
       if (off + 2 > buffer.byteLength) break;
-      const v = view.getInt16(off, true);
-      bytes.push(v & 0xFF);
+      const lo = view.getUint8(off);
+      const hi = view.getUint8(off + 1);
+      bytes.push(lo);
+      if (hi !== 0) bytes.push(hi);
     }
   }
 
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);
+  s = s.replace(/\x00/g, '');
 
   const blocks = s.split(String.fromCharCode(0x14)).map(x => x.trim()).filter(Boolean);
   const evtT = [];
@@ -1720,9 +1807,10 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
   return { t: evtT, type: evtType, source: annSig.label };
 }
 
-function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
-  const buffer = file.buffer;
+async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
   const header = file.header;
+  const buffer = file.buffer || await file.entry?.async('arraybuffer');
+  if (!buffer) throw new Error(`Missing EDF buffer for ${file.path}`);
   const view = new DataView(buffer);
   const dataStart = header.headerBytes || 0;
 
@@ -1744,9 +1832,17 @@ function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
   }
 
   const wanted = {};
-  for (const [k, normKey] of Object.entries(mappingKeys)){
-    if (!normKey) continue;
-    const sig = header.signals.find(s => normalizeLabelLoose(s.label) === normKey || normalizeLabel(s.label) === normKey);
+  for (const [k, mappedKey] of Object.entries(mappingKeys)){
+    if (!mappedKey) continue;
+    let sig = null;
+    if (String(mappedKey).startsWith(`${file.path}::`)){
+      const idx = Number(String(mappedKey).split('::').pop());
+      if (Number.isInteger(idx)) sig = header.signals.find(s => s.index === idx) || null;
+    }
+    if (!sig){
+      // Backward compatibility with older saved mapping values based on normalized labels.
+      sig = header.signals.find(s => normalizeLabelLoose(s.label) === mappedKey || normalizeLabel(s.label) === mappedKey) || null;
+    }
     if (sig) wanted[k] = sig;
   }
 
@@ -1814,10 +1910,14 @@ function enablePicker(autoSelectMostRecent){
   els.datePicker.disabled = !max;
   els.sessionSelect.disabled = !max;
   els.loadSessionBtn.disabled = !max;
+  els.loadRangeBtn.disabled = !max;
 
   if (!max){
     els.datePicker.value = '';
     els.sessionSelect.innerHTML = `<option value="">Session</option>`;
+    state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
+    els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
+    renderCalendar();
     return;
   }
 
@@ -1825,11 +1925,129 @@ function enablePicker(autoSelectMostRecent){
   els.datePicker.max = max;
   els.datePicker.value = autoSelectMostRecent ? max : (els.datePicker.value || max);
   state.selectedDateISO = els.datePicker.value;
+  state.selectedRange.startISO = state.selectedDateISO;
+  state.selectedRange.endISO = state.selectedDateISO;
+  state.calendarView = state.calendarView || new Date(`${state.selectedDateISO}T00:00:00`);
 
   populateSessionSelect(state.selectedDateISO);
+  applyRangeMode(state.selectedRange.mode || 'night');
+  renderCalendar();
 }
 
 function formatHours(sec){ return `${(sec/3600).toFixed(2)}h`; }
+
+function isoToDate(iso){ return iso ? new Date(`${iso}T00:00:00`) : null; }
+function addDaysISO(iso, days){
+  const d = isoToDate(iso); if (!d) return null;
+  d.setDate(d.getDate()+days);
+  return localDateISO(d);
+}
+function monthBoundsISO(iso){
+  const d = isoToDate(iso); if (!d) return {start:null,end:null};
+  const a = new Date(d.getFullYear(), d.getMonth(), 1);
+  const b = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return { start: localDateISO(a), end: localDateISO(b) };
+}
+
+function applyRangeMode(mode){
+  state.selectedRange.mode = mode;
+  const btns = [els.modeNight, els.modeWeek, els.modeMonth, els.modeCustom];
+  for (const b of btns) b.classList.toggle('active', b.id === `mode${mode[0].toUpperCase()+mode.slice(1)}`);
+
+  const anchor = state.selectedDateISO || Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0];
+  if (!anchor) return;
+  if (mode === 'night'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = anchor;
+    state.selectedRange.endISO = anchor;
+  } else if (mode === 'week'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = addDaysISO(anchor, -6);
+    state.selectedRange.endISO = anchor;
+  } else if (mode === 'month'){
+    state.selectedRange.pickingStart = true;
+    const b = monthBoundsISO(anchor);
+    state.selectedRange.startISO = b.start;
+    state.selectedRange.endISO = b.end;
+  } else if (mode === 'custom'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = state.selectedRange.startISO || anchor;
+    state.selectedRange.endISO = state.selectedRange.endISO || anchor;
+  }
+  const min = els.datePicker.min;
+  const max = els.datePicker.max;
+  if (min && state.selectedRange.startISO < min) state.selectedRange.startISO = min;
+  if (max && state.selectedRange.endISO > max) state.selectedRange.endISO = max;
+  if (state.selectedRange.startISO > state.selectedRange.endISO){
+    const t = state.selectedRange.startISO;
+    state.selectedRange.startISO = state.selectedRange.endISO;
+    state.selectedRange.endISO = t;
+  }
+  updateRangeHint();
+  renderCalendar();
+}
+
+function updateRangeHint(){
+  const {startISO, endISO, mode} = state.selectedRange;
+  if (!startISO || !endISO){
+    els.rangeHint.textContent = 'Select a date range.';
+    return;
+  }
+  const labelMode = humanizeWords(mode).replace(/^./, c=>c.toUpperCase());
+  els.rangeHint.textContent = `${labelMode}: ${startISO} → ${endISO}`;
+}
+
+function renderCalendar(){
+  if (!els.calGrid) return;
+  els.calGrid.innerHTML = '';
+  const dates = new Set(Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown'));
+  const base = state.calendarView || isoToDate(state.selectedDateISO || localDateISO(new Date())) || new Date();
+  const y = base.getFullYear(), m = base.getMonth();
+  els.calMonthLabel.textContent = base.toLocaleString(undefined, { month:'long', year:'numeric' });
+
+  const first = new Date(y,m,1);
+  const start = new Date(first); start.setDate(first.getDate() - first.getDay());
+
+  for (let i=0;i<42;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const iso = localDateISO(d);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'day';
+    if (d.getMonth() !== m) b.classList.add('muted');
+    if (dates.has(iso)) b.classList.add('hasData');
+    if (state.selectedRange.startISO && state.selectedRange.endISO && iso >= state.selectedRange.startISO && iso <= state.selectedRange.endISO){
+      b.classList.add('selected');
+    }
+    b.textContent = String(d.getDate());
+    b.disabled = !dates.has(iso);
+    b.addEventListener('click', ()=>{
+      state.selectedDateISO = iso;
+      els.datePicker.value = iso;
+      populateSessionSelect(iso);
+      if (state.selectedRange.mode === 'custom'){
+        if (state.selectedRange.pickingStart){
+          state.selectedRange.startISO = iso;
+          state.selectedRange.endISO = iso;
+          state.selectedRange.pickingStart = false;
+        } else {
+          state.selectedRange.endISO = iso;
+          if (state.selectedRange.startISO > state.selectedRange.endISO){
+            const t = state.selectedRange.startISO;
+            state.selectedRange.startISO = state.selectedRange.endISO;
+            state.selectedRange.endISO = t;
+          }
+          state.selectedRange.pickingStart = true;
+        }
+      } else {
+        applyRangeMode(state.selectedRange.mode);
+      }
+      updateRangeHint();
+      renderCalendar();
+    });
+    els.calGrid.appendChild(b);
+  }
+}
 
 function populateSessionSelect(dateISO){
   els.sessionSelect.innerHTML = `<option value="">Session</option>`;
@@ -1850,18 +2068,42 @@ function populateSessionSelect(dateISO){
   els.loadSessionBtn.disabled = !els.sessionSelect.value;
 }
 
+async function loadRange(){
+  const { startISO, endISO } = state.selectedRange;
+  if (!startISO || !endISO) return;
+  const dates = Array.from(state.sessionsByDate.keys()).filter(d => d!=='unknown' && d >= startISO && d <= endISO).sort();
+  const sessions = dates.flatMap(d => state.sessionsByDate.get(d)?.sessions?.slice(0,1) || []);
+  if (!sessions.length){
+    toast('No sessions in selected range.');
+    return;
+  }
+  await loadSessionsAggregate(sessions, `${dates[0]} → ${dates[dates.length-1]}`);
+}
+
 /* ============================
    Load session
    ============================ */
 
 async function loadSession(dateISO, sessionKey, jobId = state.jobId){
   assertActive(jobId);
-
   const pack = state.sessionsByDate.get(dateISO);
   const sess = pack?.sessions?.find(s => s.key === sessionKey);
   if (!sess) return;
+  await loadSessionsAggregate([sess], sess.label || dateISO, jobId);
+}
 
-  state.current.session = sess;
+async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
+  assertActive(jobId);
+  const safeSessions = (sessions || []).filter(Boolean);
+  if (!safeSessions.length) return;
+
+  state.current.session = {
+    key: safeSessions.map(s=>s.key).join('|'),
+    label,
+    start: safeSessions.reduce((m,s)=>!m||s.start<m?s.start:m, null),
+    end: safeSessions.reduce((m,s)=>!m||s.end>m?s.end:m, null),
+    files: safeSessions.flatMap(s => s.files || [])
+  };
   state.current.edfFiles = [];
   state.current.signalCatalog = [];
   state.current.mapping = { leak:null, pressure:null, flow:null, annotations:null };
@@ -1872,28 +2114,23 @@ async function loadSession(dateISO, sessionKey, jobId = state.jobId){
 
   els.pdfBtn.disabled = true;
 
-  setStatus('Loading day…','neutral');
-  progress('Loading day', 62, `Loading ${sess.files.length} EDF file(s)…`);
-  toast('Loading day…');
-  log(`Loading: ${sess.label} (${sess.files.length} EDF file(s))`);
+  setStatus('Loading selection…','neutral');
+  progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)…`);
+  toast('Loading selection…');
+  log(`Loading: ${label} (${state.current.session.files.length} EDF file(s))`);
 
-  const n = sess.files.length;
+  const n = state.current.session.files.length;
   for (let i=0;i<n;i++){
     assertActive(jobId);
-
-    const seg = sess.files[i];
+    const seg = state.current.session.files[i];
     const pct = 60 + ((i)/Math.max(1,n))*20;
-    progress('Loading day', pct, `Reading EDF ${i+1}/${n}: ${seg.path.split('/').pop()}`);
-    if ((i % 1) === 0) await tick();
-
+    progress('Loading selection', pct, `Reading EDF ${i+1}/${n}: ${seg.path.split('/').pop()}`);
+    await tick();
     if (!seg.entry) continue;
-
     const buffer = await seg.entry.async('arraybuffer');
     assertActive(jobId);
-
     const header = parseEDFHeader(buffer);
-
-    state.current.edfFiles.push({ path: seg.path, header, buffer });
+    state.current.edfFiles.push({ path: seg.path, entry: seg.entry, header, buffer: null });
     state.current.raw[seg.path] = {
       start: header.start?.toISOString?.() || null,
       patientId: header.patientId,
@@ -1910,7 +2147,10 @@ async function loadSession(dateISO, sessionKey, jobId = state.jobId){
   for (const f of state.current.edfFiles){
     for (const s of f.header.signals){
       catalog.push({
-        key: normalizeLabelLoose(s.label),
+        key: `${f.path}::${s.index}`,
+        normKey: normalizeLabelLoose(s.label),
+        normKeyStrict: normalizeLabel(s.label),
+        signalIndex: s.index,
         label: s.label,
         unit: s.physDim,
         sr: s.sampleRate,
@@ -1921,7 +2161,7 @@ async function loadSession(dateISO, sessionKey, jobId = state.jobId){
   const seen = new Set();
   const uniq = [];
   for (const c of catalog){
-    const k = `${c.key}__${c.unit||''}`;
+    const k = `${c.normKey}__${c.unit||''}__${c.file}`;
     if (seen.has(k)) continue;
     seen.add(k);
     uniq.push(c);
@@ -1939,10 +2179,9 @@ async function loadSession(dateISO, sessionKey, jobId = state.jobId){
   await tick();
   assertActive(jobId);
 
-  extractSignalsAndRender();
-
+  await extractSignalsAndRender();
   setStatus('Ready','good');
-  toast('Day ready ✔️');
+  toast('Selection ready ✔️');
   els.pdfBtn.disabled = false;
 }
 
@@ -2102,7 +2341,7 @@ function applyMappingFromUI(){
    Extract signals + render
    ============================ */
 
-function extractSignalsAndRender(){
+async function extractSignalsAndRender(){
   setStatus('Processing…','neutral');
 
   const mapping = state.current.mapping;
@@ -2117,7 +2356,7 @@ function extractSignalsAndRender(){
     const pct = 88 + ((i)/Math.max(1,n))*8;
     progress('Extracting signals', pct, `Parsing EDF ${i+1}/${n}: ${f.path.split('/').pop()}`);
 
-    const { series, events } = readSelectedSignalsFromEDF(f, mapping, 90000);
+    const { series, events } = await readSelectedSignalsFromEDF(f, mapping, 90000);
     merged.leak = mergeSeriesPickBest(merged.leak, series.leak);
     merged.pressure = mergeSeriesPickBest(merged.pressure, series.pressure);
     merged.flow = mergeSeriesPickBest(merged.flow, series.flow);
