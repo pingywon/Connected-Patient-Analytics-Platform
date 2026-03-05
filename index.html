@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.14-alpha</title>
+  <title>CalmCPAP — 0.15-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -353,10 +353,11 @@
       margin-bottom: 12px;
     }
     @media (max-width: 1050px){ .explain{ grid-template-columns:1fr; } }
+    @media (max-width: 760px){ .plot{ height:min(520px, 62vh); } .tab{ padding:8px 10px; font-size:12px; } }
 
     .plot{
       width:100%;
-      height:min(560px, 58vh);
+      height:min(700px, 70vh);
       border-radius: var(--radius2);
       overflow:hidden;
       border:1px solid rgba(255,255,255,.10);
@@ -567,7 +568,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.14-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.15-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations + PDF.</div>
       </div>
     </div>
@@ -647,6 +648,11 @@
           <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
         </div>
 
+        <div class="tiny" style="margin-top:10px;"><b>Current Settings (CurrentSettings.json)</b></div>
+        <div class="kv" id="settingsArea" style="margin-top:10px;">
+          <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
+        </div>
+
         <div class="rangeControls disabled" id="rangeControls">
           <div class="calendarWrap">
             <div class="calHead">
@@ -695,6 +701,7 @@
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="flow" id="tab-flow" aria-controls="panel-flow">Flow</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="events" id="tab-events" aria-controls="panel-events">Events</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="explore" id="tab-explore" aria-controls="panel-explore">Explore</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="raw" id="tab-raw" aria-controls="panel-raw">Raw</button>
       </div>
 
@@ -734,6 +741,16 @@
           <div class="callout" style="margin-top:12px" id="eventsNarrative"></div>
         </div>
 
+        <div class="panel" id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+          <div class="callout" id="exploreNarrative"><b>Explore:</b> choose a custom mapping from the dropdown to see it here.</div>
+          <div style="margin:10px 0;">
+            <select id="exploreSelect" disabled style="width:100%; max-width:540px;">
+              <option value="">Choose a mapped signal…</option>
+            </select>
+          </div>
+          <div class="plot" id="plotExplore"></div>
+        </div>
+
         <div class="panel" id="panel-raw" role="tabpanel" aria-labelledby="tab-raw">
           <div class="callout" id="rawSummary"></div>
           <pre class="callout log" id="rawDump" style="max-height:580px"></pre>
@@ -746,13 +763,13 @@
 <div class="toast" id="toast"></div>
 
 <!-- Pretty PDF shell (hidden; we fill it on demand) -->
-<div id="pdfShell" style="position:fixed; left:-99999px; top:0; width:900px; background:#ffffff; color:#0b1b1f;">
+<div id="pdfShell" style="position:fixed; left:0; top:0; width:900px; opacity:0; pointer-events:none; z-index:-1; background:#ffffff; color:#0b1b1f;">
   <!-- populated by JS -->
 </div>
 
 <script>
 /* ============================
-   CalmCPAP 0.14-alpha (AirSense 11 SD)
+   CalmCPAP 0.15-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ✔️ Prettier PDF report with plain-language metric explanations
    ============================ */
@@ -775,6 +792,7 @@ const els = {
   progressDetail: document.getElementById('progressDetail'),
 
   idArea: document.getElementById('idArea'),
+  settingsArea: document.getElementById('settingsArea'),
   rangeControls: document.getElementById('rangeControls'),
   rangeModeSeg: document.getElementById('rangeModeSeg'),
   modeNight: document.getElementById('modeNight'),
@@ -816,6 +834,9 @@ const els = {
   plotPressure: document.getElementById('plotPressure'),
   plotFlow: document.getElementById('plotFlow'),
   plotEvents: document.getElementById('plotEvents'),
+  plotExplore: document.getElementById('plotExplore'),
+  exploreSelect: document.getElementById('exploreSelect'),
+  exploreNarrative: document.getElementById('exploreNarrative'),
 
   log: document.getElementById('log'),
   toast: document.getElementById('toast'),
@@ -831,6 +852,7 @@ const state = {
   entries: [],
   meta: { prefix:'', rootMarkers:{} },
   identification: null,
+  currentSettings: null,
   sessionsByDate: new Map(),
   selectedDateISO: null,
   selectedRange: { mode:'night', startISO:null, endISO:null, pickingStart:true },
@@ -948,7 +970,7 @@ function CALM_LAYOUT(title){
 const plotConfig = { responsive:true, displayModeBar:true, modeBarButtonsToRemove:['autoScale2d'] };
 
 function purgePlots(){
-  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotEvents].forEach(p => Plotly.purge(p));
+  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
 }
 function placeholderPlots(){
   const data = [{ x:[0,1,2,3], y:[0,1,0.4,0.8], type:'scatter', mode:'lines', hoverinfo:'skip',
@@ -958,6 +980,7 @@ function placeholderPlots(){
   Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotEvents, data, {...CALM_LAYOUT('Events'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotExplore, data, {...CALM_LAYOUT('Explore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
 }
 
 /* ---------- Reset ---------- */
@@ -968,6 +991,7 @@ function resetAll(){
   state.entries = [];
   state.meta = { prefix:'', rootMarkers:{} };
   state.identification = null;
+  state.currentSettings = null;
   state.sessionsByDate.clear();
   state.selectedDateISO = null;
   state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
@@ -984,6 +1008,7 @@ function resetAll(){
   els.zipStats.textContent = '—';
 
   els.idArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
+  els.settingsArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
 
   els.loadRangeBtn.disabled = true;
   els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
@@ -1004,6 +1029,9 @@ function resetAll(){
   els.pressureNarrative.innerHTML = '';
   els.flowNarrative.innerHTML = '';
   els.eventsNarrative.innerHTML = '';
+  els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a custom mapping from the dropdown to see it here.';
+  els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
+  els.exploreSelect.disabled = true;
 
   els.rawSummary.innerHTML = '';
   els.rawDump.textContent = '';
@@ -1154,7 +1182,9 @@ els.calMonthSelect.addEventListener('change', ()=>{
 els.applyMappingBtn.addEventListener('click', async ()=>{
   applyMappingFromUI();
   await extractSignalsAndRender();
+  await renderExplorePlot();
 });
+els.exploreSelect.addEventListener('change', async ()=>{ await renderExplorePlot(); });
 
 /* ---------- Demo ---------- */
 els.demoBtn.addEventListener('click', ()=>{
@@ -1271,6 +1301,7 @@ async function handleZip(file){
     assertActive(jobId);
 
     await readIdentification(entries, jobId);
+    await readCurrentSettings(entries, jobId);
 
     setStatus('Indexing days…','neutral');
     progress('Indexing days', 40, 'Finding DATALOG/YYYYMMDD/ EDF files…');
@@ -1511,6 +1542,7 @@ async function readIdentification(entries, jobId){
   if (!idEntry){
     log('Identification.json not found.');
     state.identification = null;
+  state.currentSettings = null;
     els.idArea.innerHTML = `<div class="row"><span>No Identification.json found</span><span class="badge">info</span></div>`;
     progress('Reading Identification', 38, 'No Identification.json found.');
     return;
@@ -1651,6 +1683,40 @@ function flattenObject(obj, depth=5){
   return out;
 }
 
+
+async function readCurrentSettings(entries, jobId){
+  const csEntry = entries.find(e => e.path.toLowerCase().endsWith('currentsettings.json'));
+  if (!csEntry){
+    state.currentSettings = null;
+    els.settingsArea.innerHTML = `<div class="row"><span>No CurrentSettings.json found</span><span class="badge">info</span></div>`;
+    return;
+  }
+  try{
+    assertActive(jobId);
+    const txt = await csEntry.entry.async('text');
+    assertActive(jobId);
+    const json = JSON.parse(txt);
+    state.currentSettings = json;
+    renderCurrentSettings(json);
+  }catch(_e){
+    state.currentSettings = null;
+    els.settingsArea.innerHTML = `<div class="row"><span>CurrentSettings.json parse failed</span><span class="badge">warn</span></div>`;
+  }
+}
+
+function renderCurrentSettings(obj){
+  const flat = flattenObject(obj, 5);
+  const items = Object.entries(flat)
+    .map(([k,v])=>({ key:k, short: humanizeWords(shortenIdKey(k)), val:v }))
+    .filter(it => it.val != null && String(it.val).trim() !== '');
+  items.sort((a,b)=>a.short.localeCompare(b.short));
+  const rows = [];
+  for (const it of items.slice(0,14)){
+    rows.push(`<div class="row"><span>${escapeHtml(it.short)}</span><span><b>${escapeHtml(shortValue(it.val))}</b></span></div>`);
+  }
+  els.settingsArea.innerHTML = rows.join('') || `<div class="row"><span>No readable fields</span><span class="badge">json</span></div>`;
+}
+
 /* ============================
    EDF parsing
    ============================ */
@@ -1761,6 +1827,11 @@ function normalizeLabel(s){
 function normalizeLabelLoose(s){
   return normalizeLabel(s).replace(/\b\d+\b/g,'').replace(/\s+/g,' ').trim();
 }
+function cleanEventLabel(s){
+  const t = String(s || '').replace(/[\x00-\x1F]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  return t.length > 80 ? t.slice(0,77) + '…' : t;
+}
 
 function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec){
   const view = new DataView(buffer);
@@ -1768,6 +1839,8 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
   const start = header.start || new Date(0);
 
   const bytes = [];
+  const isUseful = (b) => b === 0x14 || b === 0x15 || (b >= 0x20 && b <= 0x7E);
+
   for (let r=0;r<nRec;r++){
     const recBase = dataStart + r * recordBytes;
     const sigBase = recBase + sigByteOffset[annSig.index];
@@ -1777,30 +1850,39 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
       const lo = view.getUint8(off);
       const hi = view.getUint8(off + 1);
       bytes.push(lo);
-      if (hi !== 0) bytes.push(hi);
+      if (isUseful(hi)) bytes.push(hi);
     }
   }
 
-  let s = '';
-  for (const b of bytes) s += String.fromCharCode(b);
-  s = s.replace(/\x00/g, '');
+  let raw = '';
+  for (const b of bytes) raw += String.fromCharCode(b);
+  raw = raw.replace(/\x00+/g, '\x14');
 
-  const blocks = s.split(String.fromCharCode(0x14)).map(x => x.trim()).filter(Boolean);
   const evtT = [];
   const evtType = [];
+  let currentOnset = null;
 
-  for (const blk of blocks){
-    const parts = blk.split(String.fromCharCode(0x15)).filter(p => p && p.trim().length);
-    if (!parts.length) continue;
-    const head = parts[0].trim();
-    const m = head.match(/([+-]?\d+(\.\d+)?)/);
-    const onset = m ? parseFloat(m[1]) : null;
-    if (!Number.isFinite(onset)) continue;
-    const text = parts.slice(1).join(' | ').trim();
+  const tokens = raw.split('\x14').map(t => t.trim()).filter(Boolean);
+  for (const tok of tokens){
+    const parts = tok.split('\x15');
+    const first = (parts[0] || '').trim();
+    const onsetMatch = first.match(/^[+-]?\d+(?:\.\d+)?$/);
+
+    if (onsetMatch){
+      currentOnset = parseFloat(first);
+      const maybeText = cleanEventLabel(parts.slice(1).join(' | '));
+      if (maybeText){
+        evtT.push(new Date(start.getTime() + currentOnset*1000));
+        evtType.push(maybeText);
+      }
+      continue;
+    }
+
+    if (currentOnset == null) continue;
+    const text = cleanEventLabel(tok.replace(/^\+/, ''));
     if (!text) continue;
-
-    evtT.push(new Date(start.getTime() + onset*1000));
-    evtType.push(text.length > 60 ? text.slice(0,57)+'…' : text);
+    evtT.push(new Date(start.getTime() + currentOnset*1000));
+    evtType.push(text);
   }
 
   if (!evtT.length) return null;
@@ -1835,7 +1917,7 @@ async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
   for (const [k, mappedKey] of Object.entries(mappingKeys)){
     if (!mappedKey) continue;
     let sig = null;
-    if (String(mappedKey).startsWith(`${file.path}::`)){
+    if (String(mappedKey).includes('::')){
       const idx = Number(String(mappedKey).split('::').pop());
       if (Number.isInteger(idx)) sig = header.signals.find(s => s.index === idx) || null;
     }
@@ -1895,7 +1977,10 @@ async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
 function mergeSeriesPickBest(existing, incoming){
   if (!incoming?.t?.length) return existing;
   if (!existing?.t?.length) return incoming;
-  return incoming.t.length > existing.t.length ? incoming : existing;
+  const t = existing.t.concat(incoming.t);
+  const y = existing.y.concat(incoming.y);
+  const idx = t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  return { ...existing, t: idx.map(i=>t[i]), y: idx.map(i=>y[i]) };
 }
 
 /* ============================
@@ -2292,6 +2377,8 @@ function renderMappingUI(){
 
   els.applyMappingBtn.disabled = false;
 
+  populateExploreOptions(cat);
+
   els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signal labels found.`;
   els.rawDump.textContent = JSON.stringify({
     sdMarkers: state.meta.rootMarkers,
@@ -2300,6 +2387,51 @@ function renderMappingUI(){
     signalCatalog: cat,
     mapping: state.current.mapping
   }, null, 2);
+}
+
+
+function populateExploreOptions(cat){
+  if (!els.exploreSelect) return;
+  els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
+  for (const c of cat){
+    const opt = document.createElement('option');
+    opt.value = c.key;
+    opt.textContent = `${c.label}${c.unit ? ` [${c.unit}]` : ''} — ${c.file.split('/').pop()}`;
+    els.exploreSelect.appendChild(opt);
+  }
+  els.exploreSelect.disabled = cat.length === 0;
+}
+
+async function renderExplorePlot(){
+  const key = els.exploreSelect?.value;
+  if (!key){
+    Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (select a signal)')}, plotConfig);
+    els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a custom mapping from the dropdown to see it here.';
+    return;
+  }
+  const merged = { t:[], y:[], unit:'', label:'' };
+  for (const f of state.current.edfFiles){
+    const { series } = await readSelectedSignalsFromEDF(f, { custom:key }, 120000);
+    const ser = series.custom;
+    if (!ser?.t?.length) continue;
+    merged.t = merged.t.concat(ser.t);
+    merged.y = merged.y.concat(ser.y);
+    merged.unit = merged.unit || ser.unit;
+    merged.label = merged.label || ser.label;
+  }
+  if (!merged.t.length){
+    Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (no data for selected signal)')}, plotConfig);
+    els.exploreNarrative.innerHTML = '<b>No data for selected mapping in this timeframe.</b>';
+    return;
+  }
+  const idx = merged.t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  const t = idx.map(i=>merged.t[i]);
+  const y = idx.map(i=>merged.y[i]);
+  Plotly.newPlot(els.plotExplore, [{x:t,y:y,type:'scatter',mode:'lines',line:{color:'rgba(97,212,195,.95)',width:2}}], {
+    ...CALM_LAYOUT(`Explore — ${merged.label || 'Custom signal'}`),
+    yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: merged.unit ? `${merged.label} (${merged.unit})` : (merged.label || 'Value') } }
+  }, plotConfig);
+  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(merged.label || 'selected signal')}</b> across the selected timeframe.`;
 }
 
 function applyMappingFromUI(){
@@ -2349,7 +2481,13 @@ async function extractSignalsAndRender(){
 
   let eventsOut = null;
   if (mergedEvents.t.length){
-    const idx = mergedEvents.t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const startMs = state.current.session?.start instanceof Date ? state.current.session.start.getTime() : -Infinity;
+    const endMs = state.current.session?.end instanceof Date ? state.current.session.end.getTime() : Infinity;
+    const idx = mergedEvents.t
+      .map((d,i)=>[d?.getTime?.() ?? NaN, i])
+      .filter(([ms]) => Number.isFinite(ms) && ms >= startMs && ms <= endMs)
+      .sort((a,b)=>a[0]-b[0])
+      .map(x=>x[1]);
     eventsOut = { t: idx.map(i=>mergedEvents.t[i]), type: idx.map(i=>mergedEvents.type[i]) };
   }
 
@@ -2362,6 +2500,7 @@ async function extractSignalsAndRender(){
   progress('Done', 100, 'Report ready. You can export to PDF.');
   setStatus('Ready','good');
   els.pdfBtn.disabled = !state.current.session;
+  await renderExplorePlot();
 }
 
 /* ============================
@@ -2573,36 +2712,46 @@ function renderPlotsAndText(){
   }
 
   if (ev?.t?.length){
-    const uniq = Array.from(new Set(ev.type)).slice(0, 14);
-    const y = ev.type.map(t => Math.max(0, uniq.indexOf(t)));
+    const counts = {};
+    for (const t of ev.type) counts[t] = (counts[t] || 0) + 1;
+    const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const topCats = ranked.slice(0, 10).map(x=>x[0]);
+    const catIndex = new Map(topCats.map((c,i)=>[c,i]));
+    const y = ev.type.map(t => catIndex.has(t) ? catIndex.get(t) : topCats.length);
+
     const colors = [
       'rgba(122,167,255,.92)','rgba(97,212,195,.92)','rgba(255,204,102,.90)',
       'rgba(255,107,122,.90)','rgba(110,231,166,.90)','rgba(231,246,246,.85)',
     ];
-    const layout = CALM_LAYOUT('Event markers (annotations)');
+
+    const layout = CALM_LAYOUT('Events over time (annotations)');
     layout.yaxis = {
       ...layout.yaxis,
-      title: { text: 'Event type' },
+      title: { text: 'Event category' },
       tickmode: 'array',
-      tickvals: uniq.map((_,i)=>i),
-      ticktext: uniq,
+      tickvals: [...topCats.map((_,i)=>i), topCats.length],
+      ticktext: [...topCats.map(c=>cleanEventLabel(c)), 'Other'],
     };
-    Plotly.newPlot(els.plotEvents, [{
-      x: ev.t, y, type:'scatter', mode:'markers',
-      marker:{ size:8, color: y.map(i => colors[i % colors.length]), line:{width:1,color:'rgba(0,0,0,.35)'} },
-      text: ev.type,
-      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
-    }], layout, plotConfig);
 
-    const counts = {};
-    for (const t of ev.type) counts[t] = (counts[t] || 0) + 1;
-    const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5)
-      .map(([k,v])=>`• ${escapeHtml(k)}: <b>${v}</b>`).join('<br/>');
+    const traces = [{
+      x: ev.t, y, type:'scatter', mode:'markers',
+      marker:{ size:9, color: y.map(i => colors[i % colors.length]), line:{width:1,color:'rgba(0,0,0,.35)'} },
+      text: ev.type,
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>',
+      name:'Timeline'
+    }];
+
+    Plotly.newPlot(els.plotEvents, traces, layout, plotConfig);
+
+    const top = ranked.slice(0,5)
+      .map(([k,v])=>`• ${escapeHtml(cleanEventLabel(k))}: <b>${v}</b>`).join('<br/>');
     const rangeLabel = state.selectedRange?.startISO && state.selectedRange?.endISO ? `${state.selectedRange.startISO} → ${state.selectedRange.endISO}` : (state.current.session?.label || 'Selected session');
+    const perHour = st.usageHrs && st.usageHrs > 0 ? (ev.t.length / st.usageHrs) : null;
     els.eventsNarrative.innerHTML = `
-      <b>Events explained:</b> markers from EDF annotations in the selected time frame.<br/><br/>
+      <b>Events explained:</b> each dot is one annotation event in the selected timeframe.<br/><br/>
       • Range: <b>${escapeHtml(rangeLabel)}</b><br/>
       • Total events: <b>${ev.t.length}</b><br/>
+      • Events/hour (raw): <b>${perHour != null ? perHour.toFixed(2) : '—'}</b><br/>
       • AHI (est): <b>${st.ahiEst != null ? st.ahiEst.toFixed(2) : '—'}</b><br/><br/>
       <b>Top event types</b><br/>
       ${top || 'No event labels found.'}
@@ -2746,6 +2895,7 @@ async function buildPrettyPdfShell(){
 
   // Capture chart images (nice, consistent)
   progress('Preparing PDF', 20, 'Capturing charts…');
+  await new Promise(r=>setTimeout(r,120));
   const [imgOverview, imgLeak, imgPressure, imgFlow, imgEvents] = await Promise.all([
     plotToPng(els.plotOverview),
     plotToPng(els.plotLeak),
@@ -2957,7 +3107,7 @@ async function buildPrettyPdfShell(){
             File: ${escapeHtml(els.fileBadge.textContent || '—')}
           </div>
           <div class="small" style="text-align:right;">
-            Version: 0.14-alpha<br/>
+            Version: 0.15-alpha<br/>
             Signals mapped: ${escapeHtml(JSON.stringify(state.current.mapping))}
           </div>
         </div>
