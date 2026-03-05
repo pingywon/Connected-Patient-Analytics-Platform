@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.19-alpha</title>
+  <title>CalmCPAP — 0.21-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -576,7 +576,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.19-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.21-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -584,7 +584,6 @@
     <div class="top-actions">
       <span class="badge" id="statusBadge">Waiting</span>
       <span class="badge" id="fileBadge">No file</span>
-      <button class="btn ghost" id="toggleLeftBtn" aria-pressed="false">Hide Sidebar</button>
       <button class="btn ghost" id="clearBtn">Clear</button>
     </div>
   </header>
@@ -647,6 +646,10 @@
             <div class="value" id="kpiAHI">—</div>
             <div class="note" id="kpiAHINote">From annotations if found.</div>
           </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-start; margin:8px 0 0;">
+          <button class="btn ghost" id="toggleLeftBtn" aria-pressed="false">Hide Sidebar</button>
         </div>
 
         <div class="hr"></div>
@@ -716,8 +719,8 @@
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="leaks" id="tab-leaks" aria-controls="panel-leaks">Leaks</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="flow" id="tab-flow" aria-controls="panel-flow">Flow</button>
-        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="snore" id="tab-snore" aria-controls="panel-snore">Snore2s</button>
-        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="resprate" id="tab-resprate" aria-controls="panel-resprate">RespRate2s</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="snore" id="tab-snore" aria-controls="panel-snore">Snore</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="resprate" id="tab-resprate" aria-controls="panel-resprate">Respiratory Rate</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="events" id="tab-events" aria-controls="panel-events">Events</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="explore" id="tab-explore" aria-controls="panel-explore">Explore</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="raw" id="tab-raw" aria-controls="panel-raw">Raw</button>
@@ -794,7 +797,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.19-alpha (AirSense 11 SD)
+   CalmCPAP 0.21-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -1020,8 +1023,8 @@ function placeholderPlots(){
   Plotly.newPlot(els.plotLeak, data, {...CALM_LAYOUT('Leaks'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
-  Plotly.newPlot(els.plotSnore, data, {...CALM_LAYOUT('Snore2s'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
-  Plotly.newPlot(els.plotRespRate, data, {...CALM_LAYOUT('RespRate2s'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotSnore, data, {...CALM_LAYOUT('Snore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotRespRate, data, {...CALM_LAYOUT('Respiratory Rate'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotEvents, data, {...CALM_LAYOUT('Events'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotExplore, data, {...CALM_LAYOUT('Explore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
 }
@@ -2334,8 +2337,9 @@ function autoMapSignals(){
       'snore2s', 'snore', 'snore index'
     ],
     respRate: [
+      'respiratory rate', 'respiratory rate 2s', 'respiratory rate2s',
       'resprate2s', 'resprate.2s', 'resp rate 2s', 'resp rate2s', 'resprate 2s',
-      'resp rate', 'respiratory rate', 'breath rate', 'breaths min'
+      'resp rate', 'breath rate', 'breaths min'
     ],
     annotations: [
       'edf annotations', 'annotations', 'annotation'
@@ -2437,8 +2441,8 @@ function renderMappingUI(){
     { label:'Leak', key:'leak' },
     { label:'Pressure', key:'pressure' },
     { label:'Flow', key:'flow' },
-    { label:'Snore2s', key:'snore' },
-    { label:'RespRate2s', key:'respRate' },
+    { label:'Snore', key:'snore' },
+    { label:'Respiratory Rate', key:'respRate' },
     { label:'Events', key:'annotations' },
   ];
 
@@ -2596,10 +2600,17 @@ async function extractSignalsAndRender(){
   state.current.events = eventsOut;
 
   progress('Analyzing', 97, 'Computing stats + writing explanations…');
-  analyzeAndRender();
-
-  setStatus('Ready','good');
-  await renderExplorePlot();
+  try {
+    analyzeAndRender();
+    await renderExplorePlot();
+    progress('Done', 100, 'Report ready.');
+    setStatus('Ready','good');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error','bad');
+    progress('Error', 100, `Analysis failed: ${err?.message || err}`);
+    log('❌ Analysis failed: ' + (err?.message || err));
+  }
 }
 
 /* ============================
@@ -2814,31 +2825,31 @@ function renderPlotsAndText(){
   if (s.snore?.t?.length){
     Plotly.newPlot(els.plotSnore, [{
       x:s.snore.t, y:s.snore.y, type:'scatter', mode:'lines',
-      name:'Snore2s', line:{ color:'rgba(255,204,102,.95)', width:2.1 }
+      name:'Snore', line:{ color:'rgba(255,204,102,.95)', width:2.1 }
     }], {
-      ...CALM_LAYOUT('Snore2s'),
-      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore2s (${s.snore.unit})` : 'Snore2s' } }
+      ...CALM_LAYOUT('Snore'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore (${s.snore.unit})` : 'Snore' } }
     }, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>Snore2s:</b> snore-related signal over time. Higher values may indicate increased upper-airway vibration.`;
+    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time. Higher values may indicate increased upper-airway vibration.`;
   } else {
     Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
-      {...CALM_LAYOUT('Snore2s (not mapped)')}, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>No Snore2s signal mapped.</b> Set Snore2s in the mapping panel if available.`;
+      {...CALM_LAYOUT('Snore (not mapped)')}, plotConfig);
+    els.snoreNarrative.innerHTML = `<b>No Snore signal mapped.</b> Set Snore in the mapping panel if available.`;
   }
 
   if (s.respRate?.t?.length){
     Plotly.newPlot(els.plotRespRate, [{
       x:s.respRate.t, y:s.respRate.y, type:'scatter', mode:'lines',
-      name:'RespRate2s', line:{ color:'rgba(110,231,166,.95)', width:2.1 }
+      name:'Respiratory Rate', line:{ color:'rgba(110,231,166,.95)', width:2.1 }
     }], {
-      ...CALM_LAYOUT('RespRate2s'),
-      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `RespRate2s (${s.respRate.unit})` : 'RespRate2s' } }
+      ...CALM_LAYOUT('Respiratory Rate'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `Respiratory Rate (${s.respRate.unit})` : 'Respiratory Rate' } }
     }, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>RespRate2s:</b> respiratory rate trend. Watch for sustained rises/falls compared with your usual baseline.`;
+    els.respRateNarrative.innerHTML = `<b>Respiratory Rate:</b> respiratory rate trend. Watch for sustained rises/falls compared with your usual baseline.`;
   } else {
     Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
-      {...CALM_LAYOUT('RespRate2s (not mapped)')}, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>No RespRate2s signal mapped.</b> Set RespRate2s in the mapping panel if available.`;
+      {...CALM_LAYOUT('Respiratory Rate (not mapped)')}, plotConfig);
+    els.respRateNarrative.innerHTML = `<b>No Respiratory Rate signal mapped.</b> Set Respiratory Rate in the mapping panel if available.`;
   }
 
   if (ev?.t?.length){
@@ -2854,45 +2865,50 @@ function renderPlotsAndText(){
     ];
 
     const layout = CALM_LAYOUT('Events over time (annotations)');
+    layout.margin = { ...layout.margin, l: 130 };
     layout.yaxis = {
       ...layout.yaxis,
-      title: { text: 'Event category' },
+      automargin: true,
+      title: { text: 'Event Category', standoff: 14 },
       tickmode: 'array',
       tickvals: [...topCats.map((_,i)=>i), topCats.length],
       ticktext: [...topCats.map(c=>cleanEventLabel(c)), 'Other'],
     };
 
-    const traces = [];
-    for (let i=0;i<topCats.length;i++){
-      const rawCat = topCats[i];
-      const cleanCat = cleanEventLabel(rawCat);
-      const xVals = [];
-      const yVals = [];
-      for (let j=0;j<ev.t.length;j++){
-        if (ev.type[j] !== rawCat) continue;
-        xVals.push(ev.t[j]);
-        yVals.push(i);
-      }
-      traces.push({
-        x: xVals,
-        y: yVals,
-        type:'scatter',
-        mode:'markers',
-        marker:{ size:9, color: colors[i % colors.length], line:{width:1,color:'rgba(0,0,0,.35)'} },
-        name: cleanCat,
-        text: xVals.map(() => cleanCat),
-        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
-      });
-    }
-
+    const buckets = new Map(topCats.map((c, i) => [c, { idx: i, x: [], y: [], text: [] }]));
     const otherX = [];
     const otherY = [];
     const otherText = [];
+
     for (let j=0;j<ev.t.length;j++){
-      if (catIndex.has(ev.type[j])) continue;
-      otherX.push(ev.t[j]);
-      otherY.push(topCats.length);
-      otherText.push(cleanEventLabel(ev.type[j]));
+      const raw = ev.type[j];
+      const b = buckets.get(raw);
+      if (b){
+        const clean = cleanEventLabel(raw);
+        b.x.push(ev.t[j]);
+        b.y.push(b.idx);
+        b.text.push(clean);
+      } else {
+        otherX.push(ev.t[j]);
+        otherY.push(topCats.length);
+        otherText.push(cleanEventLabel(raw));
+      }
+    }
+
+    const traces = [];
+    for (const rawCat of topCats){
+      const b = buckets.get(rawCat);
+      if (!b || !b.x.length) continue;
+      traces.push({
+        x: b.x,
+        y: b.y,
+        type:'scatter',
+        mode:'markers',
+        marker:{ size:9, color: colors[b.idx % colors.length], line:{width:1,color:'rgba(0,0,0,.35)'} },
+        name: cleanEventLabel(rawCat),
+        text: b.text,
+        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
+      });
     }
     if (otherX.length){
       traces.push({
