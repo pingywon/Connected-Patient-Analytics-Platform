@@ -3,16 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.15-alpha</title>
+  <title>CalmCPAP — 0.17-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- Charts -->
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <!-- PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
-          integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
     :root{
@@ -568,15 +564,14 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.15-alpha</span></h1>
-        <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations + PDF.</div>
+        <h1>CalmCPAP <span class="badge">0.17-alpha</span></h1>
+        <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
 
     <div class="top-actions">
       <span class="badge" id="statusBadge">Waiting</span>
       <span class="badge" id="fileBadge">No file</span>
-      <button class="btn ghost" id="pdfBtn" disabled>Share report (PDF)</button>
       <button class="btn ghost" id="clearBtn">Clear</button>
     </div>
   </header>
@@ -700,6 +695,8 @@
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="leaks" id="tab-leaks" aria-controls="panel-leaks">Leaks</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="flow" id="tab-flow" aria-controls="panel-flow">Flow</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="snore" id="tab-snore" aria-controls="panel-snore">Snore2s</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="resprate" id="tab-resprate" aria-controls="panel-resprate">RespRate2s</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="events" id="tab-events" aria-controls="panel-events">Events</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="explore" id="tab-explore" aria-controls="panel-explore">Explore</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="raw" id="tab-raw" aria-controls="panel-raw">Raw</button>
@@ -736,8 +733,19 @@
           <div class="callout" style="margin-top:12px" id="flowNarrative"></div>
         </div>
 
+        <div class="panel" id="panel-snore" role="tabpanel" aria-labelledby="tab-snore">
+          <div class="plot" id="plotSnore"></div>
+          <div class="callout" style="margin-top:12px" id="snoreNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-resprate" role="tabpanel" aria-labelledby="tab-resprate">
+          <div class="plot" id="plotRespRate"></div>
+          <div class="callout" style="margin-top:12px" id="respRateNarrative"></div>
+        </div>
+
         <div class="panel" id="panel-events" role="tabpanel" aria-labelledby="tab-events">
           <div class="plot" id="plotEvents"></div>
+          <div class="callout" id="eventsLegend" style="margin-top:10px"></div>
           <div class="callout" style="margin-top:12px" id="eventsNarrative"></div>
         </div>
 
@@ -762,16 +770,11 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Pretty PDF shell (hidden; we fill it on demand) -->
-<div id="pdfShell" style="position:fixed; left:0; top:0; width:900px; opacity:0; pointer-events:none; z-index:-1; background:#ffffff; color:#0b1b1f;">
-  <!-- populated by JS -->
-</div>
 
 <script>
 /* ============================
-   CalmCPAP 0.15-alpha (AirSense 11 SD)
+   CalmCPAP 0.17-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
-   ✔️ Prettier PDF report with plain-language metric explanations
    ============================ */
 
 const els = {
@@ -782,7 +785,6 @@ const els = {
   fileBadge: document.getElementById('fileBadge'),
   zipStats: document.getElementById('zipStats'),
 
-  pdfBtn: document.getElementById('pdfBtn'),
   clearBtn: document.getElementById('clearBtn'),
   demoBtn: document.getElementById('demoBtn'),
 
@@ -824,6 +826,9 @@ const els = {
   leakNarrative: document.getElementById('leakNarrative'),
   pressureNarrative: document.getElementById('pressureNarrative'),
   flowNarrative: document.getElementById('flowNarrative'),
+  snoreNarrative: document.getElementById('snoreNarrative'),
+  respRateNarrative: document.getElementById('respRateNarrative'),
+  eventsLegend: document.getElementById('eventsLegend'),
   eventsNarrative: document.getElementById('eventsNarrative'),
 
   rawSummary: document.getElementById('rawSummary'),
@@ -833,6 +838,8 @@ const els = {
   plotLeak: document.getElementById('plotLeak'),
   plotPressure: document.getElementById('plotPressure'),
   plotFlow: document.getElementById('plotFlow'),
+  plotSnore: document.getElementById('plotSnore'),
+  plotRespRate: document.getElementById('plotRespRate'),
   plotEvents: document.getElementById('plotEvents'),
   plotExplore: document.getElementById('plotExplore'),
   exploreSelect: document.getElementById('exploreSelect'),
@@ -842,7 +849,6 @@ const els = {
   toast: document.getElementById('toast'),
 
   tablist: document.getElementById('tablist'),
-  pdfShell: document.getElementById('pdfShell')
 };
 
 const state = {
@@ -861,7 +867,7 @@ const state = {
     session: null,
     edfFiles: [],
     signalCatalog: [],
-    mapping: { leak:null, pressure:null, flow:null, annotations:null },
+    mapping: { leak:null, pressure:null, flow:null, snore:null, respRate:null, annotations:null },
     signals: {},
     events: null,
     stats: {},
@@ -970,7 +976,7 @@ function CALM_LAYOUT(title){
 const plotConfig = { responsive:true, displayModeBar:true, modeBarButtonsToRemove:['autoScale2d'] };
 
 function purgePlots(){
-  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
+  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
 }
 function placeholderPlots(){
   const data = [{ x:[0,1,2,3], y:[0,1,0.4,0.8], type:'scatter', mode:'lines', hoverinfo:'skip',
@@ -979,6 +985,8 @@ function placeholderPlots(){
   Plotly.newPlot(els.plotLeak, data, {...CALM_LAYOUT('Leaks'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotSnore, data, {...CALM_LAYOUT('Snore2s'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotRespRate, data, {...CALM_LAYOUT('RespRate2s'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotEvents, data, {...CALM_LAYOUT('Events'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotExplore, data, {...CALM_LAYOUT('Explore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
 }
@@ -998,7 +1006,7 @@ function resetAll(){
   state.calendarView = null;
   state.current = {
     session:null, edfFiles:[], signalCatalog:[],
-    mapping:{ leak:null, pressure:null, flow:null, annotations:null },
+    mapping:{ leak:null, pressure:null, flow:null, snore:null, respRate:null, annotations:null },
     signals:{}, events:null, stats:{}, raw:{}
   };
   state.notes = [];
@@ -1028,6 +1036,9 @@ function resetAll(){
   els.leakNarrative.innerHTML = '';
   els.pressureNarrative.innerHTML = '';
   els.flowNarrative.innerHTML = '';
+  els.snoreNarrative.innerHTML = '';
+  els.respRateNarrative.innerHTML = '';
+  els.eventsLegend.innerHTML = '';
   els.eventsNarrative.innerHTML = '';
   els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a custom mapping from the dropdown to see it here.';
   els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
@@ -1040,7 +1051,6 @@ function resetAll(){
 
   progress('Idle', 0, 'Upload a ZIP to begin.');
   setStatus('Waiting','neutral');
-  els.pdfBtn.disabled = true;
 
   purgePlots();
   placeholderPlots();
@@ -1114,48 +1124,6 @@ els.zipInput.addEventListener('change', ()=>{
   if (f) handleZip(f);
 });
 els.clearBtn.addEventListener('click', ()=>{ resetAll(); toast('Cleared.'); });
-
-/* ---------- Pretty PDF export ---------- */
-els.pdfBtn.addEventListener('click', async ()=>{
-  // If we don't have a loaded session with stats, we still try but warn
-  if (!state.current.session){
-    toast('Load a session first.');
-    return;
-  }
-
-  try{
-    els.pdfBtn.disabled = true;
-    toast('Preparing PDF…');
-    setStatus('Preparing PDF…','neutral');
-
-    // Build pretty PDF HTML in hidden shell
-    await buildPrettyPdfShell();
-
-    const title = state.current?.session?.label
-      ? state.current.session.label.replace(/[^\w\-]+/g,'_')
-      : 'CalmCPAP_Report';
-
-    toast('Creating PDF…');
-    await html2pdf().set({
-      margin: 0.35,
-      filename: `${title}.pdf`,
-      image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    }).from(els.pdfShell).save();
-
-    toast('PDF saved ✔️');
-    setStatus('Ready','good');
-  } catch (e){
-    console.error(e);
-    toast('PDF failed');
-    setStatus('Error','bad');
-    log('❌ PDF export failed: ' + (e?.message || e));
-  } finally {
-    // Re-enable if session is loaded
-    els.pdfBtn.disabled = !state.current.session;
-  }
-});
 
 /* ---------- Picker ---------- */
 els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
@@ -1248,7 +1216,6 @@ els.demoBtn.addEventListener('click', ()=>{
   state.current.events = { t: evtT, type: evtType };
 
   analyzeAndRender();
-  els.pdfBtn.disabled = false;
   toast('Demo ready ✔️');
 });
 
@@ -1454,10 +1421,13 @@ async function indexSessionsFromSDStructure(entries, jobId){
         const buf = await files[fi].entry.async('arraybuffer');
         assertActive(jobId);
         const header = parseEDFHeader(buf);
-        if (header?.start){
+        const parsedStart = header?.start instanceof Date && Number.isFinite(header.start.getTime()) && header.start.getFullYear() >= 2000
+          ? header.start
+          : new Date(`${dateISO}T12:00:00`);
+        if (parsedStart && Number.isFinite(parsedStart.getTime())){
           const durSec = estimateDurationSeconds(buf, header);
-          const end = new Date(header.start.getTime() + durSec*1000);
-          if (!minStart || header.start < minStart) minStart = header.start;
+          const end = new Date(parsedStart.getTime() + durSec*1000);
+          if (!minStart || parsedStart < minStart) minStart = parsedStart;
           if (!maxEnd || end > maxEnd) maxEnd = end;
         }
       }catch(err){
@@ -1542,7 +1512,6 @@ async function readIdentification(entries, jobId){
   if (!idEntry){
     log('Identification.json not found.');
     state.identification = null;
-  state.currentSettings = null;
     els.idArea.innerHTML = `<div class="row"><span>No Identification.json found</span><span class="badge">info</span></div>`;
     progress('Reading Identification', 38, 'No Identification.json found.');
     return;
@@ -1600,19 +1569,19 @@ function renderIdentification(obj){
   const model = getLike('Model') || getLike('MachineModel') || getLike('FG P1.Model') || '';
   const mode  = getLike('Mode') || getLike('PAPMode') || getLike('FG P1.Mode') || '';
   const serial = getLike('SerialNumber') || getLike('DeviceSerial') || getLike('FG P1.SerialNumber') || getLike('FG P1.DeviceSerial') || '';
+  const productCode = getLike('Product Product Name') || getLike('ProductName') || getLike('ProductCode') || '';
 
   const headline = (make + ' ' + model).trim() || 'Unknown';
-  const sub = [mode ? `Mode: ${humanizeWords(mode)}` : '', serial ? `Serial Number: ${serial}` : ''].filter(Boolean).join(' • ');
 
   const headerRow = `
     <div class="row">
       <span><b>Detected device</b></span>
       <span class="badge">${escapeHtml(headline)}</span>
     </div>
-    ${sub ? `
+    ${productCode ? `
       <div class="row">
-        <span style="opacity:.85">Summary</span>
-        <span><b>${escapeHtml(sub)}</b></span>
+        <span style="opacity:.85">Product Code</span>
+        <span><b>${escapeHtml(productCode)}</b></span>
       </div>
     ` : ''}
   `;
@@ -1705,16 +1674,33 @@ async function readCurrentSettings(entries, jobId){
 }
 
 function renderCurrentSettings(obj){
-  const flat = flattenObject(obj, 5);
-  const items = Object.entries(flat)
-    .map(([k,v])=>({ key:k, short: humanizeWords(shortenIdKey(k)), val:v }))
-    .filter(it => it.val != null && String(it.val).trim() !== '');
-  items.sort((a,b)=>a.short.localeCompare(b.short));
+  const sp = obj?.FlowGenerator?.SettingProfiles;
+  const activeName = sp?.ActiveProfiles?.TherapyProfile || '';
+  const therapyProfiles = sp?.TherapyProfiles || {};
+  const featureProfiles = sp?.FeatureProfiles || {};
+  const activeTherapy = activeName && therapyProfiles[activeName] ? therapyProfiles[activeName] : null;
+
   const rows = [];
-  for (const it of items.slice(0,14)){
-    rows.push(`<div class="row"><span>${escapeHtml(it.short)}</span><span><b>${escapeHtml(shortValue(it.val))}</b></span></div>`);
+  if (activeName) rows.push(`<div class="row"><span>Active Therapy Profile</span><span><b>${escapeHtml(activeName)}</b></span></div>`);
+  if (activeTherapy){
+    for (const [k,v] of Object.entries(activeTherapy)){
+      rows.push(`<div class="row"><span>${escapeHtml(humanizeWords(k))}</span><span><b>${escapeHtml(shortValue(v))}</b></span></div>`);
+    }
   }
-  els.settingsArea.innerHTML = rows.join('') || `<div class="row"><span>No readable fields</span><span class="badge">json</span></div>`;
+
+  const featureNames = Array.isArray(sp?.ActiveProfiles?.FeatureProfiles) ? sp.ActiveProfiles.FeatureProfiles : [];
+  for (const name of featureNames.slice(0,10)){
+    const cfg = featureProfiles[name];
+    if (!cfg || typeof cfg !== 'object') continue;
+    const vals = Object.entries(cfg).slice(0,2).map(([k,v])=>`${humanizeWords(k)}: ${shortValue(v)}`).join(' • ');
+    rows.push(`<div class="row" title="${escapeHtml(vals)}"><span>${escapeHtml(name)}</span><span><b>${escapeHtml(vals || 'Configured')}</b></span></div>`);
+  }
+
+  if (!rows.length){
+    els.settingsArea.innerHTML = `<div class="row"><span>No TherapyProfiles settings found</span><span class="badge">json</span></div>`;
+    return;
+  }
+  els.settingsArea.innerHTML = rows.slice(0,14).join('');
 }
 
 /* ============================
@@ -1833,10 +1819,10 @@ function cleanEventLabel(s){
   return t.length > 80 ? t.slice(0,77) + '…' : t;
 }
 
-function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec){
+function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec, file){
   const view = new DataView(buffer);
   const dataStart = header.headerBytes || 0;
-  const start = header.start || new Date(0);
+  const start = resolveFileStartDate(file, header);
 
   const bytes = [];
   const isUseful = (b) => b === 0x14 || b === 0x15 || (b >= 0x20 && b <= 0x7E);
@@ -1889,6 +1875,16 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
   return { t: evtT, type: evtType, source: annSig.label };
 }
 
+
+function resolveFileStartDate(file, header){
+  const parsed = header?.start instanceof Date && Number.isFinite(header.start.getTime()) ? header.start : null;
+  if (parsed && parsed.getFullYear() >= 2000) return parsed;
+  const fallbackISO = file?.folderDateISO || file?._folderDateISO || null;
+  if (!fallbackISO) return parsed || new Date(0);
+  const d = new Date(`${fallbackISO}T12:00:00`);
+  return Number.isFinite(d.getTime()) ? d : (parsed || new Date(0));
+}
+
 async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
   const header = file.header;
   const buffer = file.buffer || await file.entry?.async('arraybuffer');
@@ -1934,7 +1930,7 @@ async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
     out[k] = { t:[], y:[], unit: sig.physDim || '', label: sig.label, sampleRate: sig.sampleRate, _source: file.path };
   }
 
-  const start = header.start || new Date(0);
+  const start = resolveFileStartDate(file, header);
 
   const ds = {};
   for (const [k, sig] of Object.entries(wanted)){
@@ -1968,7 +1964,7 @@ async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
 
   let events = null;
   if (wanted.annotations){
-    try{ events = readEDFAnnotations(buffer, header, wanted.annotations, sigByteOffset, recordBytes, nRec); }catch(e){}
+    try{ events = readEDFAnnotations(buffer, header, wanted.annotations, sigByteOffset, recordBytes, nRec, file); }catch(e){}
   }
 
   return { series: out, events };
@@ -1981,6 +1977,27 @@ function mergeSeriesPickBest(existing, incoming){
   const y = existing.y.concat(incoming.y);
   const idx = t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
   return { ...existing, t: idx.map(i=>t[i]), y: idx.map(i=>y[i]) };
+}
+
+function clipSeriesToWindow(series, start, end){
+  if (!series?.t?.length) return series;
+  const startMs = start instanceof Date ? start.getTime() : -Infinity;
+  const endMs = end instanceof Date ? end.getTime() : Infinity;
+  const idx = series.t
+    .map((d,i)=>[d?.getTime?.() ?? NaN, i])
+    .filter(([ms]) => Number.isFinite(ms) && ms >= startMs && ms <= endMs)
+    .map(x=>x[1]);
+  return { ...series, t: idx.map(i=>series.t[i]), y: idx.map(i=>series.y[i]) };
+}
+
+function sanitizePressureSeries(series){
+  if (!series?.t?.length) return series;
+  const idx = series.y
+    .map((v,i)=>[v,i])
+    .filter(([v]) => Number.isFinite(v) && v >= 0 && v <= 50)
+    .map(([,i])=>i);
+  if (!idx.length) return series;
+  return { ...series, t: idx.map(i=>series.t[i]), y: idx.map(i=>series.y[i]) };
 }
 
 /* ============================
@@ -2171,13 +2188,12 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
   };
   state.current.edfFiles = [];
   state.current.signalCatalog = [];
-  state.current.mapping = { leak:null, pressure:null, flow:null, annotations:null };
+  state.current.mapping = { leak:null, pressure:null, flow:null, snore:null, respRate:null, annotations:null };
   state.current.signals = {};
   state.current.events = null;
   state.current.stats = {};
   state.current.raw = {};
 
-  els.pdfBtn.disabled = true;
 
   setStatus('Loading selection…','neutral');
   progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)…`);
@@ -2195,7 +2211,7 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
     const buffer = await seg.entry.async('arraybuffer');
     assertActive(jobId);
     const header = parseEDFHeader(buffer);
-    state.current.edfFiles.push({ path: seg.path, entry: seg.entry, header, buffer: null });
+    state.current.edfFiles.push({ path: seg.path, entry: seg.entry, header, buffer: null, folderDateISO: seg._folderDateISO || null });
     state.current.raw[seg.path] = {
       start: header.start?.toISOString?.() || null,
       patientId: header.patientId,
@@ -2247,7 +2263,6 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
   await extractSignalsAndRender();
   setStatus('Ready','good');
   toast('Selection ready ✔️');
-  els.pdfBtn.disabled = false;
 }
 
 /* ============================
@@ -2268,6 +2283,12 @@ function autoMapSignals(){
     ],
     flow: [
       'flow', 'flow rate', 'airflow', 'resp flow', 'respiratory flow', 'flowrate'
+    ],
+    snore: [
+      'snore2s', 'snore', 'snore index'
+    ],
+    respRate: [
+      'resprate2s', 'resp rate', 'respiratory rate', 'breath rate', 'breaths min'
     ],
     annotations: [
       'edf annotations', 'annotations', 'annotation'
@@ -2299,7 +2320,13 @@ function autoMapSignals(){
     }
     if (targetKey === 'pressure'){
       if (unitN.includes('cm') && (unitN.includes('h2o') || unitN.includes('h2'))) score += 14;
+      if (labelN.includes('therapy') && labelN.includes('pressure')) score += 18;
+      if (labelN.includes('mask') && labelN.includes('pressure')) score += 16;
+      if (labelN.includes('pressure2s') || labelN.includes('press2s')) score += 18;
+      if (labelN.includes('epap') || labelN.includes('ipap')) score -= 4;
     }
+    if (targetKey === 'snore' && (labelN.includes('snore') || unitN.includes('snore'))) score += 16;
+    if (targetKey === 'respRate' && (labelN.includes('resp') || labelN.includes('rate') || unitN.includes('/min'))) score += 10;
     if (targetKey === 'annotations' && (labelN.includes('annot') || labelN.includes('event'))) score += 12;
 
     if (targetKey !== 'annotations'){
@@ -2327,6 +2354,8 @@ function autoMapSignals(){
   state.current.mapping.leak = pickBest('leak');
   state.current.mapping.pressure = pickBest('pressure');
   state.current.mapping.flow = pickBest('flow');
+  state.current.mapping.snore = pickBest('snore');
+  state.current.mapping.respRate = pickBest('respRate');
   state.current.mapping.annotations = pickBest('annotations');
 
   log(`Auto-map: ${JSON.stringify(state.current.mapping)}`);
@@ -2361,6 +2390,8 @@ function renderMappingUI(){
     { label:'Leak', key:'leak' },
     { label:'Pressure', key:'pressure' },
     { label:'Flow', key:'flow' },
+    { label:'Snore2s', key:'snore' },
+    { label:'RespRate2s', key:'respRate' },
     { label:'Events', key:'annotations' },
   ];
 
@@ -2438,8 +2469,17 @@ function applyMappingFromUI(){
   const leak = document.getElementById('map_leak')?.value || '';
   const pressure = document.getElementById('map_pressure')?.value || '';
   const flow = document.getElementById('map_flow')?.value || '';
+  const snore = document.getElementById('map_snore')?.value || '';
+  const respRate = document.getElementById('map_respRate')?.value || '';
   const annotations = document.getElementById('map_annotations')?.value || '';
-  state.current.mapping = { leak: leak||null, pressure: pressure||null, flow: flow||null, annotations: annotations||null };
+  state.current.mapping = {
+    leak: leak||null,
+    pressure: pressure||null,
+    flow: flow||null,
+    snore: snore||null,
+    respRate: respRate||null,
+    annotations: annotations||null
+  };
   log(`Applied manual mapping: ${JSON.stringify(state.current.mapping)}`);
   els.rawDump.textContent = JSON.stringify({
     identification: state.identification,
@@ -2457,7 +2497,7 @@ async function extractSignalsAndRender(){
   setStatus('Processing…','neutral');
 
   const mapping = state.current.mapping;
-  const merged = { leak:null, pressure:null, flow:null };
+  const merged = { leak:null, pressure:null, flow:null, snore:null, respRate:null };
   let mergedEvents = { t:[], type:[] };
 
   const files = state.current.edfFiles;
@@ -2472,6 +2512,8 @@ async function extractSignalsAndRender(){
     merged.leak = mergeSeriesPickBest(merged.leak, series.leak);
     merged.pressure = mergeSeriesPickBest(merged.pressure, series.pressure);
     merged.flow = mergeSeriesPickBest(merged.flow, series.flow);
+    merged.snore = mergeSeriesPickBest(merged.snore, series.snore);
+    merged.respRate = mergeSeriesPickBest(merged.respRate, series.respRate);
 
     if (events?.t?.length){
       mergedEvents.t.push(...events.t);
@@ -2491,15 +2533,25 @@ async function extractSignalsAndRender(){
     eventsOut = { t: idx.map(i=>mergedEvents.t[i]), type: idx.map(i=>mergedEvents.type[i]) };
   }
 
-  state.current.signals = { leak: merged.leak, pressure: merged.pressure, flow: merged.flow };
+  const clippedLeak = clipSeriesToWindow(merged.leak, state.current.session?.start, state.current.session?.end);
+  const clippedPressure = sanitizePressureSeries(clipSeriesToWindow(merged.pressure, state.current.session?.start, state.current.session?.end));
+  const clippedFlow = clipSeriesToWindow(merged.flow, state.current.session?.start, state.current.session?.end);
+  const clippedSnore = clipSeriesToWindow(merged.snore, state.current.session?.start, state.current.session?.end);
+  const clippedRespRate = clipSeriesToWindow(merged.respRate, state.current.session?.start, state.current.session?.end);
+
+  state.current.signals = {
+    leak: clippedLeak,
+    pressure: clippedPressure,
+    flow: clippedFlow,
+    snore: clippedSnore,
+    respRate: clippedRespRate
+  };
   state.current.events = eventsOut;
 
   progress('Analyzing', 97, 'Computing stats + writing explanations…');
   analyzeAndRender();
 
-  progress('Done', 100, 'Report ready. You can export to PDF.');
   setStatus('Ready','good');
-  els.pdfBtn.disabled = !state.current.session;
   await renderExplorePlot();
 }
 
@@ -2711,6 +2763,37 @@ function renderPlotsAndText(){
     els.flowNarrative.innerHTML = `<b>No flow signal mapped.</b> Use the mapping UI on the left.`;
   }
 
+
+  if (s.snore?.t?.length){
+    Plotly.newPlot(els.plotSnore, [{
+      x:s.snore.t, y:s.snore.y, type:'scatter', mode:'lines',
+      name:'Snore2s', line:{ color:'rgba(255,204,102,.95)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Snore2s'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore2s (${s.snore.unit})` : 'Snore2s' } }
+    }, plotConfig);
+    els.snoreNarrative.innerHTML = `<b>Snore2s:</b> snore-related signal over time. Higher values may indicate increased upper-airway vibration.`;
+  } else {
+    Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Snore2s (not mapped)')}, plotConfig);
+    els.snoreNarrative.innerHTML = `<b>No Snore2s signal mapped.</b> Set Snore2s in the mapping panel if available.`;
+  }
+
+  if (s.respRate?.t?.length){
+    Plotly.newPlot(els.plotRespRate, [{
+      x:s.respRate.t, y:s.respRate.y, type:'scatter', mode:'lines',
+      name:'RespRate2s', line:{ color:'rgba(110,231,166,.95)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('RespRate2s'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `RespRate2s (${s.respRate.unit})` : 'RespRate2s' } }
+    }, plotConfig);
+    els.respRateNarrative.innerHTML = `<b>RespRate2s:</b> respiratory rate trend. Watch for sustained rises/falls compared with your usual baseline.`;
+  } else {
+    Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('RespRate2s (not mapped)')}, plotConfig);
+    els.respRateNarrative.innerHTML = `<b>No RespRate2s signal mapped.</b> Set RespRate2s in the mapping panel if available.`;
+  }
+
   if (ev?.t?.length){
     const counts = {};
     for (const t of ev.type) counts[t] = (counts[t] || 0) + 1;
@@ -2743,6 +2826,9 @@ function renderPlotsAndText(){
 
     Plotly.newPlot(els.plotEvents, traces, layout, plotConfig);
 
+    const legendItems = topCats.slice(0,6).map((cat, i)=>`<span class="eventLegendItem" title="${escapeHtml(cleanEventLabel(cat))}: annotation category from EDF events"><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:999px;background:${colors[i % colors.length]};margin-right:6px;vertical-align:middle;"></span>${escapeHtml(cleanEventLabel(cat))}</span>`).join(' ');
+    els.eventsLegend.innerHTML = `<b>Legend:</b> ${legendItems || 'No categories'}<div class="tiny" style="margin-top:6px">Hover any dot in the chart to see timestamp + event label.</div>`;
+
     const top = ranked.slice(0,5)
       .map(([k,v])=>`• ${escapeHtml(cleanEventLabel(k))}: <b>${v}</b>`).join('<br/>');
     const rangeLabel = state.selectedRange?.startISO && state.selectedRange?.endISO ? `${state.selectedRange.startISO} → ${state.selectedRange.endISO}` : (state.current.session?.label || 'Selected session');
@@ -2759,371 +2845,11 @@ function renderPlotsAndText(){
   } else {
     Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
+    els.eventsLegend.innerHTML = '<b>Legend:</b> none (no parsed events).';
     els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
   }
 }
 
-/* ============================
-   Pretty PDF builder (the main upgrade)
-   ============================ */
-
-function metricToneLeak(stats){
-  const thr = stats.largeLeakThreshold ?? 24;
-  const pct = stats.largeLeakPct;
-  const p95 = stats.leakP95;
-  if (pct == null && p95 == null) return { cls:'note', label:'Unknown', text:'Leak wasn’t mapped, so this section may be empty.' };
-
-  const bad = (pct != null && pct >= 20) || (p95 != null && p95 >= (thr + 6));
-  const warn = (!bad) && ((pct != null && pct >= 5) || (p95 != null && p95 >= thr));
-
-  if (bad) return { cls:'note bad', label:'Likely too high', text:`Leak was above a common “large leak” reference (${thr} L/min) for a meaningful part of the night, which can make therapy less effective and event detection less reliable.` };
-  if (warn) return { cls:'note warn', label:'Worth improving', text:`Leak sometimes reached the “large leak” reference (${thr} L/min). Small adjustments (mask fit, cushion size, strap tension, or mouth leak control) may help.` };
-  return { cls:'note good', label:'Mostly controlled', text:`Leak stayed below a common “large leak” reference (${thr} L/min) most of the time. Occasional spikes are common—focus on big, sustained leak periods.` };
-}
-
-function metricExplainUsage(stats){
-  const h = stats.usageHrs;
-  if (h == null) return { title:'Usage', value:'—', help:'We couldn’t estimate usage because no usable time span was detected in the signals.' };
-  let more = 'This is the span of recorded signal data we found.';
-  if (h < 2) more += ' It’s pretty short—double-check you selected the right session/day.';
-  else if (h < 4) more += ' Many clinicians aim for ~4+ hours/night, but your personal goal may differ.';
-  else more += ' This looks like a full session length.';
-  return { title:'Usage', value:fmtHours(h), help:more };
-}
-
-function metricExplainLeak(stats){
-  const thr = stats.largeLeakThreshold ?? 24;
-  const p95 = stats.leakP95;
-  const pct = stats.largeLeakPct;
-  const p50 = stats.leakP50;
-
-  if (p95 == null) {
-    return { title:'Leak (95th percentile)', value:'—', help:'Leak wasn’t mapped or wasn’t found in your EDF signals.' };
-  }
-
-  const tone = metricToneLeak(stats);
-  return {
-    title:'Leak (95th percentile)',
-    value:`${fmtNum(p95,1)} L/min`,
-    help:
-      `“95th percentile” means: for 95% of the night, leak was at or below this number.\n` +
-      `Rule of thumb: many ResMed reports use ~${thr} L/min as a “large leak” reference.\n` +
-      `Your median leak was ${fmtNum(p50,1)} L/min and you were ≥ ${thr} L/min for ${pct==null?'—':pct.toFixed(1)+'%'} of samples.\n` +
-      `${tone.label}: ${tone.text}`
-  };
-}
-
-function metricExplainPressure(stats){
-  const p50 = stats.p50;
-  const p95 = stats.p95;
-  if (p50 == null) return { title:'Pressure (median)', value:'—', help:'Pressure wasn’t mapped or wasn’t found in your EDF signals.' };
-
-  const spread = (p95 != null) ? (p95 - p50) : null;
-  let guidance = 'Median pressure is the “typical” pressure you spent most of the night at.';
-  if (spread != null){
-    if (spread < 1.0) guidance += ' Your pressures were pretty stable.';
-    else if (spread < 3.0) guidance += ' Your machine adjusted some through the night.';
-    else guidance += ' Your machine adjusted a lot—often seen with changing position, REM sleep, or flow limitation.';
-  }
-  guidance += ' If pressure increases align with leak spikes, leak may be driving instability (or vice versa).';
-
-  return {
-    title:'Pressure (median)',
-    value:`${fmtNum(p50,1)} cmH₂O`,
-    help:`P95 pressure (a “high but not max” level) was ${p95==null?'—':fmtNum(p95,1)+' cmH₂O'}. ${guidance}`
-  };
-}
-
-function metricExplainAHI(stats){
-  const ahi = stats.ahiEst;
-  if (ahi == null) {
-    return {
-      title:'AHI (estimate)',
-      value:'—',
-      help:
-        `AHI here is estimated from EDF annotations, if present.\n` +
-        `If your EDF doesn’t include annotations (or they weren’t mapped), we can’t compute this.\n` +
-        `Tip: map “EDF Annotations” under Events if available.`
-    };
-  }
-  let band = 'unknown';
-  if (ahi < 5) band = 'generally considered “low”';
-  else if (ahi < 15) band = 'mild range';
-  else if (ahi < 30) band = 'moderate range';
-  else band = 'higher range';
-
-  return {
-    title:'AHI (estimate)',
-    value:`${fmtNum(ahi,2)}`,
-    help:
-      `AHI is “events per hour” (apneas + hypopneas).\n` +
-      `This is an estimate: ${band}. If leak is high or annotations are incomplete, this can be off.\n` +
-      `Use your device’s official AHI as the primary value, and treat this as a helpful cross-check.`
-  };
-}
-
-function getDeviceShort(){
-  const text = deviceHeadline();
-  return text || 'Unknown device';
-}
-
-function getSessionMeta(){
-  const sess = state.current.session;
-  if (!sess) return { label:'—', start:'—', end:'—', files:0 };
-  const start = (sess.start instanceof Date) ? fmtTime(sess.start) : '—';
-  const end   = (sess.end instanceof Date) ? fmtTime(sess.end) : '—';
-  return { label: sess.label || '—', start, end, files: sess.files?.length || 0 };
-}
-
-async function plotToPng(node, width=1100, height=520){
-  try{
-    // Plotly.toImage works if the node has been plotted already
-    return await Plotly.toImage(node, { format:'png', width, height, scale:2 });
-  }catch(e){
-    return null;
-  }
-}
-
-function nl2br(s){
-  return escapeHtml(String(s||'')).replace(/\n/g,'<br/>');
-}
-
-async function buildPrettyPdfShell(){
-  const sess = getSessionMeta();
-  const st = state.current.stats || {};
-  const device = getDeviceShort();
-
-  // Capture chart images (nice, consistent)
-  progress('Preparing PDF', 20, 'Capturing charts…');
-  await new Promise(r=>setTimeout(r,120));
-  const [imgOverview, imgLeak, imgPressure, imgFlow, imgEvents] = await Promise.all([
-    plotToPng(els.plotOverview),
-    plotToPng(els.plotLeak),
-    plotToPng(els.plotPressure),
-    plotToPng(els.plotFlow),
-    plotToPng(els.plotEvents),
-  ]);
-
-  progress('Preparing PDF', 55, 'Writing explanations…');
-
-  const usage = metricExplainUsage(st);
-  const leak = metricExplainLeak(st);
-  const press = metricExplainPressure(st);
-  const ahi = metricExplainAHI(st);
-  const leakTone = metricToneLeak(st);
-
-  const leakUnit = state.current.signals?.leak?.unit || 'L/min';
-  const pressUnit = state.current.signals?.pressure?.unit || 'cmH₂O';
-
-  const reportDate = fmtTime(new Date());
-
-  // A compact “plain language” summary paragraph
-  const summaryLines = [];
-  if (st.usageHrs != null) summaryLines.push(`Recorded usage: ${fmtHours(st.usageHrs)}.`);
-  if (st.leakP95 != null) summaryLines.push(`Leak P95: ${fmtNum(st.leakP95,1)} ${leakUnit} (${leakTone.label}).`);
-  if (st.p50 != null) summaryLines.push(`Median pressure: ${fmtNum(st.p50,1)} ${pressUnit}.`);
-  if (st.ahiEst != null) summaryLines.push(`Estimated AHI: ${fmtNum(st.ahiEst,2)} events/hour.`);
-  const summaryText = summaryLines.length ? summaryLines.join(' ') : 'Signals were limited or not mapped, so only a partial summary is available.';
-
-  // Build HTML
-  els.pdfShell.innerHTML = `
-    <div class="pdf">
-      <div class="page">
-        <div class="pdfTop">
-          <div class="pdfBrand">
-            <div class="pdfLogo" aria-hidden="true"></div>
-            <div>
-              <h1 class="pdfTitle">CalmCPAP Report <span class="pill">Pretty PDF</span></h1>
-              <div class="pdfSub">Local-only, generated in your browser. Plain language explanations included.</div>
-            </div>
-          </div>
-          <div class="meta">
-            <div><b>Session</b>: ${escapeHtml(sess.label)}</div>
-            <div><b>Start</b>: ${escapeHtml(sess.start)}</div>
-            <div><b>End</b>: ${escapeHtml(sess.end)}</div>
-            <div><b>Device</b>: ${escapeHtml(device)}</div>
-            <div class="small" style="margin-top:6px;">Generated: ${escapeHtml(reportDate)}</div>
-          </div>
-        </div>
-
-        <div class="${leakTone.cls}">
-          <b>Quick takeaway:</b> ${escapeHtml(summaryText)}
-        </div>
-
-        <h2>Key metrics (with plain-English meaning)</h2>
-
-        <div class="kpiRow">
-          <div class="kpiBox">
-            <div class="kpiLabel">${escapeHtml(usage.title)}</div>
-            <div class="kpiValue">${escapeHtml(usage.value)}</div>
-            <div class="kpiHelp">${nl2br(usage.help)}</div>
-          </div>
-          <div class="kpiBox">
-            <div class="kpiLabel">${escapeHtml(leak.title)}</div>
-            <div class="kpiValue">${escapeHtml(leak.value)}</div>
-            <div class="kpiHelp">${nl2br(leak.help)}</div>
-          </div>
-          <div class="kpiBox">
-            <div class="kpiLabel">${escapeHtml(press.title)}</div>
-            <div class="kpiValue">${escapeHtml(press.value)}</div>
-            <div class="kpiHelp">${nl2br(press.help)}</div>
-          </div>
-          <div class="kpiBox">
-            <div class="kpiLabel">${escapeHtml(ahi.title)}</div>
-            <div class="kpiValue">${escapeHtml(ahi.value)}</div>
-            <div class="kpiHelp">${nl2br(ahi.help)}</div>
-          </div>
-        </div>
-
-        <h2>Metric details (numbers)</h2>
-        <div class="card">
-          <div class="cardPad">
-            <table class="table">
-              <thead>
-                <tr><th>Metric</th><th>Value</th><th>Why it matters</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><b>Usage (hours)</b></td>
-                  <td>${escapeHtml(fmtHours(st.usageHrs))}</td>
-                  <td>Longer sessions make the nightly summary more meaningful. Very short sessions may be naps or partial nights.</td>
-                </tr>
-                <tr>
-                  <td><b>Leak P50 / P95</b></td>
-                  <td>${escapeHtml(fmtNum(st.leakP50,1))} / ${escapeHtml(fmtNum(st.leakP95,1))} ${escapeHtml(leakUnit)}</td>
-                  <td>Leak that stays high can reduce effective pressure and make event detection less reliable.</td>
-                </tr>
-                <tr>
-                  <td><b>Leak ≥ ${escapeHtml(String(st.largeLeakThreshold ?? 24))} (rule-of-thumb)</b></td>
-                  <td>${st.largeLeakPct==null?'—':escapeHtml(st.largeLeakPct.toFixed(1)+'%')}</td>
-                  <td>This is a common “large leak” reference point in many reports (varies by device/mask). Sustained time above it is the bigger concern.</td>
-                </tr>
-                <tr>
-                  <td><b>Pressure P50 / P95</b></td>
-                  <td>${escapeHtml(fmtNum(st.p50,1))} / ${escapeHtml(fmtNum(st.p95,1))} ${escapeHtml(pressUnit)}</td>
-                  <td>P95 reflects the higher end of pressures needed that night. A wide P95–P50 gap means the machine adjusted a lot.</td>
-                </tr>
-                <tr>
-                  <td><b>AHI (estimate)</b></td>
-                  <td>${escapeHtml(fmtNum(st.ahiEst,2))}</td>
-                  <td>Events per hour. This value depends on annotations being present and correctly parsed; use device AHI as the primary reference.</td>
-                </tr>
-              </tbody>
-            </table>
-            <div class="small" style="margin-top:10px;">
-              Tip: If a chart is blank, go back to “Signal mapping” and choose the correct signal labels.
-            </div>
-          </div>
-        </div>
-
-        <h2>Charts</h2>
-
-        ${imgOverview ? `
-          <div class="chartBlock">
-            <div class="chartPad">
-              <div class="chartTitle">Overview — leak vs pressure</div>
-              <p style="margin:0 0 8px;">Use this to see if leak spikes line up with pressure changes.</p>
-            </div>
-            <img class="chart" src="${imgOverview}" alt="Overview chart"/>
-          </div>
-        ` : `
-          <div class="note warn"><b>Overview chart unavailable.</b> (Couldn’t capture the plot image.)</div>
-        `}
-
-        <div style="height:12px"></div>
-
-        ${imgLeak ? `
-          <div class="chartBlock">
-            <div class="chartPad">
-              <div class="chartTitle">Leak</div>
-              <p style="margin:0 0 8px;">Sustained leak is the key. A few spikes can be normal (movement, mask shift).</p>
-            </div>
-            <img class="chart" src="${imgLeak}" alt="Leak chart"/>
-          </div>
-        ` : `
-          <div class="note warn"><b>Leak chart unavailable.</b> (Leak may not be mapped.)</div>
-        `}
-
-        <div style="height:12px"></div>
-
-        ${imgPressure ? `
-          <div class="chartBlock">
-            <div class="chartPad">
-              <div class="chartTitle">Pressure</div>
-              <p style="margin:0 0 8px;">Look for step-ups or ramps that might follow breathing changes or events.</p>
-            </div>
-            <img class="chart" src="${imgPressure}" alt="Pressure chart"/>
-          </div>
-        ` : `
-          <div class="note warn"><b>Pressure chart unavailable.</b> (Pressure may not be mapped.)</div>
-        `}
-
-        <div style="height:12px"></div>
-
-        <div class="grid2">
-          <div>
-            ${imgFlow ? `
-              <div class="chartBlock">
-                <div class="chartPad">
-                  <div class="chartTitle">Flow</div>
-                  <p style="margin:0 0 8px;">This is your breathing waveform. It’s mainly for context and pattern spotting.</p>
-                </div>
-                <img class="chart" src="${imgFlow}" alt="Flow chart"/>
-              </div>
-            ` : `
-              <div class="note warn"><b>Flow chart unavailable.</b> (Flow may not be mapped.)</div>
-            `}
-          </div>
-          <div>
-            ${imgEvents ? `
-              <div class="chartBlock">
-                <div class="chartPad">
-                  <div class="chartTitle">Events (annotations)</div>
-                  <p style="margin:0 0 8px;">Markers from EDF annotations, if present. AHI estimate is based on these.</p>
-                </div>
-                <img class="chart" src="${imgEvents}" alt="Events chart"/>
-              </div>
-            ` : `
-              <div class="note warn"><b>Events chart unavailable.</b> (Annotations may not exist or weren’t mapped.)</div>
-            `}
-          </div>
-        </div>
-
-        <h2>What to do next (practical)</h2>
-        <div class="card">
-          <div class="cardPad">
-            <p><b>If leak is high:</b> try reseating the mask, checking cushion wear, gently tightening straps, and addressing mouth leaks if you use a nasal mask. Focus on long periods of leak, not single spikes.</p>
-            <p><b>If pressure swings a lot:</b> look for whether pressure increases follow flow limitation or events—and whether leak spikes come first. Leak can cause instability; instability can also cause leak.</p>
-            <p><b>If AHI estimate is missing:</b> map “EDF Annotations” (Events) if it exists in your file. Some exports simply don’t include annotations.</p>
-            <div class="note warn" style="margin-top:10px;">
-              <b>Important:</b> This report is informational and not medical advice. Use it to ask better questions—not to self-diagnose.
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <div class="small">
-            CalmCPAP — generated locally in your browser<br/>
-            File: ${escapeHtml(els.fileBadge.textContent || '—')}
-          </div>
-          <div class="small" style="text-align:right;">
-            Version: 0.15-alpha<br/>
-            Signals mapped: ${escapeHtml(JSON.stringify(state.current.mapping))}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  progress('Preparing PDF', 90, 'Finalizing…');
-  await tick();
-  progress('Preparing PDF', 100, 'Ready to export.');
-}
-
-/* ============================
-   Startup
-   ============================ */
-resetAll();
 </script>
 </body>
 </html>
