@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.22-alpha</title>
+  <title>CalmCPAP — 0.23-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -580,7 +580,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.22-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.23-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -597,7 +597,10 @@
     <section class="card" id="leftPanelCard">
       <div class="hd">
         <h2>Upload & Session</h2>
-        <span class="badge">Local only ✔️</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn ghost" id="toggleLeftBtn" aria-pressed="false">Hide Sidebar</button>
+          <span class="badge">Local only ✔️</span>
+        </div>
       </div>
 
       <div class="bd">
@@ -650,10 +653,6 @@
             <div class="value" id="kpiAHI">—</div>
             <div class="note" id="kpiAHINote">From annotations if found.</div>
           </div>
-        </div>
-
-        <div style="display:flex; justify-content:flex-start; margin:8px 0 0;">
-          <button class="btn ghost" id="toggleLeftBtn" aria-pressed="false">Hide Sidebar</button>
         </div>
 
         <div class="hr"></div>
@@ -808,7 +807,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.22-alpha (AirSense 11 SD)
+   CalmCPAP 0.23-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -2231,6 +2230,9 @@ function renderCalendar(){
 async function loadRange(){
   const { startISO, endISO } = state.selectedRange;
   if (!startISO || !endISO) return;
+  progress('Preparing range', 52, `Processing range ${startISO} → ${endISO}. Please wait…`);
+  setStatus('Processing range…','neutral');
+  toast('Loading selected timeframe…');
   const dates = Array.from(state.sessionsByDate.keys()).filter(d => d!=='unknown' && d >= startISO && d <= endISO).sort();
   const sessions = dates.flatMap(d => state.sessionsByDate.get(d)?.sessions || []);
   if (!sessions.length){
@@ -2274,7 +2276,7 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
 
 
   setStatus('Loading selection…','neutral');
-  progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)…`);
+  progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)… This can take a bit for large ranges.`);
   toast('Loading selection…');
   log(`Loading: ${label} (${state.current.session.files.length} EDF file(s))`);
 
@@ -2371,7 +2373,7 @@ function autoMapSignals(){
       'resp rate', 'breath rate', 'breaths min'
     ],
     tidalVolume: [
-      'tidvol.2s', 'tidvol2s', 'tid vol 2s', 'tidal volume', 'tidal vol', 'tv'
+      'tidvol.2s', 'tidvol2s', 'tid vol 2s', 'tidal volume', 'tidal vol', 'tv', 'tid vol'
     ],
     annotations: [
       'edf annotations', 'annotations', 'annotation'
@@ -2410,7 +2412,11 @@ function autoMapSignals(){
     }
     if (targetKey === 'snore' && (labelN.includes('snore') || unitN.includes('snore'))) score += 16;
     if (targetKey === 'respRate' && (labelN.includes('resp') || labelN.includes('rate') || unitN.includes('/min'))) score += 10;
-    if (targetKey === 'tidalVolume' && (labelN.includes('tid') || labelN.includes('tidal') || labelN.includes('vol'))) score += 20;
+    if (targetKey === 'tidalVolume'){
+      if (labelN.includes('tidvol') || labelN.includes('tid vol')) score += 42;
+      if (labelN.includes('tidal') && labelN.includes('volume')) score += 26;
+      if (unitN.includes('ml') || unitN.includes('l')) score += 10;
+    }
     if (targetKey === 'annotations' && (labelN.includes('annot') || labelN.includes('event'))) score += 12;
 
     if (targetKey !== 'annotations'){
@@ -2885,7 +2891,7 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Respiratory Rate'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `Respiratory Rate (${s.respRate.unit})` : 'Respiratory Rate' } }
     }, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM = Breaths Per Minute</b>. Watch for sustained rises/falls compared with your usual baseline.`;
+    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM means Breaths Per Minute</b>. Watch for sustained rises/falls compared with your usual baseline.`;
   } else {
     Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Respiratory Rate (not mapped)')}, plotConfig);
@@ -2893,19 +2899,23 @@ function renderPlotsAndText(){
   }
 
   if (s.tidalVolume?.t?.length){
+    const unitN = normalizeLabelLoose(s.tidalVolume.unit || '');
+    const asLiters = unitN.includes('l') && !unitN.includes('ml');
+    const maleBase = asLiters ? 0.5 : 500;
+    const femaleBase = asLiters ? 0.4 : 400;
     const layTv = {
       ...CALM_LAYOUT('Tidal Volume'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.tidalVolume.unit ? `Tidal Volume (${s.tidalVolume.unit})` : 'Tidal Volume (mL)' } },
       shapes:[
-        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:500, y1:500, line:{color:'rgba(122,167,255,.75)', width:2, dash:'dot'}},
-        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:400, y1:400, line:{color:'rgba(255,204,102,.75)', width:2, dash:'dot'}}
+        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:maleBase, y1:maleBase, line:{color:'rgba(122,167,255,.75)', width:2, dash:'dot'}},
+        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:femaleBase, y1:femaleBase, line:{color:'rgba(255,204,102,.75)', width:2, dash:'dot'}}
       ]
     };
     Plotly.newPlot(els.plotTidalVolume, [{
       x:s.tidalVolume.t, y:s.tidalVolume.y, type:'scatter', mode:'lines',
       name:'Tidal Volume', line:{ color:'rgba(186,148,255,.95)', width:2.1 }
     }], layTv, plotConfig);
-    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath. Typical resting baseline is about <b>500 mL for men</b> and <b>400 mL for women</b> (shown as reference lines).`;
+    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath. Typical resting baseline is about <b>${asLiters ? '0.5 L' : '500 mL'} for men</b> and <b>${asLiters ? '0.4 L' : '400 mL'} for women</b> (shown as reference lines).`;
   } else {
     Plotly.newPlot(els.plotTidalVolume, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Tidal Volume (not mapped)')}, plotConfig);
