@@ -1,0 +1,80 @@
+// All DOM element references, gathered once at startup.
+// ES modules are deferred, so the DOM is ready when this runs.
+
+export const els = {
+  zipInput:            document.getElementById('zipInput'),
+  dropZone:            document.getElementById('dropZone'),
+  chooseZipBtn:        document.getElementById('chooseZipBtn'),
+  statusBadge:         document.getElementById('statusBadge'),
+  fileBadge:           document.getElementById('fileBadge'),
+  zipStats:            document.getElementById('zipStats'),
+
+  toggleLeftBtn:       document.getElementById('toggleLeftBtn'),
+  floatingSidebarBtn:  document.getElementById('floatingSidebarBtn'),
+  clearBtn:            document.getElementById('clearBtn'),
+  demoBtn:             document.getElementById('demoBtn'),
+
+  progressStep:        document.getElementById('progressStep'),
+  progressPct:         document.getElementById('progressPct'),
+  progressBar:         document.getElementById('progressBar'),
+  progressDetail:      document.getElementById('progressDetail'),
+
+  idArea:              document.getElementById('idArea'),
+  settingsArea:        document.getElementById('settingsArea'),
+  rangeControls:       document.getElementById('rangeControls'),
+  rangeModeSeg:        document.getElementById('rangeModeSeg'),
+  modeNight:           document.getElementById('modeNight'),
+  modeWeek:            document.getElementById('modeWeek'),
+  modeMonth:           document.getElementById('modeMonth'),
+  modeCustom:          document.getElementById('modeCustom'),
+  loadRangeBtn:        document.getElementById('loadRangeBtn'),
+  calPrev:             document.getElementById('calPrev'),
+  calNext:             document.getElementById('calNext'),
+  calToday:            document.getElementById('calToday'),
+  calMonthSelect:      document.getElementById('calMonthSelect'),
+  calGrid:             document.getElementById('calGrid'),
+  rangeHint:           document.getElementById('rangeHint'),
+
+  mapGrid:             document.getElementById('mapGrid'),
+  applyMappingBtn:     document.getElementById('applyMappingBtn'),
+
+  kpiUsage:            document.getElementById('kpiUsage'),
+  kpiUsageNote:        document.getElementById('kpiUsageNote'),
+  kpiLeak95:           document.getElementById('kpiLeak95'),
+  kpiLeak95Note:       document.getElementById('kpiLeak95Note'),
+  kpiP50:              document.getElementById('kpiP50'),
+  kpiP50Note:          document.getElementById('kpiP50Note'),
+  kpiAHI:              document.getElementById('kpiAHI'),
+  kpiAHINote:          document.getElementById('kpiAHINote'),
+
+  overviewSummary:     document.getElementById('overviewSummary'),
+  overviewNarrative:   document.getElementById('overviewNarrative'),
+  leakNarrative:       document.getElementById('leakNarrative'),
+  pressureNarrative:   document.getElementById('pressureNarrative'),
+  flowNarrative:       document.getElementById('flowNarrative'),
+  snoreNarrative:      document.getElementById('snoreNarrative'),
+  respRateNarrative:   document.getElementById('respRateNarrative'),
+  tidalNarrative:      document.getElementById('tidalNarrative'),
+  eventsLegend:        document.getElementById('eventsLegend'),
+  eventsNarrative:     document.getElementById('eventsNarrative'),
+
+  rawSummary:          document.getElementById('rawSummary'),
+  rawDump:             document.getElementById('rawDump'),
+
+  plotOverview:        document.getElementById('plotOverview'),
+  plotLeak:            document.getElementById('plotLeak'),
+  plotPressure:        document.getElementById('plotPressure'),
+  plotFlow:            document.getElementById('plotFlow'),
+  plotSnore:           document.getElementById('plotSnore'),
+  plotRespRate:        document.getElementById('plotRespRate'),
+  plotTidalVolume:     document.getElementById('plotTidalVolume'),
+  plotEvents:          document.getElementById('plotEvents'),
+  plotExplore:         document.getElementById('plotExplore'),
+  exploreSelect:       document.getElementById('exploreSelect'),
+  exploreNarrative:    document.getElementById('exploreNarrative'),
+
+  log:                 document.getElementById('log'),
+  toast:               document.getElementById('toast'),
+
+  tablist:             document.getElementById('tablist'),
+};
