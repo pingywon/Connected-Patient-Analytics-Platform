@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.40-alpha</title>
+  <title>CalmCPAP — 0.41-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -583,7 +583,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.40-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.41-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -844,7 +844,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.40-alpha (AirSense 11 SD)
+   CalmCPAP 0.41-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -1025,6 +1025,9 @@ function humanizeWords(s){
     .replace(/\bAhi\b/g, 'AHI')
     .replace(/\bCpap\b/g, 'CPAP')
     .replace(/\bAutoSet\b/g, 'AutoSet')
+    .replace(/\bProduct\s+Product\s+Name\b/gi, 'Product Name')
+    .replace(/\bProduct\s*Geographic\s*Identifier\b/gi, 'Product Geographic Identifier')
+    .replace(/\bProduct\s*Code\b/gi, 'Product Code')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -1734,7 +1737,9 @@ function renderIdentification(obj){
   const model = getLike('Model') || getLike('MachineModel') || getLike('FG P1.Model') || '';
   const mode  = getLike('Mode') || getLike('PAPMode') || getLike('FG P1.Mode') || '';
   const serial = getLike('SerialNumber') || getLike('DeviceSerial') || getLike('FG P1.SerialNumber') || getLike('FG P1.DeviceSerial') || '';
-  const productCode = getLike('Product Product Name') || getLike('ProductName') || getLike('ProductCode') || '';
+  const productCode = getLike('ProductCode') || getLike('Product Code') || '';
+  const productGeographicIdentifier = getLike('ProductGeographicIdentifier') || getLike('Product Geographic Identifier') || getLike('GeographicIdentifier') || '';
+  const productName = getLike('ProductName') || getLike('Product Name') || getLike('Product Product Name') || '';
 
   const headline = (make + ' ' + model).trim() || 'Unknown';
 
@@ -1747,6 +1752,18 @@ function renderIdentification(obj){
       <div class="row">
         <span style="opacity:.85">Product Code</span>
         <span><b>${escapeHtml(productCode)}</b></span>
+      </div>
+    ` : ''}
+    ${productGeographicIdentifier ? `
+      <div class="row">
+        <span style="opacity:.85">Product Geographic Identifier</span>
+        <span><b>${escapeHtml(productGeographicIdentifier)}</b></span>
+      </div>
+    ` : ''}
+    ${productName ? `
+      <div class="row">
+        <span style="opacity:.85">Product Name</span>
+        <span><b>${escapeHtml(productName)}</b></span>
       </div>
     ` : ''}
   `;
@@ -2095,14 +2112,24 @@ async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
   const wanted = {};
   for (const [k, mappedKey] of Object.entries(mappingKeys)){
     if (!mappedKey) continue;
+    const mappedStr = String(mappedKey);
     let sig = null;
-    if (String(mappedKey).includes('::')){
-      const idx = Number(String(mappedKey).split('::').pop());
-      if (Number.isInteger(idx)) sig = header.signals.find(s => s.index === idx) || null;
+
+    if (mappedStr.includes('::')){
+      const splitAt = mappedStr.lastIndexOf('::');
+      const mappedPath = mappedStr.slice(0, splitAt);
+      const idx = Number(mappedStr.slice(splitAt + 2));
+      if (Number.isInteger(idx)){
+        const pathMatches = !mappedPath || mappedPath === file.path;
+        if (pathMatches){
+          sig = header.signals.find(s => s.index === idx) || null;
+        }
+      }
     }
-    if (!sig){
+
+    if (!sig && !mappedStr.includes('::')){
       // Backward compatibility with older saved mapping values based on normalized labels.
-      sig = header.signals.find(s => normalizeLabelLoose(s.label) === mappedKey || normalizeLabel(s.label) === mappedKey) || null;
+      sig = header.signals.find(s => normalizeLabelLoose(s.label) === mappedStr || normalizeLabel(s.label) === mappedStr) || null;
     }
     if (sig) wanted[k] = sig;
   }
