@@ -13,5 +13,3 @@ Built using:
 HTML
 Javascript
 Chart.jsFirst github release. alpha
-
-Everything gets merged into this branch.
