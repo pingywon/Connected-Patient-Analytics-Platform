@@ -1,6 +1,5 @@
 // Entry point — wires event listeners and orchestrates the load pipeline.
-import './style.css';
-
+// CSS is loaded via <link> in index.html so Vite inlines it on build.
 import { els } from './dom.js';
 import { state, newJob, assertActive } from './state.js';
 import { tick, localDateISO } from './utils.js';
