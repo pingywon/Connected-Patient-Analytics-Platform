@@ -3,18 +3,578 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.30-alpha</title>
+  <title>CalmCPAP — 0.40-alpha</title>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="./src/style.css" />
-
-  <!-- Unzip (CDN global: JSZip) -->
+  <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <!-- Charts (CDN global: Plotly) -->
+  <!-- Charts -->
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <!-- App entry (Vite inlines CSS + JS on build; in dev served as modules) -->
-  <script type="module" src="/src/app.js"></script>
+  <style>
+    :root{
+      --bg0:#071a1f; --bg1:#0b252c;
+      --card:#0f323a; --card2:#0b2a31;
+      --text:#e7f6f6; --muted:#b7d7d7; --muted2:#89b8b8;
+      --accent:#61d4c3; --accent2:#7aa7ff;
+      --warn:#ffcc66; --bad:#ff6b7a; --good:#6ee7a6;
+      --line: rgba(255,255,255,.10);
+      --shadow: 0 18px 40px rgba(0,0,0,.40);
+      --radius: 20px; --radius2: 14px;
+      --focus: rgba(97,212,195,.9);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 520px at 20% 10%, rgba(97,212,195,.18), transparent 60%),
+        radial-gradient(1000px 620px at 82% 12%, rgba(122,167,255,.14), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    :focus{ outline:none; }
+    :focus-visible{
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+      border-radius: 14px;
+    }
+    @media (prefers-reduced-motion: reduce){
+      *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+    }
+
+    .app{ height:100%; display:grid; grid-template-rows:auto 1fr; }
+
+    header{
+      padding:18px 18px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(11,42,49,.35);
+      backdrop-filter: blur(10px);
+    }
+    .brand{ display:flex; gap:12px; align-items:center; min-width:260px; }
+    .logo{
+      width:46px;height:46px;border-radius:16px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.35), transparent 70%),
+        linear-gradient(135deg, rgba(97,212,195,.95), rgba(122,167,255,.85));
+      box-shadow: var(--shadow);
+    }
+    h1{ margin:0; font-size:18px; letter-spacing:.2px; }
+    .subtitle{ margin:2px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35; }
+
+    .top-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .badge{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      color: rgba(231,246,246,.9);
+      background: rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .btn{
+      cursor:pointer;
+      border:none;
+      border-radius:999px;
+      padding:10px 12px;
+      font-weight:850;
+      color:#062026;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 22px rgba(97,212,195,.12);
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); filter:brightness(1.03); }
+    .btn:active{ transform: translateY(0px); filter:brightness(.98); }
+    .btn[disabled]{ opacity:.55; cursor:not-allowed; filter:saturate(.7); }
+    .btn.ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      box-shadow:none;
+    }
+    input[type="file"]{ display:none; }
+
+    main{
+      height:100%;
+      display:grid;
+      grid-template-columns: 430px 1fr;
+      gap:14px;
+      padding:14px;
+      overflow:hidden;
+    }
+
+    body.left-collapsed main{ grid-template-columns: 1fr; }
+    body.left-collapsed #leftPanelCard{ display:none; }
+
+    #leftPanelCard{ position:sticky; top:0; align-self:start; }
+
+    @media (max-width: 1050px){
+      body{ overflow:auto; }
+      main{ grid-template-columns:1fr; height:auto; overflow:visible; }
+      #leftPanelCard{ position:static; }
+      .app{ height:auto; }
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,50,58,.55);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .card .hd{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card .hd h2{
+      margin:0;
+      font-size: 13px;
+      letter-spacing:.35px;
+      color: rgba(231,246,246,.92);
+      text-transform: uppercase;
+    }
+    .card .bd{
+      padding:14px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    .drop{
+      border:1px dashed rgba(255,255,255,.25);
+      border-radius: var(--radius2);
+      background: rgba(11,42,49,.55);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      cursor:pointer;
+      transition: border-color .12s ease, transform .12s ease, filter .12s ease;
+    }
+    .drop:hover{
+      border-color: rgba(97,212,195,.65);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+    .drop strong{ font-size: 14px; }
+    .drop p{ margin:0; color:var(--muted); font-size:12.5px; line-height: 1.35; }
+    .drop .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .drop .row .left{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .hr{ height:1px; background: rgba(255,255,255,.08); margin:12px 0; }
+    .tiny{ font-size:12px; color:var(--muted2); }
+
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    .kpi{
+      padding:12px;
+      border-radius: var(--radius2);
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .kpi .label{ font-size: 11px; color: var(--muted2); text-transform: uppercase; letter-spacing:.25px; }
+    .kpi .value{ margin-top:6px; font-size: 18px; font-weight: 900; }
+    .kpi .note{ margin-top:6px; font-size: 12px; color: var(--muted); line-height:1.35; }
+
+    .callout{
+      padding:12px 12px;
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(11,42,49,.55);
+      color: var(--muted);
+      line-height:1.45;
+      font-size: 13px;
+    }
+    .callout b{ color: rgba(231,246,246,.94); }
+
+    .progressWrap{
+      padding:12px;
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(7,26,31,.35);
+    }
+    .progressTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(97,212,195,.85), rgba(122,167,255,.85));
+      transition: width .08s linear;
+    }
+
+    .kv{ display:grid; grid-template-columns: 1fr; gap:8px; margin-top:10px; }
+    .kv .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px;
+      border-radius: 12px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .kv .row b{ color: rgba(231,246,246,.93); font-weight:850; }
+
+    .drawer{ margin-top:10px; border:1px solid rgba(255,255,255,.10); border-radius:14px; background:rgba(11,42,49,.35); overflow:hidden; }
+    .drawer > summary{ cursor:pointer; list-style:none; padding:10px 12px; font-size:12.5px; color:var(--muted); font-weight:800; display:flex; align-items:center; justify-content:space-between; }
+    .drawer > summary::-webkit-details-marker{ display:none; }
+    .drawer > summary::after{ content:'▾'; color:var(--muted2); font-size:12px; }
+    .drawer:not([open]) > summary::after{ content:'▸'; }
+    .drawerBody{ padding:0 10px 10px; }
+
+    .picker{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding:10px;
+      border-radius: 14px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      margin-top:12px;
+    }
+    .picker label{ font-size:12px; color: var(--muted2); }
+
+    .rangeControls{ margin-top:10px; display:grid; gap:8px; transition:filter .2s ease, opacity .2s ease; }
+    .rangeControls.disabled{ opacity:.55; filter:saturate(.7); }
+    .rangeControls.ready .seg, .rangeControls.ready .calendarWrap{ background: rgba(18,58,68,.72); border-color: rgba(122,167,255,.35); }
+    .rangeControls.ready .rangeHint{ color: var(--muted); }
+    .seg{
+      display:flex; gap:6px; flex-wrap:wrap;
+      background: rgba(11,42,49,.45);
+      border:1px solid rgba(255,255,255,.08);
+      padding:8px; border-radius:12px;
+    }
+    .seg button{ padding:7px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); color:var(--text); cursor:pointer; font-weight:700; }
+    #loadRangeBtn{ background: linear-gradient(135deg, var(--accent), var(--accent2)); color:#062026; border:none; box-shadow:0 10px 18px rgba(97,212,195,.22); font-weight:900; }
+    #loadRangeBtn:disabled{ opacity:.55; filter:saturate(.7); }
+    .seg button.active{ background:linear-gradient(135deg, rgba(97,212,195,.24), rgba(122,167,255,.25)); border-color:rgba(97,212,195,.65); }
+    .calendarWrap{ border:1px solid rgba(255,255,255,.10); background:rgba(11,42,49,.45); border-radius:14px; padding:10px; }
+    .calHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .calHead .month{ font-size:12px; color:var(--muted); font-weight:700; }
+    .calMonthSelect{ background:rgba(255,255,255,.08); color:var(--text); border:1px solid rgba(255,255,255,.16); border-radius:10px; padding:6px 8px; font-size:12px; min-width:180px; }
+    .calNav{ display:flex; gap:6px; }
+    .calNav button{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); color:var(--text); border-radius:10px; padding:4px 8px; cursor:pointer; }
+    .dow, .calGrid{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+    .dow div{ text-align:center; font-size:10.5px; color:var(--muted2); text-transform:uppercase; }
+    .day{ min-height:32px; border-radius:10px; border:1px solid rgba(255,255,255,.08); font-size:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.03); color:var(--muted); }
+    .day.muted{ opacity:.45; }
+    .day.hasData{ color:var(--text); border-color:rgba(97,212,195,.45); }
+    .day.selected{ background:linear-gradient(135deg, rgba(255,204,102,.42), rgba(255,107,122,.34)); color:#ffffff; border-color:rgba(255,204,102,.95); box-shadow: inset 0 0 0 1px rgba(255,255,255,.24); font-weight:900; }
+    .day.boundary{ background:linear-gradient(135deg, rgba(255,107,122,.62), rgba(122,167,255,.62)); border-color:#ffffff; color:#ffffff; box-shadow:0 0 0 2px rgba(255,255,255,.24); }
+    .rangeHint{ font-size:11.5px; color:var(--muted2); }
+    .picker input[type="date"], .picker select{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding:8px 10px;
+      color: var(--text);
+      outline:none;
+    }
+
+    .mapGrid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px; }
+    .mapRow{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-radius:12px;
+      background: rgba(11,42,49,.55);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:12.5px;
+    }
+    .mapRow label{ color:var(--muted2); font-size:12px; }
+
+    select, option, .calMonthSelect option{
+      color: var(--text);
+      background-color: #123740;
+    }
+    .mapRow select{
+      width:100%;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding:8px 10px;
+      color: var(--text);
+      outline:none;
+    }
+
+    .tabs{
+      display:flex; flex-wrap:wrap; gap:8px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(11,42,49,.25);
+      flex:0 0 auto;
+    }
+    .tab{
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(231,246,246,.9);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size: 12.5px;
+      user-select:none;
+      transition: filter .12s ease, transform .12s ease;
+    }
+    .tab:hover{ filter:brightness(1.07); transform: translateY(-1px); }
+    .tab.active{
+      border-color: rgba(97,212,195,.55);
+      background: linear-gradient(135deg, rgba(97,212,195,.18), rgba(122,167,255,.14));
+      box-shadow: 0 10px 18px rgba(0,0,0,.18);
+    }
+    .report{ min-height:0; overflow:auto; }
+    .panel{ display:none; padding:14px; }
+    .panel.active{ display:block; }
+
+    #floatingSidebarBtn{ box-shadow: var(--shadow); border:1px solid rgba(255,255,255,.2); background:rgba(11,42,49,.92); }
+    body.left-collapsed #floatingSidebarBtn{ display:inline-flex !important; }
+    #exploreSelect{ width:100%; max-width:640px; min-height:44px; font-size:14px; font-weight:700; border:1px solid rgba(97,212,195,.5); background:rgba(8,36,43,.8); color:var(--text); border-radius:12px; padding:10px 12px; box-shadow:0 8px 16px rgba(0,0,0,.22); }
+
+    .explain{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 1050px){ .explain{ grid-template-columns:1fr; } }
+    @media (max-width: 760px){ .plot{ height:min(520px, 62vh); } .tab{ padding:8px 10px; font-size:12px; } }
+
+    .plot{
+      width:100%;
+      height:min(700px, 70vh);
+      border-radius: var(--radius2);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(7,26,31,.35);
+    }
+    pre.log{
+      white-space:pre-wrap;
+      max-height: 320px;
+      overflow:auto;
+      margin:0;
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:16px;
+      left:50%;
+      transform:translateX(-50%);
+      background: rgba(15,50,58,.92);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+      padding:10px 12px;
+      border-radius: 999px;
+      color: rgba(231,246,246,.95);
+      font-size: 12.5px;
+      display:none;
+      max-width: 92vw;
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+    }
+
+    /* ============================
+       Pretty PDF styles (used in hidden shell)
+       ============================ */
+    .pdf{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:#0b1b1f;
+      background:#fff;
+    }
+    .pdf .page{
+      padding: 28px 28px 24px;
+    }
+    .pdf .pdfTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid rgba(11,27,31,.08);
+      margin-bottom: 18px;
+    }
+    .pdf .pdfBrand{
+      display:flex; gap:12px; align-items:center;
+    }
+    .pdf .pdfLogo{
+      width:42px; height:42px; border-radius:14px;
+      background: linear-gradient(135deg, rgba(97,212,195,.95), rgba(122,167,255,.95));
+    }
+    .pdf .pdfTitle{
+      margin:0; font-size: 18px; letter-spacing:.2px;
+    }
+    .pdf .pdfSub{
+      margin-top:2px; color: rgba(11,27,31,.65); font-size:12px; line-height:1.3;
+    }
+    .pdf .meta{
+      text-align:right; font-size:12px; color: rgba(11,27,31,.70);
+      line-height:1.35;
+      max-width: 320px;
+    }
+    .pdf .pill{
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(11,27,31,.14);
+      background: rgba(11,27,31,.04);
+      font-size: 11px;
+      color: rgba(11,27,31,.80);
+      margin-left: 6px;
+      white-space:nowrap;
+    }
+    .pdf h2{
+      margin: 18px 0 10px;
+      font-size: 14px;
+      letter-spacing:.25px;
+      text-transform: uppercase;
+      color: rgba(11,27,31,.85);
+    }
+    .pdf p{
+      margin: 8px 0;
+      font-size: 12.8px;
+      line-height: 1.5;
+      color: rgba(11,27,31,.82);
+    }
+    .pdf .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .pdf .card{
+      border-radius: 14px;
+      border: 1px solid rgba(11,27,31,.12);
+      background: #fff;
+      box-shadow: none;
+      overflow: hidden;
+    }
+    .pdf .cardPad{ padding: 12px; }
+    .pdf .kpiRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .pdf .kpiBox{
+      border: 1px solid rgba(11,27,31,.12);
+      background: rgba(122,167,255,.06);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .pdf .kpiLabel{
+      font-size: 11px; letter-spacing:.25px; text-transform: uppercase;
+      color: rgba(11,27,31,.62);
+    }
+    .pdf .kpiValue{
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: 900;
+      color: rgba(11,27,31,.92);
+    }
+    .pdf .kpiHelp{
+      margin-top: 6px;
+      font-size: 12.2px;
+      color: rgba(11,27,31,.78);
+      line-height: 1.45;
+    }
+    .pdf .note{
+      border-left: 4px solid rgba(97,212,195,.9);
+      background: rgba(97,212,195,.08);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12.4px;
+      color: rgba(11,27,31,.85);
+    }
+    .pdf .warn{
+      border-left-color: rgba(255,204,102,.95);
+      background: rgba(255,204,102,.10);
+    }
+    .pdf .bad{
+      border-left-color: rgba(255,107,122,.95);
+      background: rgba(255,107,122,.10);
+    }
+    .pdf .good{
+      border-left-color: rgba(110,231,166,.95);
+      background: rgba(110,231,166,.12);
+    }
+    .pdf .small{
+      font-size: 11.5px;
+      color: rgba(11,27,31,.62);
+      line-height: 1.45;
+    }
+    .pdf .table{
+      width:100%;
+      border-collapse: collapse;
+      font-size: 12.4px;
+    }
+    .pdf .table th, .pdf .table td{
+      border-bottom: 1px solid rgba(11,27,31,.10);
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+    .pdf .table th{
+      text-align:left;
+      color: rgba(11,27,31,.72);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing:.25px;
+    }
+    .pdf .chartBlock{
+      border: 1px solid rgba(11,27,31,.12);
+      border-radius: 14px;
+      overflow:hidden;
+      background: #fff;
+    }
+    .pdf .chartPad{ padding: 10px 12px; }
+    .pdf .chartTitle{
+      font-size: 12px;
+      color: rgba(11,27,31,.75);
+      text-transform: uppercase;
+      letter-spacing:.25px;
+      margin: 0 0 6px;
+    }
+    .pdf img.chart{
+      width: 100%;
+      height: auto;
+      display:block;
+    }
+    .pdf .footer{
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(11,27,31,.10);
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      align-items:flex-end;
+    }
+  </style>
 </head>
 
 <body>
@@ -23,7 +583,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.30-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.40-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -39,7 +599,7 @@
     <!-- LEFT -->
     <section class="card" id="leftPanelCard">
       <div class="hd">
-        <h2>Upload &amp; Session</h2>
+        <h2>Upload & Session</h2>
         <div style="display:flex; gap:8px; align-items:center;">
           <button class="btn ghost" id="toggleLeftBtn" aria-pressed="false">Hide Sidebar</button>
           <span class="badge">Local only ✔️</span>
@@ -101,7 +661,7 @@
         <div class="hr"></div>
 
         <details class="drawer" open>
-          <summary>Device &amp; Profile (Identification.json)</summary>
+          <summary>Device & Profile (Identification.json)</summary>
           <div class="drawerBody">
             <div class="kv" id="idArea" style="margin-top:0;">
               <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
@@ -147,7 +707,7 @@
 
         <div class="callout">
           <b>Signal mapping (if auto-detect misses your labels)</b><br/>
-          ResMed labels can be "real device weird". If charts are empty, pick signals here.
+          ResMed labels can be “real device weird”. If charts are empty, pick signals here.
           <div class="mapGrid" id="mapGrid"></div>
           <button class="btn ghost" id="applyMappingBtn" disabled style="margin-top:10px;">Apply mapping</button>
         </div>
@@ -161,16 +721,17 @@
     <!-- RIGHT -->
     <section class="card" id="rightPanelCard">
       <div class="tabs" role="tablist" aria-label="Report sections" id="tablist">
-        <button class="tab active" role="tab" aria-selected="true"  tabindex="0"  data-tab="overview"  id="tab-overview"  aria-controls="panel-overview">Overview</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="leaks"     id="tab-leaks"     aria-controls="panel-leaks">Leaks</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="pressure"  id="tab-pressure"  aria-controls="panel-pressure">Pressure</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="flow"      id="tab-flow"      aria-controls="panel-flow">Flow</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="snore"     id="tab-snore"     aria-controls="panel-snore">Snore</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="resprate"  id="tab-resprate"  aria-controls="panel-resprate">Respiratory Rate</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="tidal"     id="tab-tidal"     aria-controls="panel-tidal">Tidal Volume</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="events"    id="tab-events"    aria-controls="panel-events">Events</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="explore"   id="tab-explore"   aria-controls="panel-explore">Explore</button>
-        <button class="tab"        role="tab" aria-selected="false" tabindex="-1" data-tab="raw"       id="tab-raw"       aria-controls="panel-raw">Raw</button>
+        <button class="tab active" role="tab" aria-selected="true" tabindex="0" data-tab="overview" id="tab-overview" aria-controls="panel-overview">Overview</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="leaks" id="tab-leaks" aria-controls="panel-leaks">Leaks</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="flow" id="tab-flow" aria-controls="panel-flow">Flow</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="snore" id="tab-snore" aria-controls="panel-snore">Snore</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="resprate" id="tab-resprate" aria-controls="panel-resprate">Respiratory Rate</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="tidal" id="tab-tidal" aria-controls="panel-tidal">Tidal Volume</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="epr" id="tab-epr" aria-controls="panel-epr">EPR</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="events" id="tab-events" aria-controls="panel-events">Events</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="explore" id="tab-explore" aria-controls="panel-explore">Explore</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="raw" id="tab-raw" aria-controls="panel-raw">Raw</button>
       </div>
 
       <div class="report" id="reportArea">
@@ -178,7 +739,7 @@
           <div class="explain">
             <div class="callout" id="overviewExplain">
               <b>How this report works</b><br/>
-              Upload an AirSense 11 SD ZIP (raw SD structure), pick a day, and we'll plot + explain leak/pressure/flow (if present).
+              Upload an AirSense 11 SD ZIP (raw SD structure), pick a day, and we’ll plot + explain leak/pressure/flow (if present).
               Mapping controls handle label differences.
             </div>
             <div class="callout" id="overviewSummary">
@@ -219,6 +780,11 @@
           <div class="callout" style="margin-top:12px" id="tidalNarrative"></div>
         </div>
 
+        <div class="panel" id="panel-epr" role="tabpanel" aria-labelledby="tab-epr">
+          <div class="plot" id="plotEpr"></div>
+          <div class="callout" style="margin-top:12px" id="eprNarrative"></div>
+        </div>
+
         <div class="panel" id="panel-events" role="tabpanel" aria-labelledby="tab-events">
           <div class="plot" id="plotEvents"></div>
           <div class="callout" id="eventsLegend" style="margin-top:10px"></div>
@@ -226,10 +792,10 @@
         </div>
 
         <div class="panel" id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
-          <div class="callout" id="exploreNarrative"><b>Explore:</b> choose a mapped signal from the large dropdown below to display it here.</div>
+          <div class="callout" id="exploreNarrative"><b>Explore:</b> choose a mapped signal from the dropdown below to display it here.</div>
           <div style="margin:10px 0;">
             <select id="exploreSelect" disabled>
-              <option value="">Choose a mapped signal (large selector)…</option>
+              <option value="">Choose a mapped signal…</option>
             </select>
           </div>
           <div class="plot" id="plotExplore"></div>
@@ -245,7 +811,2352 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<button id="floatingSidebarBtn" class="btn ghost" style="display:none; position:fixed; left:14px; top:84px; z-index:30;">Open Sidebar</button>
+<button id="floatingSidebarBtn" class="btn ghost" style="display:none; position:fixed; left:14px; bottom:18px; z-index:30;">Open Sidebar</button>
+<div id="onboardingModal" aria-hidden="true" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(5,16,20,.75);">
+  <div style="width:min(1100px, 75vw); max-height:82vh; overflow:auto; margin:6vh auto 0; background:rgba(11,42,49,.98); border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:18px 20px; box-shadow:0 28px 60px rgba(0,0,0,.45);">
+    <h2 style="margin:0 0 8px;">How to prepare your SD ZIP</h2>
+    <p style="margin:0 0 10px; color:var(--muted);">Follow these steps so CalmCPAP can parse your data correctly:</p>
+    <ol style="margin:0 0 14px 20px; line-height:1.5; color:var(--text);">
+      <li>Power off your machine and safely remove the SD card.</li>
+      <li>Copy the <b>entire root of the SD card</b> to your computer.</li>
+      <li>If you want a smaller file, remove older day folders from <code>DATALOG/</code>.</li>
+      <li>Create one ZIP from that root copy.</li>
+      <li>Upload that ZIP in this app.</li>
+    </ol>
+    <label style="display:flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--muted);">
+      <input type="checkbox" id="onboardingDontShow" />
+      Don’t show this again
+    </label>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn ghost" id="onboardingCloseBtn" type="button">Got it — Continue</button>
+    </div>
+  </div>
+</div>
 
+<div id="globalLoadOverlay" style="display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); width:min(720px, 84vw); z-index:45; background:rgba(11,42,49,.95); border:1px solid rgba(255,255,255,.22); border-radius:14px; padding:10px 12px; box-shadow:0 20px 36px rgba(0,0,0,.35);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+    <b id="globalLoadStep">Processing…</b>
+    <span class="badge" id="globalLoadPct">0%</span>
+  </div>
+  <div class="bar"><div id="globalLoadBar"></div></div>
+  <div class="tiny" id="globalLoadDetail" style="margin-top:6px;">Please wait while files load and parse…</div>
+</div>
+
+<script>
+/* ============================
+   CalmCPAP 0.40-alpha (AirSense 11 SD)
+   ✔️ Robust ZIP indexing + EDF parsing + charts
+   ============================ */
+
+const els = {
+  zipInput: document.getElementById('zipInput'),
+  dropZone: document.getElementById('dropZone'),
+  chooseZipBtn: document.getElementById('chooseZipBtn'),
+  statusBadge: document.getElementById('statusBadge'),
+  fileBadge: document.getElementById('fileBadge'),
+  zipStats: document.getElementById('zipStats'),
+
+  toggleLeftBtn: document.getElementById('toggleLeftBtn'),
+  floatingSidebarBtn: document.getElementById('floatingSidebarBtn'),
+  onboardingModal: document.getElementById('onboardingModal'),
+  onboardingCloseBtn: document.getElementById('onboardingCloseBtn'),
+  onboardingDontShow: document.getElementById('onboardingDontShow'),
+  globalLoadOverlay: document.getElementById('globalLoadOverlay'),
+  globalLoadStep: document.getElementById('globalLoadStep'),
+  globalLoadPct: document.getElementById('globalLoadPct'),
+  globalLoadBar: document.getElementById('globalLoadBar'),
+  globalLoadDetail: document.getElementById('globalLoadDetail'),
+  clearBtn: document.getElementById('clearBtn'),
+  demoBtn: document.getElementById('demoBtn'),
+
+  progressStep: document.getElementById('progressStep'),
+  progressPct: document.getElementById('progressPct'),
+  progressBar: document.getElementById('progressBar'),
+  progressDetail: document.getElementById('progressDetail'),
+
+  idArea: document.getElementById('idArea'),
+  settingsArea: document.getElementById('settingsArea'),
+  rangeControls: document.getElementById('rangeControls'),
+  rangeModeSeg: document.getElementById('rangeModeSeg'),
+  modeNight: document.getElementById('modeNight'),
+  modeWeek: document.getElementById('modeWeek'),
+  modeMonth: document.getElementById('modeMonth'),
+  modeCustom: document.getElementById('modeCustom'),
+  loadRangeBtn: document.getElementById('loadRangeBtn'),
+  calPrev: document.getElementById('calPrev'),
+  calNext: document.getElementById('calNext'),
+  calToday: document.getElementById('calToday'),
+  calMonthSelect: document.getElementById('calMonthSelect'),
+  calGrid: document.getElementById('calGrid'),
+  rangeHint: document.getElementById('rangeHint'),
+
+  mapGrid: document.getElementById('mapGrid'),
+  applyMappingBtn: document.getElementById('applyMappingBtn'),
+
+  kpiUsage: document.getElementById('kpiUsage'),
+  kpiUsageNote: document.getElementById('kpiUsageNote'),
+  kpiLeak95: document.getElementById('kpiLeak95'),
+  kpiLeak95Note: document.getElementById('kpiLeak95Note'),
+  kpiP50: document.getElementById('kpiP50'),
+  kpiP50Note: document.getElementById('kpiP50Note'),
+  kpiAHI: document.getElementById('kpiAHI'),
+  kpiAHINote: document.getElementById('kpiAHINote'),
+
+  overviewSummary: document.getElementById('overviewSummary'),
+  overviewNarrative: document.getElementById('overviewNarrative'),
+  leakNarrative: document.getElementById('leakNarrative'),
+  pressureNarrative: document.getElementById('pressureNarrative'),
+  flowNarrative: document.getElementById('flowNarrative'),
+  snoreNarrative: document.getElementById('snoreNarrative'),
+  respRateNarrative: document.getElementById('respRateNarrative'),
+  tidalNarrative: document.getElementById('tidalNarrative'),
+  eprNarrative: document.getElementById('eprNarrative'),
+  eventsLegend: document.getElementById('eventsLegend'),
+  eventsNarrative: document.getElementById('eventsNarrative'),
+
+  rawSummary: document.getElementById('rawSummary'),
+  rawDump: document.getElementById('rawDump'),
+
+  plotOverview: document.getElementById('plotOverview'),
+  plotLeak: document.getElementById('plotLeak'),
+  plotPressure: document.getElementById('plotPressure'),
+  plotFlow: document.getElementById('plotFlow'),
+  plotSnore: document.getElementById('plotSnore'),
+  plotRespRate: document.getElementById('plotRespRate'),
+  plotTidalVolume: document.getElementById('plotTidalVolume'),
+  plotEpr: document.getElementById('plotEpr'),
+  plotEvents: document.getElementById('plotEvents'),
+  plotExplore: document.getElementById('plotExplore'),
+  exploreSelect: document.getElementById('exploreSelect'),
+  exploreNarrative: document.getElementById('exploreNarrative'),
+
+  log: document.getElementById('log'),
+  toast: document.getElementById('toast'),
+
+  tablist: document.getElementById('tablist'),
+};
+
+const state = {
+  jobId: 0,
+
+  zip: null,
+  entries: [],
+  meta: { prefix:'', rootMarkers:{} },
+  identification: null,
+  currentSettings: null,
+  sessionsByDate: new Map(),
+  selectedDateISO: null,
+  selectedRange: { mode:'night', startISO:null, endISO:null, pickingStart:true },
+  calendarView: null,
+  current: {
+    session: null,
+    edfFiles: [],
+    signalCatalog: [],
+    mapping: { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null },
+    signals: {},
+    events: null,
+    stats: {},
+    raw: {}
+  },
+  notes: []
+};
+
+/* ---------- UI helpers ---------- */
+function toast(msg){
+  els.toast.textContent = msg;
+  els.toast.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> els.toast.style.display = 'none', 2400);
+}
+function setStatus(text, tone='neutral'){
+  els.statusBadge.textContent = text;
+  const map = {
+    neutral: 'rgba(255,255,255,.06)',
+    good: 'rgba(110,231,166,.12)',
+    warn: 'rgba(255,204,102,.14)',
+    bad: 'rgba(255,107,122,.14)',
+  };
+  els.statusBadge.style.background = map[tone] || map.neutral;
+  els.statusBadge.style.borderColor = 'rgba(255,255,255,.14)';
+}
+function log(line){
+  state.notes.push(line);
+  els.log.textContent = state.notes.join('\n');
+}
+
+const progressState = { step:'Idle', pct:0, detail:'', raf:0 };
+function progress(step, pct, detail=''){
+  progressState.step = step;
+  progressState.pct = Math.max(0, Math.min(100, pct));
+  progressState.detail = detail || '';
+  if (progressState.raf) return;
+  progressState.raf = requestAnimationFrame(() => {
+    progressState.raf = 0;
+    els.progressStep.textContent = progressState.step;
+    els.progressPct.textContent = `${Math.round(progressState.pct)}%`;
+    els.progressBar.style.width = `${progressState.pct}%`;
+    els.progressDetail.textContent = progressState.detail;
+
+    const busy = progressState.step !== 'Idle' && progressState.pct < 100 && !/^Error/i.test(progressState.step || '');
+    if (els.globalLoadOverlay){
+      els.globalLoadOverlay.style.display = busy ? 'block' : 'none';
+      els.globalLoadStep.textContent = progressState.step;
+      els.globalLoadPct.textContent = `${Math.round(progressState.pct)}%`;
+      els.globalLoadBar.style.width = `${progressState.pct}%`;
+      els.globalLoadDetail.textContent = progressState.detail || 'Please wait while files load and parse…';
+    }
+  });
+}
+
+function tick(){ return new Promise(r => setTimeout(r, 0)); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localDateISO(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+function humanizeWords(s){
+  return String(s||'')
+    .replace(/[._\-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/FG Identification Profiles/gi, '')
+    .replace(/\bEpr\b/g, 'EPR')
+    .replace(/\bAhi\b/g, 'AHI')
+    .replace(/\bCpap\b/g, 'CPAP')
+    .replace(/\bAutoSet\b/g, 'AutoSet')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatSettingsLabel(s){
+  let t = humanizeWords(s);
+  t = t.replace(/\bFeature\b/g, 'Features');
+  t = t.replace(/\bFeatures\s+Features\b/gi, 'Features');
+  t = t.replace(/\b(\w+)\s+\1\b/gi, '$1');
+  return t;
+}
+
+function newJob(){ state.jobId++; return state.jobId; }
+function assertActive(jobId){
+  if (jobId !== state.jobId) {
+    const err = new Error('Cancelled');
+    err.name = 'CancelledError';
+    throw err;
+  }
+}
+function fmtTime(d){
+  if (!(d instanceof Date) || !Number.isFinite(d.getTime())) return '—';
+  const y = d.getFullYear(), m = pad2(d.getMonth()+1), da = pad2(d.getDate());
+  const hh = pad2(d.getHours()), mm = pad2(d.getMinutes());
+  return `${y}-${m}-${da} ${hh}:${mm}`;
+}
+function fmtNum(x, digits=1){
+  return (x==null || !Number.isFinite(x)) ? '—' : Number(x).toFixed(digits);
+}
+function fmtHours(h){
+  return (h==null || !Number.isFinite(h)) ? '—' : `${h.toFixed(2)} h`;
+}
+
+/* ---------- Plotly helpers ---------- */
+function CALM_LAYOUT(title){
+  return {
+    title: { text: title, font: { color: 'rgba(231,246,246,.95)', size: 14 } },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: 'rgba(231,246,246,.9)' },
+    margin: { l: 55, r: 22, t: 45, b: 55 },
+    xaxis: {
+      gridcolor: 'rgba(255,255,255,.08)',
+      zerolinecolor: 'rgba(255,255,255,.08)',
+      tickcolor: 'rgba(255,255,255,.25)',
+      rangeslider: { visible: true, bgcolor: 'rgba(255,255,255,.04)', bordercolor: 'rgba(255,255,255,.10)' },
+    },
+    yaxis: {
+      gridcolor: 'rgba(255,255,255,.08)',
+      zerolinecolor: 'rgba(255,255,255,.08)',
+      tickcolor: 'rgba(255,255,255,.25)',
+    },
+    legend: { bgcolor: 'rgba(0,0,0,0)' }
+  };
+}
+const plotConfig = { responsive:true, displayModeBar:true, modeBarButtonsToRemove:['autoScale2d'] };
+
+function purgePlots(){
+  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
+}
+function placeholderPlots(){
+  const data = [{ x:[0,1,2,3], y:[0,1,0.4,0.8], type:'scatter', mode:'lines', hoverinfo:'skip',
+    line:{ color:'rgba(97,212,195,.55)', width:3 }}];
+  Plotly.newPlot(els.plotOverview, data, {...CALM_LAYOUT('Upload a ZIP to see your report'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotLeak, data, {...CALM_LAYOUT('Leaks'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotSnore, data, {...CALM_LAYOUT('Snore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotRespRate, data, {...CALM_LAYOUT('Respiratory Rate'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotTidalVolume, data, {...CALM_LAYOUT('Tidal Volume'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotEpr, data, {...CALM_LAYOUT('Expiratory Pressure Relief (EPR)'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotEvents, data, {...CALM_LAYOUT('Events'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotExplore, data, {...CALM_LAYOUT('Explore'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+}
+
+/* ---------- Reset ---------- */
+function resetAll(){
+  newJob();
+
+  state.zip = null;
+  state.entries = [];
+  state.meta = { prefix:'', rootMarkers:{} };
+  state.identification = null;
+  state.currentSettings = null;
+  state.sessionsByDate.clear();
+  state.selectedDateISO = null;
+  state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
+  state.calendarView = null;
+  state.current = {
+    session:null, edfFiles:[], signalCatalog:[],
+    mapping:{ leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null },
+    signals:{}, events:null, stats:{}, raw:{}
+  };
+  state.notes = [];
+
+  els.zipInput.value = '';
+  els.fileBadge.textContent = 'No file';
+  els.zipStats.textContent = '—';
+
+  els.idArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
+  els.settingsArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
+
+  els.loadRangeBtn.disabled = true;
+  els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
+  els.rangeControls.classList.add('disabled');
+  els.rangeControls.classList.remove('ready');
+
+  els.mapGrid.innerHTML = '';
+  els.applyMappingBtn.disabled = true;
+
+  els.kpiUsage.textContent = '—'; els.kpiUsageNote.textContent = 'Select a day.';
+  els.kpiLeak95.textContent = '—'; els.kpiLeak95Note.textContent = 'Needs leak signal.';
+  els.kpiP50.textContent = '—'; els.kpiP50Note.textContent = 'Needs pressure signal.';
+  els.kpiAHI.textContent = '—'; els.kpiAHINote.textContent = 'From annotations if found.';
+
+  els.overviewSummary.innerHTML = `<b>Status</b><br/>Upload a ZIP to begin.`;
+  els.overviewNarrative.innerHTML = '';
+  els.leakNarrative.innerHTML = '';
+  els.pressureNarrative.innerHTML = '';
+  els.flowNarrative.innerHTML = '';
+  els.snoreNarrative.innerHTML = '';
+  els.respRateNarrative.innerHTML = '';
+  els.tidalNarrative.innerHTML = '';
+  els.eprNarrative.innerHTML = '';
+  els.eventsLegend.innerHTML = '';
+  els.eventsNarrative.innerHTML = '';
+  els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a mapped signal from the dropdown below to display it here.';
+  els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
+  els.exploreSelect.disabled = true;
+
+  els.rawSummary.innerHTML = '';
+  els.rawDump.textContent = '';
+  applyRangeMode('night');
+  renderCalendar();
+
+  progress('Idle', 0, 'Upload a ZIP to begin.');
+  setStatus('Waiting','neutral');
+
+  purgePlots();
+  placeholderPlots();
+  log('Ready.');
+}
+
+/* ---------- Tabs (ARIA + keyboard) ---------- */
+function setActiveTab(tabId){
+  const tabs = Array.from(els.tablist.querySelectorAll('[role="tab"]'));
+  const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+  for (const t of tabs){
+    const active = t.id === tabId;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+    t.tabIndex = active ? 0 : -1;
+  }
+  for (const p of panels){
+    const wants = p.getAttribute('aria-labelledby') === tabId;
+    p.classList.toggle('active', wants);
+  }
+}
+els.tablist.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[role="tab"]');
+  if (!btn) return;
+  setActiveTab(btn.id);
+});
+els.tablist.addEventListener('keydown', (e)=>{
+  const tabs = Array.from(els.tablist.querySelectorAll('[role="tab"]'));
+  const current = document.activeElement;
+  const idx = tabs.indexOf(current);
+  if (idx === -1) return;
+  let next = idx;
+  if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+  else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = tabs.length - 1;
+  else if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    setActiveTab(current.id);
+    return;
+  } else return;
+  e.preventDefault();
+  tabs[next].focus();
+});
+
+/* ---------- Upload handling ---------- */
+function maybeShowOnboarding(){
+  if (!els.onboardingModal) return;
+  const hide = localStorage.getItem('calmcpap_hide_onboarding') === '1';
+  if (hide) return;
+  els.onboardingModal.style.display = 'block';
+  els.onboardingModal.setAttribute('aria-hidden','false');
+}
+function closeOnboarding(){
+  if (!els.onboardingModal) return;
+  if (els.onboardingDontShow?.checked) localStorage.setItem('calmcpap_hide_onboarding','1');
+  els.onboardingModal.style.display = 'none';
+  els.onboardingModal.setAttribute('aria-hidden','true');
+}
+els.onboardingCloseBtn?.addEventListener('click', closeOnboarding);
+els.onboardingModal?.addEventListener('click', (e)=>{ if (e.target === els.onboardingModal) closeOnboarding(); });
+document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && els.onboardingModal?.style.display === 'block') closeOnboarding(); });
+setTimeout(maybeShowOnboarding, 120);
+
+els.dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+els.dropZone.addEventListener('drop', (e)=>{
+  e.preventDefault();
+  const f = e.dataTransfer.files?.[0];
+  if (f) handleZip(f);
+});
+els.dropZone.addEventListener('click', (e)=>{
+  const clickedControl = e.target.closest('label,button,input,select,a');
+  if (clickedControl) return;
+  els.zipInput.click();
+});
+els.dropZone.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter' || e.key === ' ') {
+    const focusedControl = document.activeElement?.closest?.('label,button,input,select,a');
+    if (focusedControl) return;
+    e.preventDefault();
+    els.zipInput.click();
+  }
+});
+els.chooseZipBtn.addEventListener('click', (e)=> e.stopPropagation());
+els.demoBtn.addEventListener('click', (e)=> e.stopPropagation());
+
+els.zipInput.addEventListener('change', ()=>{
+  const f = els.zipInput.files?.[0];
+  if (f) handleZip(f);
+});
+els.clearBtn.addEventListener('click', ()=>{ resetAll(); toast('Cleared.'); });
+
+function updateSidebarToggleUI(collapsed){
+  els.toggleLeftBtn.textContent = collapsed ? 'Open Sidebar' : 'Hide Sidebar';
+  els.toggleLeftBtn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+  if (els.floatingSidebarBtn){
+    els.floatingSidebarBtn.style.display = collapsed ? 'inline-flex' : 'none';
+    els.floatingSidebarBtn.textContent = 'Open Sidebar';
+  }
+  setTimeout(()=>{
+    [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
+      if (p) Plotly.Plots.resize(p);
+    });
+  }, 40);
+}
+
+els.toggleLeftBtn.addEventListener('click', ()=>{
+  const collapsed = document.body.classList.toggle('left-collapsed');
+  updateSidebarToggleUI(collapsed);
+});
+els.floatingSidebarBtn?.addEventListener('click', ()=>{
+  document.body.classList.remove('left-collapsed');
+  updateSidebarToggleUI(false);
+});
+window.addEventListener('resize', ()=>{
+  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
+    if (p) Plotly.Plots.resize(p);
+  });
+});
+
+/* ---------- Picker ---------- */
+els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
+els.modeWeek.addEventListener('click', ()=> applyRangeMode('week'));
+els.modeMonth.addEventListener('click', ()=> applyRangeMode('month'));
+els.modeCustom.addEventListener('click', ()=> applyRangeMode('custom'));
+els.loadRangeBtn.addEventListener('click', async ()=>{ await loadRange(); });
+els.calPrev.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()-1); state.calendarView = d; renderCalendar(); });
+els.calNext.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()+1); state.calendarView = d; renderCalendar(); });
+els.calToday.addEventListener('click', ()=>{ state.calendarView = isoToDate(state.selectedDateISO || localDateISO(new Date())); renderCalendar(); });
+els.calMonthSelect.addEventListener('change', ()=>{
+  const v = els.calMonthSelect.value;
+  if (!v) return;
+  const d = new Date(`${v}-01T00:00:00`);
+  if (!Number.isFinite(d.getTime())) return;
+  state.calendarView = d;
+  const mDates = Array.from(state.sessionsByDate.keys()).filter(x=>x!=='unknown' && x.startsWith(v)).sort();
+  if (mDates.length){
+    state.selectedDateISO = mDates[mDates.length-1];
+    applyRangeMode(state.selectedRange.mode || 'night');
+  }
+  renderCalendar();
+});
+els.applyMappingBtn.addEventListener('click', async ()=>{
+  applyMappingFromUI();
+  await extractSignalsAndRender();
+  await renderExplorePlot();
+});
+els.exploreSelect.addEventListener('change', async ()=>{ await renderExplorePlot(); });
+
+/* ---------- Demo ---------- */
+els.demoBtn.addEventListener('click', ()=>{
+  resetAll();
+  setStatus('Demo','good');
+  els.fileBadge.textContent = 'demo.zip';
+  els.zipStats.textContent = 'demo';
+  progress('Demo', 100, 'Loaded synthetic data for layout + charts.');
+
+  state.identification = {
+    Manufacturer: "ResMed (demo)",
+    Model: "AirSense 11 (demo)",
+    Mode: "AutoSet (demo)",
+    SerialNumber: "DEMO-12345"
+  };
+  renderIdentification(state.identification);
+
+  const start = new Date(); start.setHours(23,0,0,0);
+  const dateISO = localDateISO(start);
+  const end = new Date(start.getTime() + 7*3600*1000);
+
+  const sess = {
+    key: `${dateISO}__DAY`,
+    label: `${dateISO} — Day`,
+    start, end,
+    files: [{ path:'demo/STR.edf', entry:null, _folderDateISO: dateISO }]
+  };
+  state.sessionsByDate.set(dateISO, { dateISO, sessions:[sess] });
+  enablePicker(true);
+
+  const t = [], leak = [], pressure = [], flow = [], snore = [], respRate = [], tidalVolume = [], epr = [];
+  const mins = 7*60;
+  for (let i=0;i<=mins;i++){
+    const d = new Date(start.getTime() + i*60*1000);
+    t.push(d);
+    const baseLeak = 6 + 2*Math.sin(i/33);
+    const spike = (i>180 && i<210) ? 18 + 7*Math.sin(i/2) : 0;
+    const spike2 = (i>330 && i<360) ? 26 + 7*Math.sin(i/3) : 0;
+    leak.push(Math.max(0, baseLeak + spike + spike2 + (Math.random()-0.5)*1.0));
+    const baseP = 8 + 0.6*Math.sin(i/70);
+    const bump = (i>120 && i<260) ? 2.4 : 0;
+    const bump2 = (i>320 && i<420) ? 1.6 : 0;
+    pressure.push(baseP + bump + bump2 + (Math.random()-0.5)*0.25);
+    flow.push(Math.sin(i/2) * (0.5 + Math.random()*0.2));
+    snore.push(Math.max(0, 0.08 + 0.06*Math.sin(i/29) + (Math.random()-0.5)*0.04));
+    respRate.push(12 + 1.4*Math.sin(i/26) + (Math.random()-0.5)*0.8);
+    tidalVolume.push(480 + 50*Math.sin(i/24) + (Math.random()-0.5)*40);
+    epr.push(Math.max(0, Math.min(3, 1.6 + 0.9*Math.sin(i/40) + (Math.random()-0.5)*0.35)));
+  }
+  const evtT = [], evtType = [];
+  for (let k=0;k<22;k++){
+    const m = Math.floor(Math.random()*mins);
+    evtT.push(new Date(start.getTime() + m*60*1000));
+    const r = Math.random();
+    evtType.push(r < 0.5 ? 'H' : r < 0.85 ? 'OA' : r < 0.95 ? 'RERA' : 'CA');
+  }
+  evtT.sort((a,b)=>a-b);
+
+  state.current.session = sess;
+  state.current.signals = {
+    leak: { t:[...t], y:leak, unit:'L/min', label:'Leak', _source:'demo' },
+    pressure: { t:[...t], y:pressure, unit:'cmH₂O', label:'Pressure', _source:'demo' },
+    flow: { t:[...t], y:flow, unit:'a.u.', label:'Flow', _source:'demo' },
+    snore: { t:[...t], y:snore, unit:'a.u.', label:'Snore', _source:'demo' },
+    respRate: { t:[...t], y:respRate, unit:'BPM', label:'Respiratory Rate', _source:'demo' },
+    tidalVolume: { t:[...t], y:tidalVolume, unit:'mL', label:'Tidal Volume', _source:'demo' },
+    epr: { t:[...t], y:epr, unit:'cmH₂O', label:'EPR', _source:'demo' }
+  };
+  state.current.events = { t: evtT, type: evtType };
+
+  analyzeAndRender();
+  toast('Demo ready ✔️');
+});
+
+/* ============================
+   ZIP scan helpers
+   ============================ */
+
+async function handleZip(file){
+  const jobId = newJob();
+  resetAll();
+  state.jobId = jobId;
+
+  els.fileBadge.textContent = file.name;
+  setStatus('Reading ZIP…','neutral');
+  progress('Reading ZIP', 2, `${file.name} — ${(file.size/1024/1024).toFixed(2)} MB`);
+  log(`ZIP: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`);
+
+  try{
+    const buf = await readFileAsArrayBufferWithProgress(file, (loaded, total)=>{
+      assertActive(jobId);
+      const pct = total ? (loaded/total)*20 : 5;
+      progress('Reading ZIP', pct, `Reading file… ${(loaded/1024/1024).toFixed(2)} / ${(total/1024/1024).toFixed(2)} MB`);
+    });
+    assertActive(jobId);
+
+    progress('Unzipping', 22, 'Unzipping archive…');
+    setStatus('Unzipping…','neutral');
+    await tick();
+    assertActive(jobId);
+
+    state.zip = await JSZip.loadAsync(buf);
+    assertActive(jobId);
+
+    progress('Scanning ZIP', 30, 'Scanning file list…');
+    await tick();
+    assertActive(jobId);
+
+    const { entries, prefix, markers } = enumerateZipEntries(state.zip);
+    state.entries = entries;
+    state.meta.prefix = prefix;
+    state.meta.rootMarkers = markers;
+
+    const edfCount = entries.filter(e => e.path.toLowerCase().endsWith('.edf')).length;
+    const idCount = entries.filter(e => e.path.toLowerCase().endsWith('identification.json')).length;
+
+    els.zipStats.textContent = `${entries.length} files • ${edfCount} edf • id:${idCount? 'yes':'no'}`;
+    log(`Files: ${entries.length} | EDF: ${edfCount} | Identification.json: ${idCount? 'yes':'no'} | prefix: ${prefix || '(none)'}`);
+    progress('Scanning ZIP', 35, `Found ${entries.length} files. EDF: ${edfCount}. Identification.json: ${idCount? 'yes':'no'}.`);
+    await tick();
+    assertActive(jobId);
+
+    await readIdentification(entries, jobId);
+    await readCurrentSettings(entries, jobId);
+
+    setStatus('Indexing days…','neutral');
+    progress('Indexing days', 40, 'Finding DATALOG/YYYYMMDD/ EDF files…');
+    await tick();
+    assertActive(jobId);
+
+    const index = await indexSessionsFromSDStructure(entries, jobId);
+    state.sessionsByDate = index.sessionsByDate;
+
+    if (!state.sessionsByDate.size){
+      setStatus('No sessions','warn');
+      progress('Indexing days', 100, 'No day folders found under DATALOG/YYYYMMDD, and no usable STR.edf date.');
+      els.overviewSummary.innerHTML = `<b>Status</b><br/>Couldn’t find sessions. Expected: <b>DATALOG/YYYYMMDD/*.edf</b>.`;
+      els.rawSummary.innerHTML = `<b>Raw:</b> Couldn’t index sessions.`;
+      els.rawDump.textContent = entries.slice(0,400).map(e=>e.path).join('\n');
+      return;
+    }
+
+    enablePicker(true);
+
+    setStatus('Loading most recent day…','neutral');
+    progress('Auto-loading', 96, 'Auto-loading most recent day…');
+    await tick();
+    assertActive(jobId);
+
+    const maxDate = Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0];
+    const pack = state.sessionsByDate.get(maxDate);
+    const firstKey = pack?.sessions?.[0]?.key;
+    if (maxDate && firstKey){
+      await loadSession(maxDate, firstKey, jobId);
+    } else {
+      setStatus('Ready','good');
+      progress('Ready', 100, 'Choose a date + session, then click Load.');
+    }
+
+    toast('ZIP ready ✔️');
+  }catch(err){
+    if (err?.name === 'CancelledError'){
+      log('⏹ Cancelled (new ZIP loaded).');
+      return;
+    }
+    console.error(err);
+    setStatus('Error','bad');
+    progress('Error', 100, err?.message || String(err));
+    log('❌ ' + (err?.message || String(err)));
+  }
+}
+
+function readFileAsArrayBufferWithProgress(file, onProgress){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onprogress = (e)=>{
+      if (e.lengthComputable) onProgress?.(e.loaded, e.total);
+      else onProgress?.(e.loaded, file.size);
+    };
+    reader.onload = () => resolve(reader.result);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function enumerateZipEntries(zip){
+  const rawPaths = [];
+  zip.forEach((path, entry)=>{ if (!entry.dir) rawPaths.push(path); });
+
+  let prefix = '';
+  if (rawPaths.length){
+    const firstSegs = rawPaths.map(p => p.split('/')[0]).filter(Boolean);
+    const uniq = Array.from(new Set(firstSegs));
+    if (uniq.length === 1) prefix = uniq[0] + '/';
+  }
+
+  const markers = {};
+  const entries = [];
+  zip.forEach((path, entry)=>{
+    if (entry.dir) return;
+    const norm = normalizeZipPath(path, prefix);
+    const lower = norm.toLowerCase();
+    if (lower.startsWith('datalog/')) markers.DATALOG = true;
+    if (lower.startsWith('settings/')) markers.SETTINGS = true;
+    if (lower === 'identification.json') markers.ID = true;
+    if (lower === 'str.edf') markers.STR = true;
+    entries.push({ path: norm, entry });
+  });
+
+  entries.sort((a,b)=>a.path.localeCompare(b.path));
+  return { entries, prefix, markers };
+}
+
+function normalizeZipPath(path, detectedPrefix){
+  let p = String(path || '').replace(/\\/g,'/').trim();
+  if (detectedPrefix && p.startsWith(detectedPrefix)) p = p.slice(detectedPrefix.length);
+  p = p.replace(/^(\.\/)+/,'').replace(/^\/+/, '');
+  return p;
+}
+
+/* ============================
+   SD folder sessions
+   ============================ */
+
+function isYYYYMMDD(seg){ return /^[0-9]{8}$/.test(seg); }
+function yyyymmddToISO(s){
+  const y = s.slice(0,4), m = s.slice(4,6), d = s.slice(6,8);
+  return `${y}-${m}-${d}`;
+}
+
+async function indexSessionsFromSDStructure(entries, jobId){
+  const sessionsByDate = new Map();
+  const edfs = entries.filter(e => e.path.toLowerCase().endsWith('.edf'));
+  const dayFolders = new Map();
+  let strEntry = null;
+
+  for (const e of edfs){
+    assertActive(jobId);
+    const p = e.path.replace(/\\/g,'/');
+    const parts = p.split('/').filter(Boolean);
+
+    if (parts.length === 1 && parts[0].toLowerCase() === 'str.edf'){
+      strEntry = e;
+      continue;
+    }
+
+    if (parts.length >= 3 && parts[0].toLowerCase() === 'datalog' && isYYYYMMDD(parts[1])){
+      const dateISO = yyyymmddToISO(parts[1]);
+      if (!dayFolders.has(dateISO)) dayFolders.set(dateISO, []);
+      dayFolders.get(dateISO).push({ path: e.path, entry: e.entry, _folderDateISO: dateISO });
+    }
+  }
+
+  const dates = Array.from(dayFolders.keys()).sort();
+  let fileCounter = 0;
+  const totalFolderEdfs = Array.from(dayFolders.values()).reduce((a,b)=>a+b.length,0);
+
+  for (let di=0; di<dates.length; di++){
+    assertActive(jobId);
+    const dateISO = dates[di];
+    const files = dayFolders.get(dateISO) || [];
+
+    let minStart = null;
+    let maxEnd = null;
+
+    for (let fi=0; fi<files.length; fi++){
+      assertActive(jobId);
+      fileCounter++;
+      const pct = 40 + (fileCounter / Math.max(1,totalFolderEdfs)) * 20;
+      progress('Indexing days', pct, `Reading headers ${fileCounter}/${totalFolderEdfs}: ${files[fi].path.split('/').pop()}`);
+      if ((fileCounter % 2) === 0) await tick();
+
+      try{
+        const buf = await files[fi].entry.async('arraybuffer');
+        assertActive(jobId);
+        const header = parseEDFHeader(buf);
+        const parsedStart = header?.start instanceof Date && Number.isFinite(header.start.getTime()) && header.start.getFullYear() >= 2000
+          ? header.start
+          : new Date(`${dateISO}T12:00:00`);
+        if (parsedStart && Number.isFinite(parsedStart.getTime())){
+          const durSec = estimateDurationSeconds(buf, header);
+          const end = new Date(parsedStart.getTime() + durSec*1000);
+          if (!minStart || parsedStart < minStart) minStart = parsedStart;
+          if (!maxEnd || end > maxEnd) maxEnd = end;
+        }
+      }catch(err){
+        log(`Header read failed: ${files[fi].path} (${err?.message || err})`);
+      }
+    }
+
+    const session = {
+      key: `${dateISO}__DAY`,
+      label: `${dateISO} — Day`,
+      start: minStart || new Date(dateISO + 'T00:00:00'),
+      end: maxEnd || new Date(dateISO + 'T08:00:00'),
+      files
+    };
+    sessionsByDate.set(dateISO, { dateISO, sessions:[session] });
+  }
+
+  if (strEntry){
+    progress('Indexing STR.edf', 61, 'Reading STR.edf header…');
+    await tick();
+    assertActive(jobId);
+
+    let attachISO = null;
+    try{
+      const buf = await strEntry.entry.async('arraybuffer');
+      assertActive(jobId);
+      const header = parseEDFHeader(buf);
+      if (header?.start) attachISO = localDateISO(header.start);
+
+      if (attachISO){
+        if (!sessionsByDate.has(attachISO)){
+          sessionsByDate.set(attachISO, {
+            dateISO: attachISO,
+            sessions: [{
+              key: `${attachISO}__DAY`,
+              label: `${attachISO} — Day`,
+              start: header.start,
+              end: new Date(header.start.getTime() + estimateDurationSeconds(buf, header)*1000),
+              files: []
+            }]
+          });
+        }
+        sessionsByDate.get(attachISO).sessions[0].files.push({ path: strEntry.path, entry: strEntry.entry, _folderDateISO: attachISO, _isSTR:true });
+        log(`STR.edf attached to ${attachISO}`);
+      } else {
+        log('STR.edf found but could not parse start date; attaching as fallback.');
+      }
+    }catch(err){
+      log(`STR.edf header parse failed: ${err?.message || err}`);
+    }
+
+    if (!attachISO){
+      const fallbackISO = Array.from(sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0] || 'unknown';
+      if (fallbackISO === 'unknown'){
+        sessionsByDate.set('unknown', {
+          dateISO:'unknown',
+          sessions:[{
+            key:'unknown__STR',
+            label:'unknown — STR.edf',
+            start:new Date(0),
+            end:new Date(0),
+            files:[{ path: strEntry.path, entry: strEntry.entry, _folderDateISO:'unknown', _isSTR:true }]
+          }]
+        });
+      } else {
+        sessionsByDate.get(fallbackISO).sessions[0].files.push({ path: strEntry.path, entry: strEntry.entry, _folderDateISO:fallbackISO, _isSTR:true });
+      }
+    }
+  }
+
+  log(`Indexed dates: ${sessionsByDate.size} (folder-based)`);
+  return { sessionsByDate };
+}
+
+/* ============================
+   Identification.json
+   ============================ */
+
+async function readIdentification(entries, jobId){
+  progress('Reading Identification', 36, 'Looking for Identification.json…');
+  const idEntry = entries.find(e => e.path.toLowerCase().endsWith('identification.json'));
+  if (!idEntry){
+    log('Identification.json not found.');
+    state.identification = null;
+    els.idArea.innerHTML = `<div class="row"><span>No Identification.json found</span><span class="badge">info</span></div>`;
+    progress('Reading Identification', 38, 'No Identification.json found.');
+    return;
+  }
+  try{
+    progress('Reading Identification', 37, `Reading ${idEntry.path}…`);
+    await tick();
+    assertActive(jobId);
+    const txt = await idEntry.entry.async('text');
+    assertActive(jobId);
+    const json = JSON.parse(txt);
+    state.identification = json;
+    log(`Identification.json loaded: ${idEntry.path}`);
+    renderIdentification(json);
+    progress('Reading Identification', 39, 'Identification.json loaded.');
+  }catch(e){
+    log('Identification.json present but failed to parse.');
+    els.idArea.innerHTML = `<div class="row"><span>Identification.json parse failed</span><span class="badge">warn</span></div>`;
+    progress('Reading Identification', 39, 'Identification.json parse failed.');
+  }
+}
+
+function renderIdentification(obj){
+  const flat = flattenObject(obj, 5);
+  const items = Object.entries(flat)
+    .map(([k,v])=>({ key:k, short: shortenIdKey(k), val:v }))
+    .filter(it => it.val != null && String(it.val).trim() !== '');
+
+  const priorityShort = [
+    'Manufacturer','Brand','Model','MachineModel','Mode','PAPMode',
+    'SerialNumber','DeviceSerial','DeviceSerialNumber','Patient','Profile','Name','User',
+    'FG P1.Manufacturer','FG P1.Model','FG P1.SerialNumber','FG P1.DeviceSerial',
+    'FG P1.Mode','FG P1.PAPMode'
+  ].map(s => s.toLowerCase());
+
+  items.sort((a,b)=>{
+    const ai = priorityShort.indexOf(a.short.toLowerCase());
+    const bi = priorityShort.indexOf(b.short.toLowerCase());
+    if (ai !== -1 || bi !== -1){
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    }
+    return a.short.localeCompare(b.short);
+  });
+
+  const getLike = (needle) => {
+    const n = needle.toLowerCase();
+    const hit = items.find(it => it.short.toLowerCase() === n) ||
+                items.find(it => it.short.toLowerCase().includes(n));
+    return hit ? String(hit.val ?? '') : '';
+  };
+
+  const make = getLike('Manufacturer') || getLike('Brand') || getLike('FG P1.Manufacturer') || '';
+  const model = getLike('Model') || getLike('MachineModel') || getLike('FG P1.Model') || '';
+  const mode  = getLike('Mode') || getLike('PAPMode') || getLike('FG P1.Mode') || '';
+  const serial = getLike('SerialNumber') || getLike('DeviceSerial') || getLike('FG P1.SerialNumber') || getLike('FG P1.DeviceSerial') || '';
+  const productCode = getLike('Product Product Name') || getLike('ProductName') || getLike('ProductCode') || '';
+
+  const headline = (make + ' ' + model).trim() || 'Unknown';
+
+  const headerRow = `
+    <div class="row">
+      <span><b>Detected device</b></span>
+      <span class="badge">${escapeHtml(headline)}</span>
+    </div>
+    ${productCode ? `
+      <div class="row">
+        <span style="opacity:.85">Product Code</span>
+        <span><b>${escapeHtml(productCode)}</b></span>
+      </div>
+    ` : ''}
+  `;
+
+  const rows = [];
+  const used = new Set();
+  for (const it of items){
+    if (rows.length >= 14) break;
+    const sk = it.short;
+    if (used.has(sk)) continue;
+    if (typeof it.val === 'object') continue;
+    rows.push(`
+      <div class="row">
+        <span>${escapeHtml(humanizeWords(sk))}</span>
+        <span><b>${escapeHtml(shortValue(it.val))}</b></span>
+      </div>
+    `);
+    used.add(sk);
+  }
+
+  els.idArea.innerHTML = headerRow + (rows.join('') || `<div class="row"><span>No readable fields</span><span class="badge">json</span></div>`);
+}
+
+function shortenIdKey(path){
+  let k = String(path || '');
+  k = k.replace(/^FlowGenerator\./, 'FG.');
+  k = k.replace(/^FG\.IdentificationProfiles\[(\d+)\]\.Identification\./, (_, idx) => `FG P${(+idx)+1}.`);
+  k = k.replace(/^FG\.IdentificationProfiles\[(\d+)\]\./, (_, idx) => `FG P${(+idx)+1}.`);
+  k = k.replace(/^Identification\./, '');
+  k = k.replace(/^Device\./, '');
+  k = k.replace(/DeviceSerialNumber/i, 'DeviceSerial');
+  k = k.replace(/DeviceSerial/i, 'DeviceSerial');
+  k = k.replace(/SerialNumber/i, 'SerialNumber');
+  k = k.replace(/MachineModel/i, 'MachineModel');
+  k = k.replace(/PAPMode/i, 'PAPMode');
+  k = k.replace(/\.?Meta\.?/g, '.Meta.');
+  return k;
+}
+
+function shortValue(v){
+  if (v == null) return '—';
+  if (typeof v === 'object') return '[object]';
+  const s = String(v);
+  return s.length > 52 ? s.slice(0, 49) + '…' : s;
+}
+
+function flattenObject(obj, depth=5){
+  const out = {};
+  function rec(o, d, p){
+    if (o == null) return;
+    if (typeof o !== 'object'){ out[p] = o; return; }
+    if (Array.isArray(o)){
+      out[p] = `[array x${o.length}]`;
+      if (d > 0){
+        for (let i=0;i<Math.min(o.length, 6);i++){
+          rec(o[i], d-1, p ? `${p}[${i}]` : `[${i}]`);
+        }
+      }
+      return;
+    }
+    for (const [k,v] of Object.entries(o)){
+      const np = p ? `${p}.${k}` : k;
+      if (typeof v === 'object' && v !== null && d > 0) rec(v, d-1, np);
+      else out[np] = v;
+    }
+  }
+  rec(obj, depth, '');
+  return out;
+}
+
+
+async function readCurrentSettings(entries, jobId){
+  const csEntry = entries.find(e => e.path.toLowerCase().endsWith('currentsettings.json'));
+  if (!csEntry){
+    state.currentSettings = null;
+    els.settingsArea.innerHTML = `<div class="row"><span>No CurrentSettings.json found</span><span class="badge">info</span></div>`;
+    return;
+  }
+  try{
+    assertActive(jobId);
+    const txt = await csEntry.entry.async('text');
+    assertActive(jobId);
+    const json = JSON.parse(txt);
+    state.currentSettings = json;
+    renderCurrentSettings(json);
+  }catch(_e){
+    state.currentSettings = null;
+    els.settingsArea.innerHTML = `<div class="row"><span>CurrentSettings.json parse failed</span><span class="badge">warn</span></div>`;
+  }
+}
+
+function renderCurrentSettings(obj){
+  const sp = obj?.FlowGenerator?.SettingProfiles;
+  const activeName = sp?.ActiveProfiles?.TherapyProfile || '';
+  const therapyProfiles = sp?.TherapyProfiles || {};
+  const featureProfiles = sp?.FeatureProfiles || {};
+  const activeTherapy = activeName && therapyProfiles[activeName] ? therapyProfiles[activeName] : null;
+
+  const rows = [];
+  if (activeName) rows.push(`<div class="row"><span>Active Therapy Profile</span><span><b>${escapeHtml(activeName)}</b></span></div>`);
+  if (activeTherapy){
+    for (const [k,v] of Object.entries(activeTherapy)){
+      rows.push(`<div class="row"><span>${escapeHtml(formatSettingsLabel(k))}</span><span><b>${escapeHtml(shortValue(v))}</b></span></div>`);
+    }
+  }
+
+  const featureNames = Array.isArray(sp?.ActiveProfiles?.FeatureProfiles) ? sp.ActiveProfiles.FeatureProfiles : [];
+  for (const name of featureNames.slice(0,10)){
+    const cfg = featureProfiles[name];
+    if (!cfg || typeof cfg !== 'object') continue;
+    const vals = Object.entries(cfg).slice(0,2).map(([k,v])=>`${formatSettingsLabel(k)}: ${shortValue(v)}`).join(' • ');
+    rows.push(`<div class="row" title="${escapeHtml(vals)}"><span>${escapeHtml(formatSettingsLabel(name))}</span><span><b>${escapeHtml(vals || 'Configured')}</b></span></div>`);
+  }
+
+  if (!rows.length){
+    els.settingsArea.innerHTML = `<div class="row"><span>No TherapyProfiles settings found</span><span class="badge">json</span></div>`;
+    return;
+  }
+  els.settingsArea.innerHTML = rows.slice(0,14).join('');
+}
+
+/* ============================
+   EDF parsing
+   ============================ */
+
+function readAscii(view, offset, length){
+  let s = '';
+  for (let i=0;i<length;i++) s += String.fromCharCode(view.getUint8(offset+i));
+  return s;
+}
+function trim(s){ return String(s).trim(); }
+function parseIntSafe(s){ const n = parseInt(String(s).trim(), 10); return Number.isFinite(n) ? n : null; }
+function parseFloatSafe(s){ const n = parseFloat(String(s).trim().replace(',', '.')); return Number.isFinite(n) ? n : null; }
+
+function parseEDFStartDateTime(ddmmyy, hhmmss){
+  const d = trim(ddmmyy), t = trim(hhmmss);
+  const dm = d.split('.'); const tm = t.split('.');
+  if (dm.length < 3 || tm.length < 3) return null;
+  const dd = parseIntSafe(dm[0]), mm = parseIntSafe(dm[1]), yy = parseIntSafe(dm[2]);
+  const HH = parseIntSafe(tm[0]), MM = parseIntSafe(tm[1]), SS = parseIntSafe(tm[2]);
+  if ([dd,mm,yy,HH,MM,SS].some(x => x == null)) return null;
+  const fullY = (yy <= 84) ? (2000 + yy) : (1900 + yy);
+  return new Date(fullY, mm-1, dd, HH, MM, SS);
+}
+
+function parseEDFHeader(buffer){
+  const view = new DataView(buffer);
+  const version = trim(readAscii(view, 0, 8));
+  const patientId = trim(readAscii(view, 8, 80));
+  const recordingId = trim(readAscii(view, 88, 80));
+  const startDate = trim(readAscii(view, 168, 8));
+  const startTime = trim(readAscii(view, 176, 8));
+  const headerBytes = parseIntSafe(readAscii(view, 184, 8)) || 0;
+  const reserved = trim(readAscii(view, 192, 44));
+  const numRecords = parseIntSafe(readAscii(view, 236, 8));
+  const recordDuration = parseFloatSafe(readAscii(view, 244, 8)) || 1;
+  const numSignals = parseIntSafe(readAscii(view, 252, 4)) || 0;
+  const start = parseEDFStartDateTime(startDate, startTime);
+
+  let off = 256;
+  const readFieldArr = (len) => {
+    const arr = [];
+    for (let i=0;i<numSignals;i++){
+      arr.push(trim(readAscii(view, off + i*len, len)));
+    }
+    off += numSignals * len;
+    return arr;
+  };
+
+  const labels      = readFieldArr(16);
+  const transducer  = readFieldArr(80);
+  const physDim     = readFieldArr(8);
+  const physMinS    = readFieldArr(8);
+  const physMaxS    = readFieldArr(8);
+  const digMinS     = readFieldArr(8);
+  const digMaxS     = readFieldArr(8);
+  const prefilter   = readFieldArr(80);
+  const sprS        = readFieldArr(8);
+  const sigReserved = readFieldArr(32);
+
+  const signals = [];
+  for (let i=0;i<numSignals;i++){
+    const physMin = parseFloatSafe(physMinS[i]);
+    const physMax = parseFloatSafe(physMaxS[i]);
+    const digMin  = parseFloatSafe(digMinS[i]);
+    const digMax  = parseFloatSafe(digMaxS[i]);
+    const spr     = parseIntSafe(sprS[i]) || 0;
+
+    const scale = (digMax != null && digMin != null && physMax != null && physMin != null && (digMax - digMin) !== 0)
+      ? ( (physMax - physMin) / (digMax - digMin) )
+      : null;
+    const offset = (scale != null && digMin != null && physMin != null) ? (physMin - scale * digMin) : null;
+    const sampleRate = spr / recordDuration;
+
+    signals.push({
+      index:i,
+      label: labels[i],
+      physDim: physDim[i] || '',
+      physMin, physMax, digMin, digMax,
+      scale, offset,
+      samplesPerRecord: spr,
+      sampleRate,
+      transducer: transducer[i] || '',
+      prefilter: prefilter[i] || '',
+      reserved: sigReserved[i] || ''
+    });
+  }
+
+  return { version, patientId, recordingId, startDate, startTime, start, headerBytes, reserved, numRecords, recordDuration, numSignals, signals };
+}
+
+function estimateDurationSeconds(buffer, header){
+  const nRec = (header.numRecords != null && header.numRecords >= 0) ? header.numRecords : null;
+  const dataStart = header.headerBytes || 0;
+  const recordBytes = header.signals.reduce((sum, s) => sum + s.samplesPerRecord*2, 0);
+  if (recordBytes <= 0) return 0;
+  if (nRec != null) return nRec * (header.recordDuration || 1);
+  const approx = Math.floor((buffer.byteLength - dataStart) / recordBytes) * (header.recordDuration || 1);
+  return Math.max(0, approx);
+}
+
+function normalizeLabel(s){
+  return String(s||'')
+    .toLowerCase()
+    .replace(/[\u00B2]/g,'2')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+function normalizeLabelLoose(s){
+  return normalizeLabel(s).replace(/\b\d+\b/g,'').replace(/\s+/g,' ').trim();
+}
+function cleanEventLabel(s){
+  const t = String(s || '').replace(/[\x00-\x1F]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  return t.length > 80 ? t.slice(0,77) + '…' : t;
+}
+
+
+const EVENT_CODE_LABELS = {
+  '0':'Unknown / Unspecified event',
+  '10':'Obstructive Apnea (OA)',
+  '11':'Hypopnea (H)',
+  '12':'Central Apnea (CA)',
+  '13':'Unclassified Apnea',
+  '14':'RERA / Flow Limitation-related event'
+};
+function humanizeEventCategory(raw){
+  const clean = cleanEventLabel(raw);
+  if (!clean) return '';
+  const m = clean.match(/^\s*(\d{1,3})\s*$/);
+  if (!m) return clean;
+  const code = m[1];
+  return EVENT_CODE_LABELS[code] ? `${EVENT_CODE_LABELS[code]} (code ${code})` : `Device event code ${code}`;
+}
+
+function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec, file){
+  const view = new DataView(buffer);
+  const dataStart = header.headerBytes || 0;
+  const start = resolveFileStartDate(file, header);
+
+  const bytes = [];
+  const isUseful = (b) => b === 0x14 || b === 0x15 || (b >= 0x20 && b <= 0x7E);
+
+  for (let r=0;r<nRec;r++){
+    const recBase = dataStart + r * recordBytes;
+    const sigBase = recBase + sigByteOffset[annSig.index];
+    for (let i=0;i<annSig.samplesPerRecord;i++){
+      const off = sigBase + i*2;
+      if (off + 2 > buffer.byteLength) break;
+      const lo = view.getUint8(off);
+      const hi = view.getUint8(off + 1);
+      bytes.push(lo);
+      if (isUseful(hi)) bytes.push(hi);
+    }
+  }
+
+  let raw = '';
+  for (const b of bytes) raw += String.fromCharCode(b);
+  raw = raw.replace(/\x00+/g, '\x14');
+
+  const evtT = [];
+  const evtType = [];
+  let currentOnset = null;
+
+  const tokens = raw.split('\x14').map(t => t.trim()).filter(Boolean);
+  for (const tok of tokens){
+    const parts = tok.split('\x15');
+    const first = (parts[0] || '').trim();
+    const onsetMatch = first.match(/^[+-]?\d+(?:\.\d+)?$/);
+
+    if (onsetMatch){
+      currentOnset = parseFloat(first);
+      const maybeText = cleanEventLabel(parts.slice(1).join(' | '));
+      if (maybeText){
+        evtT.push(new Date(start.getTime() + currentOnset*1000));
+        evtType.push(maybeText);
+      }
+      continue;
+    }
+
+    if (currentOnset == null) continue;
+    const text = cleanEventLabel(tok.replace(/^\+/, ''));
+    if (!text) continue;
+    evtT.push(new Date(start.getTime() + currentOnset*1000));
+    evtType.push(text);
+  }
+
+  if (!evtT.length) return null;
+  return { t: evtT, type: evtType, source: annSig.label };
+}
+
+
+function resolveFileStartDate(file, header){
+  const parsed = header?.start instanceof Date && Number.isFinite(header.start.getTime()) ? header.start : null;
+  if (parsed && parsed.getFullYear() >= 2000) return parsed;
+  const fallbackISO = file?.folderDateISO || file?._folderDateISO || null;
+  if (!fallbackISO) return parsed || new Date(0);
+  const d = new Date(`${fallbackISO}T12:00:00`);
+  return Number.isFinite(d.getTime()) ? d : (parsed || new Date(0));
+}
+
+async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
+  const header = file.header;
+  const buffer = file.buffer || await file.entry?.async('arraybuffer');
+  if (!buffer) throw new Error(`Missing EDF buffer for ${file.path}`);
+  const view = new DataView(buffer);
+  const dataStart = header.headerBytes || 0;
+
+  const ns = header.numSignals;
+  const recordBytes = header.signals.reduce((sum, s) => sum + s.samplesPerRecord*2, 0);
+  if (recordBytes <= 0) throw new Error('EDF recordBytes computed as 0');
+
+  const nRec = header.numRecords != null && header.numRecords >= 0
+    ? header.numRecords
+    : Math.floor((buffer.byteLength - dataStart) / recordBytes);
+
+  const sigByteOffset = new Array(ns).fill(0);
+  {
+    let acc = 0;
+    for (let i=0;i<ns;i++){
+      sigByteOffset[i] = acc;
+      acc += header.signals[i].samplesPerRecord * 2;
+    }
+  }
+
+  const wanted = {};
+  for (const [k, mappedKey] of Object.entries(mappingKeys)){
+    if (!mappedKey) continue;
+    let sig = null;
+    if (String(mappedKey).includes('::')){
+      const idx = Number(String(mappedKey).split('::').pop());
+      if (Number.isInteger(idx)) sig = header.signals.find(s => s.index === idx) || null;
+    }
+    if (!sig){
+      // Backward compatibility with older saved mapping values based on normalized labels.
+      sig = header.signals.find(s => normalizeLabelLoose(s.label) === mappedKey || normalizeLabel(s.label) === mappedKey) || null;
+    }
+    if (sig) wanted[k] = sig;
+  }
+
+  const out = {};
+  for (const [k, sig] of Object.entries(wanted)){
+    if (k === 'annotations') continue;
+    out[k] = { t:[], y:[], unit: sig.physDim || '', label: sig.label, sampleRate: sig.sampleRate, _source: file.path };
+  }
+
+  const start = resolveFileStartDate(file, header);
+
+  const ds = {};
+  for (const [k, sig] of Object.entries(wanted)){
+    if (k === 'annotations') continue;
+    const totalSamples = nRec * sig.samplesPerRecord;
+    ds[k] = Math.max(1, Math.floor(totalSamples / maxPoints));
+  }
+
+  for (let r=0;r<nRec;r++){
+    const recBase = dataStart + r * recordBytes;
+    for (const [k, sig] of Object.entries(wanted)){
+      if (k === 'annotations') continue;
+      const sigBase = recBase + sigByteOffset[sig.index];
+      for (let i=0;i<sig.samplesPerRecord;i++){
+        const sampleIndex = r * sig.samplesPerRecord + i;
+        if (sampleIndex % ds[k] !== 0) continue;
+
+        const off = sigBase + i*2;
+        if (off + 2 > buffer.byteLength) break;
+
+        const dig = view.getInt16(off, true);
+        let phys = dig;
+        if (sig.scale != null && sig.offset != null) phys = sig.scale * dig + sig.offset;
+
+        const seconds = sampleIndex / (sig.sampleRate || 1);
+        out[k].t.push(new Date(start.getTime() + seconds*1000));
+        out[k].y.push(phys);
+      }
+    }
+  }
+
+  let events = null;
+  if (wanted.annotations){
+    try{ events = readEDFAnnotations(buffer, header, wanted.annotations, sigByteOffset, recordBytes, nRec, file); }catch(e){}
+  }
+
+  return { series: out, events };
+}
+
+function mergeSeriesPickBest(existing, incoming){
+  if (!incoming?.t?.length) return existing;
+  if (!existing?.t?.length) return incoming;
+  const t = existing.t.concat(incoming.t);
+  const y = existing.y.concat(incoming.y);
+  const idx = t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  return { ...existing, t: idx.map(i=>t[i]), y: idx.map(i=>y[i]) };
+}
+
+function clipSeriesToWindow(series, start, end){
+  if (!series?.t?.length) return series;
+  const startMs = start instanceof Date ? start.getTime() : -Infinity;
+  const endMs = end instanceof Date ? end.getTime() : Infinity;
+  const idx = series.t
+    .map((d,i)=>[d?.getTime?.() ?? NaN, i])
+    .filter(([ms]) => Number.isFinite(ms) && ms >= startMs && ms <= endMs)
+    .map(x=>x[1]);
+  return { ...series, t: idx.map(i=>series.t[i]), y: idx.map(i=>series.y[i]) };
+}
+
+function sanitizePressureSeries(series){
+  if (!series?.t?.length) return series;
+  const idx = series.y
+    .map((v,i)=>[v,i])
+    .filter(([v]) => Number.isFinite(v) && v >= 0 && v <= 50)
+    .map(([,i])=>i);
+  if (!idx.length) return series;
+  return { ...series, t: idx.map(i=>series.t[i]), y: idx.map(i=>series.y[i]) };
+}
+
+/* ============================
+   Picker enable + session select
+   ============================ */
+
+function enablePicker(autoSelectMostRecent){
+  const dates = Array.from(state.sessionsByDate.keys()).filter(d => d !== 'unknown').sort();
+  const min = dates[0] || '';
+  const max = dates[dates.length-1] || '';
+
+  els.loadRangeBtn.disabled = !max;
+
+  if (!max){
+    state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
+    state.selectedDateISO = null;
+    els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
+    els.rangeControls.classList.add('disabled');
+    els.rangeControls.classList.remove('ready');
+    renderCalendar();
+    return;
+  }
+
+  state.selectedDateISO = autoSelectMostRecent ? max : (state.selectedDateISO || max);
+  state.selectedRange.startISO = state.selectedDateISO;
+  state.selectedRange.endISO = state.selectedDateISO;
+  state.calendarView = state.calendarView || new Date(`${state.selectedDateISO}T00:00:00`);
+
+  applyRangeMode(state.selectedRange.mode || 'night');
+  els.rangeControls.classList.remove('disabled');
+  els.rangeControls.classList.add('ready');
+  renderCalendar();
+}
+
+function formatHours(sec){ return `${(sec/3600).toFixed(2)}h`; }
+
+function isoToDate(iso){ return iso ? new Date(`${iso}T00:00:00`) : null; }
+function addDaysISO(iso, days){
+  const d = isoToDate(iso); if (!d) return null;
+  d.setDate(d.getDate()+days);
+  return localDateISO(d);
+}
+function monthBoundsISO(iso){
+  const d = isoToDate(iso); if (!d) return {start:null,end:null};
+  const a = new Date(d.getFullYear(), d.getMonth(), 1);
+  const b = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return { start: localDateISO(a), end: localDateISO(b) };
+}
+
+function applyRangeMode(mode){
+  state.selectedRange.mode = mode;
+  const btns = [els.modeNight, els.modeWeek, els.modeMonth, els.modeCustom];
+  for (const b of btns) b.classList.toggle('active', b.id === `mode${mode[0].toUpperCase()+mode.slice(1)}`);
+
+  const anchor = state.selectedDateISO || Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0];
+  if (!anchor) return;
+  if (mode === 'night'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = anchor;
+    state.selectedRange.endISO = anchor;
+  } else if (mode === 'week'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = addDaysISO(anchor, -6);
+    state.selectedRange.endISO = anchor;
+  } else if (mode === 'month'){
+    state.selectedRange.pickingStart = true;
+    const b = monthBoundsISO(anchor);
+    state.selectedRange.startISO = b.start;
+    state.selectedRange.endISO = b.end;
+  } else if (mode === 'custom'){
+    state.selectedRange.pickingStart = true;
+    state.selectedRange.startISO = state.selectedRange.startISO || anchor;
+    state.selectedRange.endISO = state.selectedRange.endISO || anchor;
+  }
+  const dates = Array.from(state.sessionsByDate.keys()).filter(d => d !== 'unknown').sort();
+  const min = dates[0] || '';
+  const max = dates[dates.length-1] || '';
+  if (min && state.selectedRange.startISO < min) state.selectedRange.startISO = min;
+  if (max && state.selectedRange.endISO > max) state.selectedRange.endISO = max;
+  if (state.selectedRange.startISO > state.selectedRange.endISO){
+    const t = state.selectedRange.startISO;
+    state.selectedRange.startISO = state.selectedRange.endISO;
+    state.selectedRange.endISO = t;
+  }
+  updateRangeHint();
+  renderCalendar();
+}
+
+function updateRangeHint(){
+  const {startISO, endISO, mode} = state.selectedRange;
+  if (!startISO || !endISO){
+    els.rangeHint.textContent = 'Select a date range.';
+    return;
+  }
+  const labelMode = humanizeWords(mode).replace(/^./, c=>c.toUpperCase());
+  els.rangeHint.textContent = `${labelMode}: ${startISO} → ${endISO}`;
+}
+
+function renderCalendar(){
+  if (!els.calGrid) return;
+  els.calGrid.innerHTML = '';
+  const dates = new Set(Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown'));
+  const base = state.calendarView || isoToDate(state.selectedDateISO || localDateISO(new Date())) || new Date();
+  const y = base.getFullYear(), m = base.getMonth();
+  const allDates = Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort();
+  const months = Array.from(new Set(allDates.map(d=>d.slice(0,7))));
+  const curMonth = `${base.getFullYear()}-${pad2(base.getMonth()+1)}`;
+  els.calMonthSelect.innerHTML = months.map(m=>`<option value="${m}">${new Date(`${m}-01T00:00:00`).toLocaleString(undefined,{month:'long',year:'numeric'})}</option>`).join('');
+  els.calMonthSelect.value = months.includes(curMonth) ? curMonth : (months[months.length-1] || '');
+
+  const first = new Date(y,m,1);
+  const start = new Date(first); start.setDate(first.getDate() - first.getDay());
+
+  for (let i=0;i<42;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const iso = localDateISO(d);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'day';
+    if (d.getMonth() !== m) b.classList.add('muted');
+    if (dates.has(iso)) b.classList.add('hasData');
+    if (state.selectedRange.startISO && state.selectedRange.endISO && iso >= state.selectedRange.startISO && iso <= state.selectedRange.endISO){
+      b.classList.add('selected');
+      if (iso === state.selectedRange.startISO || iso === state.selectedRange.endISO) b.classList.add('boundary');
+    }
+    b.textContent = String(d.getDate());
+    b.disabled = !dates.has(iso);
+    b.addEventListener('click', ()=>{
+      state.selectedDateISO = iso;
+      if (state.selectedRange.mode === 'custom'){
+        if (state.selectedRange.pickingStart){
+          state.selectedRange.startISO = iso;
+          state.selectedRange.endISO = iso;
+          state.selectedRange.pickingStart = false;
+        } else {
+          state.selectedRange.endISO = iso;
+          if (state.selectedRange.startISO > state.selectedRange.endISO){
+            const t = state.selectedRange.startISO;
+            state.selectedRange.startISO = state.selectedRange.endISO;
+            state.selectedRange.endISO = t;
+          }
+          state.selectedRange.pickingStart = true;
+        }
+      } else {
+        applyRangeMode(state.selectedRange.mode);
+      }
+      updateRangeHint();
+      renderCalendar();
+    });
+    els.calGrid.appendChild(b);
+  }
+}
+
+async function loadRange(){
+  const { startISO, endISO } = state.selectedRange;
+  if (!startISO || !endISO) return;
+  progress('Preparing range', 52, `Processing range ${startISO} → ${endISO}. Please wait…`);
+  setStatus('Processing range…','neutral');
+  toast('Loading selected timeframe…');
+  const dates = Array.from(state.sessionsByDate.keys()).filter(d => d!=='unknown' && d >= startISO && d <= endISO).sort();
+  const sessions = dates.flatMap(d => state.sessionsByDate.get(d)?.sessions || []);
+  if (!sessions.length){
+    toast('No sessions in selected range.');
+    return;
+  }
+  await loadSessionsAggregate(sessions, `${dates[0]} → ${dates[dates.length-1]}`);
+}
+
+/* ============================
+   Load session
+   ============================ */
+
+async function loadSession(dateISO, sessionKey, jobId = state.jobId){
+  assertActive(jobId);
+  const pack = state.sessionsByDate.get(dateISO);
+  const sess = pack?.sessions?.find(s => s.key === sessionKey);
+  if (!sess) return;
+  await loadSessionsAggregate([sess], sess.label || dateISO, jobId);
+}
+
+async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
+  assertActive(jobId);
+  const safeSessions = (sessions || []).filter(Boolean);
+  if (!safeSessions.length) return;
+
+  state.current.session = {
+    key: safeSessions.map(s=>s.key).join('|'),
+    label,
+    start: safeSessions.reduce((m,s)=>!m||s.start<m?s.start:m, null),
+    end: safeSessions.reduce((m,s)=>!m||s.end>m?s.end:m, null),
+    files: safeSessions.flatMap(s => s.files || [])
+  };
+  state.current.edfFiles = [];
+  state.current.signalCatalog = [];
+  state.current.mapping = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null };
+  state.current.signals = {};
+  state.current.events = null;
+  state.current.stats = {};
+  state.current.raw = {};
+
+
+  setStatus('Loading selection…','neutral');
+  progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)… This can take a bit for large ranges.`);
+  toast('Loading selection…');
+  log(`Loading: ${label} (${state.current.session.files.length} EDF file(s))`);
+
+  const n = state.current.session.files.length;
+  for (let i=0;i<n;i++){
+    assertActive(jobId);
+    const seg = state.current.session.files[i];
+    const pct = 60 + ((i)/Math.max(1,n))*20;
+    progress('Loading selection', pct, `Reading EDF ${i+1}/${n}: ${seg.path.split('/').pop()}`);
+    await tick();
+    if (!seg.entry) continue;
+    const buffer = await seg.entry.async('arraybuffer');
+    assertActive(jobId);
+    const header = parseEDFHeader(buffer);
+    state.current.edfFiles.push({ path: seg.path, entry: seg.entry, header, buffer: null, folderDateISO: seg._folderDateISO || null });
+    state.current.raw[seg.path] = {
+      start: header.start?.toISOString?.() || null,
+      patientId: header.patientId,
+      recordingId: header.recordingId,
+      signals: header.signals.map(s => ({ label:s.label, unit:s.physDim, sr:+(s.sampleRate||0).toFixed(3), spr:s.samplesPerRecord }))
+    };
+  }
+
+  progress('Cataloging signals', 82, 'Building signal catalog…');
+  await tick();
+  assertActive(jobId);
+
+  const catalog = [];
+  for (const f of state.current.edfFiles){
+    for (const s of f.header.signals){
+      catalog.push({
+        key: `${f.path}::${s.index}`,
+        normKey: normalizeLabelLoose(s.label),
+        normKeyStrict: normalizeLabel(s.label),
+        signalIndex: s.index,
+        label: s.label,
+        unit: s.physDim,
+        sr: s.sampleRate,
+        file: f.path
+      });
+    }
+  }
+  const seen = new Set();
+  const uniq = [];
+  for (const c of catalog){
+    const k = `${c.normKey}__${c.unit||''}__${c.file}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniq.push(c);
+  }
+  state.current.signalCatalog = uniq;
+
+  progress('Auto-mapping', 85, `Found ${uniq.length} unique signals. Auto-detecting…`);
+  await tick();
+  assertActive(jobId);
+
+  autoMapSignals();
+  renderMappingUI();
+
+  progress('Extracting signals', 88, 'Reading samples for mapped signals…');
+  await tick();
+  assertActive(jobId);
+
+  await extractSignalsAndRender();
+  setStatus('Ready','good');
+  toast('Selection ready ✔️');
+}
+
+/* ============================
+   Auto-mapping
+   ============================ */
+
+function autoMapSignals(){
+  const cat = state.current.signalCatalog;
+
+  const alias = {
+    leak: [
+      'leak', 'mask leak', 'total leak', 'unintentional leak', 'leak rate',
+      'maskleak', 'leakrate'
+    ],
+    pressure: [
+      'pressure', 'mask pressure', 'therapy pressure', 'epap', 'ipap', 'press', 'mask pres',
+      'therapy pres', 'delivered pressure'
+    ],
+    flow: [
+      'flow', 'flow rate', 'airflow', 'resp flow', 'respiratory flow', 'flowrate'
+    ],
+    snore: [
+      'snore2s', 'snore', 'snore index'
+    ],
+    respRate: [
+      'respiratory rate', 'respiratory rate 2s', 'respiratory rate2s',
+      'resprate2s', 'resprate.2s', 'resp rate 2s', 'resp rate2s', 'resprate 2s',
+      'resp rate', 'breath rate', 'breaths min'
+    ],
+    tidalVolume: [
+      'tidvol.2s', 'tidvol2s', 'tid vol 2s', 'tidal volume', 'tidal vol', 'tv', 'tid vol'
+    ],
+    epr: [
+      'eprpress.2s', 'epr press 2s', 'epr pressure', 'epr', 'expiratory pressure relief', 'exp pressure relief'
+    ],
+    annotations: [
+      'edf annotations', 'annotations', 'annotation'
+    ]
+  };
+
+  function scoreSignal(targetKey, sig){
+    const labelN = normalizeLabelLoose(sig.label);
+    const unitN  = normalizeLabelLoose(sig.unit || '');
+    const fileN  = normalizeLabelLoose(sig.file || '');
+
+    let score = 0;
+    const aliases = alias[targetKey] || [];
+
+    for (const a of aliases){
+      const an = normalizeLabelLoose(a);
+      if (!an) continue;
+      if (labelN === an) score += 60;
+      if (labelN.includes(an)) score += 28;
+      const toksA = an.split(' ').filter(Boolean);
+      const toksL = new Set(labelN.split(' ').filter(Boolean));
+      const overlap = toksA.filter(t => toksL.has(t)).length;
+      score += overlap * 6;
+    }
+
+    if (targetKey === 'leak'){
+      if (unitN.includes('l') && unitN.includes('min')) score += 10;
+      if (unitN.includes('l min')) score += 10;
+    }
+    if (targetKey === 'pressure'){
+      if (unitN.includes('cm') && (unitN.includes('h2o') || unitN.includes('h2'))) score += 14;
+      if (labelN.includes('therapy') && labelN.includes('pressure')) score += 18;
+      if (labelN.includes('mask') && labelN.includes('pressure')) score += 16;
+      if (labelN.includes('pressure2s') || labelN.includes('press2s')) score += 18;
+      if (labelN.includes('epap') || labelN.includes('ipap')) score -= 4;
+    }
+    if (targetKey === 'snore' && (labelN.includes('snore') || unitN.includes('snore'))) score += 16;
+    if (targetKey === 'respRate' && (labelN.includes('resp') || labelN.includes('rate') || unitN.includes('/min'))) score += 10;
+    if (targetKey === 'tidalVolume'){
+      if (labelN.includes('tidvol') || labelN.includes('tid vol')) score += 42;
+      if (labelN.includes('tidal') && labelN.includes('volume')) score += 26;
+      if (unitN.includes('ml') || unitN.includes('l')) score += 10;
+    }
+    if (targetKey === 'epr'){
+      if (labelN.includes('eprpress') || labelN.includes('epr press')) score += 42;
+      if (labelN.includes('expiratory') && labelN.includes('pressure') && labelN.includes('relief')) score += 30;
+      if (labelN === 'epr' || labelN.includes(' epr ')) score += 14;
+      if (unitN.includes('cm') && (unitN.includes('h2o') || unitN.includes('h2'))) score += 8;
+    }
+    if (targetKey === 'annotations' && (labelN.includes('annot') || labelN.includes('event'))) score += 12;
+
+    if (targetKey !== 'annotations'){
+      if (fileN.includes('str edf') || fileN.endsWith('str edf')) score -= 6;
+      if (sig.sr && sig.sr >= 1) score += Math.min(10, Math.log10(sig.sr+1)*6);
+    }
+
+    return score;
+  }
+
+  function pickBest(targetKey){
+    let best = null;
+    let bestScore = -Infinity;
+    for (const s of cat){
+      const sc = scoreSignal(targetKey, s);
+      if (sc > bestScore){
+        bestScore = sc;
+        best = s;
+      }
+    }
+    if (!best || bestScore < 18) return null;
+    return best.key;
+  }
+
+  state.current.mapping.leak = pickBest('leak');
+  state.current.mapping.pressure = pickBest('pressure');
+  state.current.mapping.flow = pickBest('flow');
+  state.current.mapping.snore = pickBest('snore');
+  state.current.mapping.respRate = pickBest('respRate');
+  state.current.mapping.tidalVolume = pickBest('tidalVolume');
+  state.current.mapping.epr = pickBest('epr');
+  state.current.mapping.annotations = pickBest('annotations');
+
+  log(`Auto-map: ${JSON.stringify(state.current.mapping)}`);
+}
+
+function renderMappingUI(){
+  const cat = state.current.signalCatalog;
+
+  const opts = [
+    { value:'', text:'(not set)' },
+    ...cat.map(c => ({
+      value: c.key,
+      text: `${c.label}${c.unit ? ` [${c.unit}]` : ''} — ${c.file.split('/').pop()}`
+    }))
+  ];
+
+  const mkSelect = (id, value) => {
+    const sel = document.createElement('select');
+    sel.id = id;
+    for (const o of opts){
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.text;
+      if (o.value === value) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    return sel;
+  };
+
+  els.mapGrid.innerHTML = '';
+  const rows = [
+    { label:'Leak', key:'leak' },
+    { label:'Pressure', key:'pressure' },
+    { label:'Flow', key:'flow' },
+    { label:'Snore', key:'snore' },
+    { label:'Respiratory Rate', key:'respRate' },
+    { label:'Tidal Volume', key:'tidalVolume' },
+    { label:'EPR', key:'epr' },
+    { label:'Events', key:'annotations' },
+  ];
+
+  for (const r of rows){
+    const wrap = document.createElement('div');
+    wrap.className = 'mapRow';
+    const lab = document.createElement('label');
+    lab.textContent = r.label;
+    const sel = mkSelect(`map_${r.key}`, state.current.mapping[r.key] || '');
+    wrap.appendChild(lab);
+    wrap.appendChild(sel);
+    els.mapGrid.appendChild(wrap);
+  }
+
+  els.applyMappingBtn.disabled = false;
+
+  populateExploreOptions(cat);
+
+  els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signal labels found.`;
+  els.rawDump.textContent = JSON.stringify({
+    sdMarkers: state.meta.rootMarkers,
+    device: state.identification,
+    session: { label: state.current.session?.label, files: state.current.edfFiles.map(f=>f.path) },
+    signalCatalog: cat,
+    mapping: state.current.mapping
+  }, null, 2);
+}
+
+
+function populateExploreOptions(cat){
+  if (!els.exploreSelect) return;
+  els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
+  for (const c of cat){
+    const opt = document.createElement('option');
+    opt.value = c.key;
+    opt.textContent = `${c.label}${c.unit ? ` [${c.unit}]` : ''} — ${c.file.split('/').pop()}`;
+    els.exploreSelect.appendChild(opt);
+  }
+  els.exploreSelect.disabled = cat.length === 0;
+}
+
+async function renderExplorePlot(){
+  const key = els.exploreSelect?.value;
+  if (!key){
+    Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (select a signal)')}, plotConfig);
+    els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a mapped signal from the dropdown below to display it here.';
+    return;
+  }
+  const merged = { t:[], y:[], unit:'', label:'' };
+  for (const f of state.current.edfFiles){
+    const { series } = await readSelectedSignalsFromEDF(f, { custom:key }, 120000);
+    const ser = series.custom;
+    if (!ser?.t?.length) continue;
+    merged.t = merged.t.concat(ser.t);
+    merged.y = merged.y.concat(ser.y);
+    merged.unit = merged.unit || ser.unit;
+    merged.label = merged.label || ser.label;
+  }
+  if (!merged.t.length){
+    Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (no data for selected signal)')}, plotConfig);
+    els.exploreNarrative.innerHTML = '<b>No data for selected mapping in this timeframe.</b>';
+    return;
+  }
+  const idx = merged.t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  const t = idx.map(i=>merged.t[i]);
+  const y = idx.map(i=>merged.y[i]);
+  Plotly.newPlot(els.plotExplore, [{x:t,y:y,type:'scatter',mode:'lines',line:{color:'rgba(97,212,195,.95)',width:2}}], {
+    ...CALM_LAYOUT(`Explore — ${merged.label || 'Custom signal'}`),
+    yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: merged.unit ? `${merged.label} (${merged.unit})` : (merged.label || 'Value') } }
+  }, plotConfig);
+  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(merged.label || 'selected signal')}</b> across the selected timeframe.`;
+}
+
+function applyMappingFromUI(){
+  const leak = document.getElementById('map_leak')?.value || '';
+  const pressure = document.getElementById('map_pressure')?.value || '';
+  const flow = document.getElementById('map_flow')?.value || '';
+  const snore = document.getElementById('map_snore')?.value || '';
+  const respRate = document.getElementById('map_respRate')?.value || '';
+  const tidalVolume = document.getElementById('map_tidalVolume')?.value || '';
+  const epr = document.getElementById('map_epr')?.value || '';
+  const annotations = document.getElementById('map_annotations')?.value || '';
+  state.current.mapping = {
+    leak: leak||null,
+    pressure: pressure||null,
+    flow: flow||null,
+    snore: snore||null,
+    respRate: respRate||null,
+    tidalVolume: tidalVolume||null,
+    epr: epr||null,
+    annotations: annotations||null
+  };
+  log(`Applied manual mapping: ${JSON.stringify(state.current.mapping)}`);
+  els.rawDump.textContent = JSON.stringify({
+    identification: state.identification,
+    session: { label: state.current.session?.label, files: state.current.edfFiles.map(f=>f.path) },
+    mapping: state.current.mapping,
+    edfHeaders: state.current.raw
+  }, null, 2);
+}
+
+/* ============================
+   Extract signals + render
+   ============================ */
+
+async function extractSignalsAndRender(){
+  setStatus('Processing…','neutral');
+
+  const mapping = state.current.mapping;
+  const merged = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null };
+  let mergedEvents = { t:[], type:[] };
+
+  const files = state.current.edfFiles;
+  const n = files.length;
+
+  for (let i=0;i<n;i++){
+    const f = files[i];
+    const pct = 88 + ((i)/Math.max(1,n))*8;
+    progress('Extracting signals', pct, `Parsing EDF ${i+1}/${n}: ${f.path.split('/').pop()} — please wait for large ranges…`);
+
+    const { series, events } = await readSelectedSignalsFromEDF(f, mapping, 90000);
+    merged.leak = mergeSeriesPickBest(merged.leak, series.leak);
+    merged.pressure = mergeSeriesPickBest(merged.pressure, series.pressure);
+    merged.flow = mergeSeriesPickBest(merged.flow, series.flow);
+    merged.snore = mergeSeriesPickBest(merged.snore, series.snore);
+    merged.respRate = mergeSeriesPickBest(merged.respRate, series.respRate);
+    merged.tidalVolume = mergeSeriesPickBest(merged.tidalVolume, series.tidalVolume);
+    merged.epr = mergeSeriesPickBest(merged.epr, series.epr);
+
+    if (events?.t?.length){
+      mergedEvents.t.push(...events.t);
+      mergedEvents.type.push(...events.type);
+    }
+  }
+
+  let eventsOut = null;
+  if (mergedEvents.t.length){
+    const startMs = state.current.session?.start instanceof Date ? state.current.session.start.getTime() : -Infinity;
+    const endMs = state.current.session?.end instanceof Date ? state.current.session.end.getTime() : Infinity;
+    const idx = mergedEvents.t
+      .map((d,i)=>[d?.getTime?.() ?? NaN, i])
+      .filter(([ms]) => Number.isFinite(ms) && ms >= startMs && ms <= endMs)
+      .sort((a,b)=>a[0]-b[0])
+      .map(x=>x[1]);
+    eventsOut = { t: idx.map(i=>mergedEvents.t[i]), type: idx.map(i=>mergedEvents.type[i]) };
+  }
+
+  const clippedLeak = clipSeriesToWindow(merged.leak, state.current.session?.start, state.current.session?.end);
+  const clippedPressure = sanitizePressureSeries(clipSeriesToWindow(merged.pressure, state.current.session?.start, state.current.session?.end));
+  const clippedFlow = clipSeriesToWindow(merged.flow, state.current.session?.start, state.current.session?.end);
+  const clippedSnore = clipSeriesToWindow(merged.snore, state.current.session?.start, state.current.session?.end);
+  const clippedRespRate = clipSeriesToWindow(merged.respRate, state.current.session?.start, state.current.session?.end);
+  const clippedTidalVolume = clipSeriesToWindow(merged.tidalVolume, state.current.session?.start, state.current.session?.end);
+  const clippedEpr = clipSeriesToWindow(merged.epr, state.current.session?.start, state.current.session?.end);
+
+  state.current.signals = {
+    leak: clippedLeak,
+    pressure: clippedPressure,
+    flow: clippedFlow,
+    snore: clippedSnore,
+    respRate: clippedRespRate,
+    tidalVolume: clippedTidalVolume,
+    epr: clippedEpr
+  };
+  state.current.events = eventsOut;
+
+  progress('Analyzing', 97, 'Computing stats + writing explanations…');
+  try {
+    analyzeAndRender();
+    await renderExplorePlot();
+    progress('Done', 100, 'Report ready.');
+    setStatus('Ready','good');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error','bad');
+    progress('Error', 100, `Analysis failed: ${err?.message || err}`);
+    log('❌ Analysis failed: ' + (err?.message || err));
+  }
+}
+
+/* ============================
+   Analysis + plots
+   ============================ */
+
+function cleanNums(arr){ return (arr||[]).filter(v => Number.isFinite(v)); }
+function percentile(arr, p){
+  const a = cleanNums(arr).slice().sort((x,y)=>x-y);
+  if (!a.length) return null;
+  const idx = (a.length-1) * p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return a[lo];
+  const w = idx - lo;
+  return a[lo]*(1-w) + a[hi]*w;
+}
+function timeSpanHours(series){
+  if (!series?.t?.length) return null;
+  return (series.t[series.t.length-1] - series.t[0]) / 1000 / 3600;
+}
+function deviceHeadline(){
+  const id = state.identification;
+  if (!id) return 'Unknown device';
+  const flat = flattenObject(id, 5);
+  const items = Object.entries(flat).map(([k,v])=>({k:shortenIdKey(k), v}));
+  const get = (needle) => {
+    const n = needle.toLowerCase();
+    const hit = items.find(it => String(it.k).toLowerCase() === n) ||
+                items.find(it => String(it.k).toLowerCase().includes(n));
+    return hit ? String(hit.v ?? '') : '';
+  };
+  const make = get('Manufacturer') || get('Brand') || get('FG P1.Manufacturer');
+  const model = get('Model') || get('MachineModel') || get('FG P1.Model');
+  const mode = get('Mode') || get('PAPMode') || get('FG P1.Mode');
+  const serial = get('SerialNumber') || get('DeviceSerial') || get('FG P1.SerialNumber') || get('FG P1.DeviceSerial');
+  return [ [make,model].filter(Boolean).join(' ').trim() || 'Unknown',
+           [mode?`Mode: ${mode}`:'', serial?`SN: ${serial}`:''].filter(Boolean).join(' • ')
+         ].filter(Boolean).join(' — ');
+}
+
+function analyzeAndRender(){
+  const s = state.current.signals;
+  const ev = state.current.events;
+  const sess = state.current.session;
+
+  const stats = {};
+  const usage = Math.max(
+    timeSpanHours(s.leak) ?? 0,
+    timeSpanHours(s.pressure) ?? 0,
+    timeSpanHours(s.flow) ?? 0,
+    sess ? (sess.end - sess.start)/1000/3600 : 0
+  );
+  stats.usageHrs = usage || null;
+
+  if (s.leak?.y?.length){
+    stats.leakP50 = percentile(s.leak.y, 0.50);
+    stats.leakP95 = percentile(s.leak.y, 0.95);
+    // "Common" ResMed large-leak reference point; we label it as a rule-of-thumb.
+    stats.largeLeakThreshold = 24;
+    const thr = stats.largeLeakThreshold;
+    stats.largeLeakPct = s.leak.y.filter(v => v >= thr).length / s.leak.y.length * 100;
+  }
+  if (s.pressure?.y?.length){
+    stats.p50 = percentile(s.pressure.y, 0.50);
+    stats.p95 = percentile(s.pressure.y, 0.95);
+  }
+  if (ev?.t?.length && stats.usageHrs && stats.usageHrs > 0.1){
+    stats.ahiEst = ev.t.length / stats.usageHrs;
+  }
+  state.current.stats = stats;
+
+  els.kpiUsage.textContent = stats.usageHrs != null ? `${stats.usageHrs.toFixed(2)} h` : '—';
+  els.kpiUsageNote.textContent = stats.usageHrs != null ? 'Based on detected signal time span.' : 'No usable time span.';
+  els.kpiLeak95.textContent = stats.leakP95 != null ? stats.leakP95.toFixed(1) : '—';
+  els.kpiLeak95Note.textContent = stats.leakP95 != null ? '95% of the night was at/below this leak.' : 'Leak not mapped.';
+  els.kpiP50.textContent = stats.p50 != null ? stats.p50.toFixed(1) : '—';
+  els.kpiP50Note.textContent = stats.p50 != null ? 'Median pressure.' : 'Pressure not mapped.';
+  els.kpiAHI.textContent = stats.ahiEst != null ? stats.ahiEst.toFixed(2) : '—';
+  els.kpiAHINote.textContent = stats.ahiEst != null ? 'Estimated from annotations.' : 'No annotations mapped/found.';
+
+  renderPlotsAndText();
+}
+
+function renderPlotsAndText(){
+  const s = state.current.signals;
+  const ev = state.current.events;
+  const st = state.current.stats;
+  const sess = state.current.session;
+
+  const traces = [];
+  let needY2 = false;
+
+  if (s.leak?.t?.length){
+    traces.push({
+      x: s.leak.t, y: s.leak.y, type:'scatter', mode:'lines',
+      name:`Leak${s.leak.unit?` (${s.leak.unit})`:''}`,
+      line:{ color:'rgba(255,107,122,.85)', width:2.3 },
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{y:.1f}</b><extra></extra>'
+    });
+  }
+  if (s.pressure?.t?.length){
+    needY2 = traces.length > 0;
+    traces.push({
+      x: s.pressure.t, y: s.pressure.y, type:'scatter', mode:'lines',
+      name:`Pressure${s.pressure.unit?` (${s.pressure.unit})`:''}`,
+      yaxis: needY2 ? 'y2' : 'y',
+      line:{ color:'rgba(97,212,195,.92)', width:2.3 },
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{y:.1f}</b><extra></extra>'
+    });
+  }
+
+  if (!traces.length){
+    Plotly.newPlot(els.plotOverview, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Overview (no mapped signals)')}, plotConfig);
+  } else {
+    const layout = CALM_LAYOUT(`Overview — ${sess?.label || ''}`);
+    if (needY2){
+      layout.yaxis.title = { text:'Leak', font:{ color:'rgba(255,107,122,.85)' } };
+      layout.yaxis2 = {
+        title:{ text:'Pressure', font:{ color:'rgba(97,212,195,.92)' } },
+        overlaying:'y', side:'right',
+        gridcolor:'rgba(255,255,255,.02)',
+        zerolinecolor:'rgba(255,255,255,.06)',
+        tickcolor:'rgba(255,255,255,.25)',
+      };
+    }
+    Plotly.newPlot(els.plotOverview, traces, layout, plotConfig);
+  }
+
+  els.overviewSummary.innerHTML = `
+    <b>Status</b><br/>
+    Loaded: <b>${escapeHtml(sess?.label || '—')}</b><br/>
+    Device: <b>${escapeHtml(deviceHeadline())}</b>
+  `;
+
+  els.overviewNarrative.innerHTML = `
+    <b>What you’re looking at:</b><br/>
+    Overview helps you spot whether leak spikes line up with pressure changes.<br/><br/>
+    <b>Indexing rule:</b> Sessions are grouped by <b>DATALOG/YYYYMMDD</b> folders.
+  `;
+
+  if (s.leak?.t?.length){
+    const thr = st.largeLeakThreshold ?? 24;
+    const lay = CALM_LAYOUT('Mask leak rate');
+    lay.yaxis.title = { text: s.leak.unit ? `Leak (${s.leak.unit})` : 'Leak' };
+    lay.shapes = [{
+      type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:thr, y1:thr,
+      line:{ color:'rgba(255,204,102,.75)', width:2, dash:'dot' }
+    }];
+    Plotly.newPlot(els.plotLeak, [{
+      x:s.leak.t, y:s.leak.y, type:'scatter', mode:'lines',
+      name:'Leak', line:{ color:'rgba(255,107,122,.85)', width:2.5 }
+    }], lay, plotConfig);
+
+    const pct = st.largeLeakPct;
+    const p95 = st.leakP95;
+    const tone =
+      (pct != null && pct >= 20) || (p95 != null && p95 >= (thr + 6)) ? 'Likely problematic' :
+      (pct != null && pct >= 5)  || (p95 != null && p95 >= thr) ? 'Worth improving' :
+      'Mostly controlled';
+
+    els.leakNarrative.innerHTML = `
+      <b>Leak explained:</b> extra air escaping beyond expected venting. Sampled <b>every 2 seconds</b>.<br/>
+      <b>Your reading:</b> <b>${tone}</b><br/>
+      • Median: <b>${st.leakP50 != null ? st.leakP50.toFixed(1) : '—'}</b><br/>
+      • P95: <b>${st.leakP95 != null ? st.leakP95.toFixed(1) : '—'}</b><br/>
+      • Time ≥ ${thr}: <b>${pct != null ? pct.toFixed(1)+'%' : '—'}</b>
+    `;
+  } else {
+    Plotly.newPlot(els.plotLeak, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Leaks (not mapped)')}, plotConfig);
+    els.leakNarrative.innerHTML = `<b>No leak signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+  if (s.pressure?.t?.length){
+    Plotly.newPlot(els.plotPressure, [{
+      x:s.pressure.t, y:s.pressure.y, type:'scatter', mode:'lines',
+      name:'Pressure', line:{ color:'rgba(97,212,195,.92)', width:2.5 }
+    }], {
+      ...CALM_LAYOUT('Therapy pressure'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.pressure.unit ? `Pressure (${s.pressure.unit})` : 'Pressure' } }
+    }, plotConfig);
+
+    els.pressureNarrative.innerHTML = `
+      <b>Pressure explained:</b> the “air support” keeping your airway open.<br/>Sample rate: <b>every 1 second</b>.<br/><br/>
+      • Median: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
+      • P95: <b>${st.p95 != null ? st.p95.toFixed(1) : '—'}</b>
+    `;
+  } else {
+    Plotly.newPlot(els.plotPressure, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Pressure (not mapped)')}, plotConfig);
+    els.pressureNarrative.innerHTML = `<b>No pressure signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+  if (s.flow?.t?.length){
+    Plotly.newPlot(els.plotFlow, [{
+      x:s.flow.t, y:s.flow.y, type:'scatter', mode:'lines',
+      name:'Flow', line:{ color:'rgba(122,167,255,.92)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Flow'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.flow.unit ? `Flow (${s.flow.unit})` : 'Flow' } }
+    }, plotConfig);
+
+    els.flowNarrative.innerHTML = `<b>Flow explained:</b> your breathing waveform (useful for pattern context).`;
+  } else {
+    Plotly.newPlot(els.plotFlow, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Flow (not mapped)')}, plotConfig);
+    els.flowNarrative.innerHTML = `<b>No flow signal mapped.</b> Use the mapping UI on the left.`;
+  }
+
+
+  if (s.snore?.t?.length){
+    Plotly.newPlot(els.plotSnore, [{
+      x:s.snore.t, y:s.snore.y, type:'scatter', mode:'lines',
+      name:'Snore', line:{ color:'rgba(255,204,102,.95)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Snore'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore (${s.snore.unit})` : 'Snore' } }
+    }, plotConfig);
+    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.`;
+  } else {
+    Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Snore (not mapped)')}, plotConfig);
+    els.snoreNarrative.innerHTML = `<b>No Snore signal mapped.</b> Set Snore in the mapping panel if available.`;
+  }
+
+  if (s.respRate?.t?.length){
+    Plotly.newPlot(els.plotRespRate, [{
+      x:s.respRate.t, y:s.respRate.y, type:'scatter', mode:'lines',
+      name:'Respiratory Rate', line:{ color:'rgba(110,231,166,.95)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Respiratory Rate'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `Respiratory Rate (${s.respRate.unit})` : 'Respiratory Rate' } }
+    }, plotConfig);
+    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM means Breaths Per Minute</b>. Watch for sustained rises/falls compared with your usual baseline.`;
+  } else {
+    Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Respiratory Rate (not mapped)')}, plotConfig);
+    els.respRateNarrative.innerHTML = `<b>No Respiratory Rate signal mapped.</b> Set Respiratory Rate in the mapping panel if available.`;
+  }
+
+  if (s.tidalVolume?.t?.length){
+    const unitN = normalizeLabelLoose(s.tidalVolume.unit || '');
+    const asLiters = unitN.includes('l') && !unitN.includes('ml');
+    const maleBase = asLiters ? 0.5 : 500;
+    const femaleBase = asLiters ? 0.4 : 400;
+    const layTv = {
+      ...CALM_LAYOUT('Tidal Volume'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.tidalVolume.unit ? `Tidal Volume (${s.tidalVolume.unit})` : 'Tidal Volume (mL)' } },
+      shapes:[
+        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:maleBase, y1:maleBase, line:{color:'rgba(122,167,255,.75)', width:2, dash:'dot'}},
+        {type:'line', xref:'paper', x0:0, x1:1, yref:'y', y0:femaleBase, y1:femaleBase, line:{color:'rgba(255,204,102,.75)', width:2, dash:'dot'}}
+      ]
+    };
+    Plotly.newPlot(els.plotTidalVolume, [{
+      x:s.tidalVolume.t, y:s.tidalVolume.y, type:'scatter', mode:'lines',
+      name:'Tidal Volume', line:{ color:'rgba(186,148,255,.95)', width:2.1 }
+    }], layTv, plotConfig);
+    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath. Typical resting baseline is about <b>${asLiters ? '0.5 L' : '500 mL'} for men</b> and <b>${asLiters ? '0.4 L' : '400 mL'} for women</b> (shown as reference lines).`;
+  } else {
+    Plotly.newPlot(els.plotTidalVolume, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Tidal Volume (not mapped)')}, plotConfig);
+    els.tidalNarrative.innerHTML = `<b>No Tidal Volume signal mapped.</b> Tidal Volume uses <b>TidVol.2s</b> when available.`;
+  }
+
+  if (s.epr?.t?.length){
+    Plotly.newPlot(els.plotEpr, [{
+      x:s.epr.t, y:s.epr.y, type:'scatter', mode:'lines',
+      name:'EPR', line:{ color:'rgba(141,211,255,.95)', width:2.1 }
+    }], {
+      ...CALM_LAYOUT('Expiratory Pressure Relief (EPR)'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.epr.unit ? `EPR (${s.epr.unit})` : 'EPR' } }
+    }, plotConfig);
+    els.eprNarrative.innerHTML = `<b>Expiratory Pressure Relief (EPR):</b> comfort reduction in pressure during exhale. Parsed from <b>EprPress.2s</b> variants when available.`;
+  } else {
+    Plotly.newPlot(els.plotEpr, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('EPR (not mapped)')}, plotConfig);
+    els.eprNarrative.innerHTML = `<b>No EPR signal mapped.</b> EPR uses <b>EprPress.2s</b> (or close label variants) when available.`;
+  }
+
+  if (ev?.t?.length){
+    const counts = {};
+    for (const t of ev.type) counts[t] = (counts[t] || 0) + 1;
+    const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const topCats = ranked.slice(0, 10).map(x=>x[0]);
+    const catIndex = new Map(topCats.map((c,i)=>[c,i]));
+
+    const colors = [
+      'rgba(122,167,255,.92)','rgba(97,212,195,.92)','rgba(255,204,102,.90)',
+      'rgba(255,107,122,.90)','rgba(110,231,166,.90)','rgba(231,246,246,.85)',
+    ];
+
+    const layout = CALM_LAYOUT('Events over time (annotations)');
+    layout.margin = { ...layout.margin, l: 130 };
+    layout.yaxis = {
+      ...layout.yaxis,
+      automargin: true,
+      title: { text: 'Event Category', standoff: 14 },
+      tickmode: 'array',
+      tickvals: [...topCats.map((_,i)=>i), topCats.length],
+      ticktext: [...topCats.map(c=>humanizeEventCategory(c)), 'Other'],
+    };
+
+    const buckets = new Map(topCats.map((c, i) => [c, { idx: i, x: [], y: [], text: [] }]));
+    const otherX = [];
+    const otherY = [];
+    const otherText = [];
+
+    for (let j=0;j<ev.t.length;j++){
+      const raw = ev.type[j];
+      const b = buckets.get(raw);
+      if (b){
+        const clean = cleanEventLabel(raw);
+        b.x.push(ev.t[j]);
+        b.y.push(b.idx);
+        b.text.push(clean);
+      } else {
+        otherX.push(ev.t[j]);
+        otherY.push(topCats.length);
+        otherText.push(humanizeEventCategory(raw));
+      }
+    }
+
+    const traces = [];
+    for (const rawCat of topCats){
+      const b = buckets.get(rawCat);
+      if (!b || !b.x.length) continue;
+      traces.push({
+        x: b.x,
+        y: b.y,
+        type:'scatter',
+        mode:'markers',
+        marker:{ size:9, color: colors[b.idx % colors.length], line:{width:1,color:'rgba(0,0,0,.35)'} },
+        name: humanizeEventCategory(rawCat),
+        text: b.text,
+        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
+      });
+    }
+    if (otherX.length){
+      traces.push({
+        x: otherX,
+        y: otherY,
+        type:'scatter',
+        mode:'markers',
+        marker:{ size:8, color:'rgba(180,188,198,.88)', line:{width:1,color:'rgba(0,0,0,.35)'} },
+        name:'Other',
+        text: otherText,
+        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
+      });
+    }
+
+    Plotly.newPlot(els.plotEvents, traces, layout, plotConfig);
+
+    const legendItems = topCats.slice(0,6).map((cat, i)=>`<span class="eventLegendItem" title="${escapeHtml(humanizeEventCategory(cat))}: annotation category from EDF events"><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:999px;background:${colors[i % colors.length]};margin-right:6px;vertical-align:middle;"></span>${escapeHtml(humanizeEventCategory(cat))}</span>`).join(' ');
+    els.eventsLegend.innerHTML = `<b>Legend:</b> ${legendItems || 'No categories'}<div class="tiny" style="margin-top:6px">Dots are labeled by parsed event category. Hover a dot to see exact timestamp and label.</div>`;
+
+    const top = ranked.slice(0,5)
+      .map(([k,v])=>`• ${escapeHtml(humanizeEventCategory(k))}: <b>${v}</b>`).join('<br/>');
+    const rangeLabel = state.selectedRange?.startISO && state.selectedRange?.endISO ? `${state.selectedRange.startISO} → ${state.selectedRange.endISO}` : (state.current.session?.label || 'Selected session');
+    const perHour = st.usageHrs && st.usageHrs > 0 ? (ev.t.length / st.usageHrs) : null;
+    els.eventsNarrative.innerHTML = `
+      <b>Events explained:</b> each dot is one parsed annotation event, grouped by category (including decoded device event codes where possible).<br/><br/>
+      • Range: <b>${escapeHtml(rangeLabel)}</b><br/>
+      • Total events: <b>${ev.t.length}</b><br/>
+      • Events/hour (raw): <b>${perHour != null ? perHour.toFixed(2) : '—'}</b><br/>
+      • AHI (est): <b>${st.ahiEst != null ? st.ahiEst.toFixed(2) : '—'}</b><br/><br/>
+      <b>Top event types</b><br/>
+      ${top || 'No event labels found.'}
+    `;
+  } else {
+    Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+      {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
+    els.eventsLegend.innerHTML = '<b>Legend:</b> none (no parsed events).';
+    els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
+  }
+}
+
+</script>
 </body>
 </html>
