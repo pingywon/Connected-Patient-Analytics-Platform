@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.42-alpha</title>
+  <title>CalmCPAP — 0.43-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -583,16 +583,12 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.42-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.43-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
 
-    <div class="top-actions">
-      <span class="badge" id="statusBadge">Waiting</span>
-      <span class="badge" id="fileBadge">No file</span>
-      <button class="btn ghost" id="clearBtn">Clear</button>
-    </div>
+    <div class="top-actions"></div>
   </header>
 
   <main>
@@ -624,7 +620,14 @@
           </p>
         </div>
 
-        <div class="rangeControls disabled" id="rangeControls">
+        <div class="progressWrap" style="margin-top:10px;">
+          <div class="progressTop" style="margin-bottom:0;">
+            <div class="tiny"><b id="statusText">Waiting</b></div>
+            <span class="badge" id="fileBadge">No file</span>
+          </div>
+        </div>
+
+        <details class="drawer" open><summary>Calendar</summary><div class="drawerBody"><div class="rangeControls disabled" id="rangeControls">
           <div class="calendarWrap">
             <div class="calHead">
               <div class="calNav">
@@ -641,18 +644,15 @@
           </div>
           <div class="seg" id="rangeModeSeg" aria-label="Range mode">
             <button type="button" id="modeNight" class="active">Night</button>
-            <button type="button" id="modeWeek">Week</button>
-            <button type="button" id="modeMonth">Month</button>
             <button type="button" id="modeCustom">Custom</button>
             <button type="button" id="loadRangeBtn">Load Range</button>
           </div>
-          <div class="rangeHint" id="rangeHint">Upload a ZIP to enable calendar range selection.</div>
-        </div>
-
+          <div class="rangeHint" id="rangeHint">Upload ZIP to enable.</div>
+        </div></div></details>
 
         <div class="hr"></div>
 
-        <div class="progressWrap">
+        <details class="drawer" open><summary>Session Stats</summary><div class="drawerBody"><div class="progressWrap">
           <div class="progressTop">
             <div class="tiny"><b id="progressStep">Idle</b></div>
             <div class="badge" id="progressPct">0%</div>
@@ -686,6 +686,8 @@
 
         <div class="hr"></div>
 
+        </div></details>
+
         <details class="drawer" open>
           <summary>Device & Profile (Identification.json)</summary>
           <div class="drawerBody">
@@ -708,16 +710,19 @@
 
         <div class="hr"></div>
 
-        <div class="callout">
-          <b>Signal mapping (if auto-detect misses your labels)</b><br/>
-          ResMed labels can be “real device weird”. If charts are empty, pick signals here.
-          <div class="mapGrid" id="mapGrid"></div>
-          <button class="btn ghost" id="applyMappingBtn" disabled style="margin-top:10px;">Apply mapping</button>
-        </div>
+        <details class="drawer" id="mappingDrawer">
+          <summary>Manual Signal Mapping</summary>
+          <div class="drawerBody">
+            <div class="callout">
+              <div class="tiny">If auto-mapping misses labels, set them here.</div>
+              <div class="mapGrid" id="mapGrid"></div>
+              <button class="btn ghost" id="applyMappingBtn" disabled style="margin-top:10px;">Apply mapping</button>
+            </div>
+          </div>
+        </details>
 
         <div class="hr"></div>
-        <div class="tiny">Debug log</div>
-        <pre class="callout log" id="log"></pre>
+        <details class="drawer"><summary>Debug log</summary><div class="drawerBody"><pre class="callout log" id="log"></pre></div></details>
       </div>
     </section>
 
@@ -725,8 +730,8 @@
     <section class="card" id="rightPanelCard">
       <div class="tabs" role="tablist" aria-label="Report sections" id="tablist">
         <button class="tab active" role="tab" aria-selected="true" tabindex="0" data-tab="overview" id="tab-overview" aria-controls="panel-overview">Overview</button>
-        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="leaks" id="tab-leaks" aria-controls="panel-leaks">Leaks</button>
-        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
+        <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="compare" id="tab-compare" aria-controls="panel-compare">Compare</button>
+                <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="pressure" id="tab-pressure" aria-controls="panel-pressure">Pressure</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="flow" id="tab-flow" aria-controls="panel-flow">Flow</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="snore" id="tab-snore" aria-controls="panel-snore">Snore</button>
         <button class="tab" role="tab" aria-selected="false" tabindex="-1" data-tab="resprate" id="tab-resprate" aria-controls="panel-resprate">Respiratory Rate</button>
@@ -756,6 +761,12 @@
         <div class="panel" id="panel-leaks" role="tabpanel" aria-labelledby="tab-leaks">
           <div class="plot" id="plotLeak"></div>
           <div class="callout" style="margin-top:12px" id="leakNarrative"></div>
+        </div>
+
+        <div class="panel" id="panel-compare" role="tabpanel" aria-labelledby="tab-compare">
+          <div class="callout" id="compareNarrative"><b>Compare:</b> choose graphs to overlay.</div>
+          <div class="callout" id="compareControls" style="margin-top:10px"></div>
+          <div class="plot" id="plotCompare" style="margin-top:10px"></div>
         </div>
 
         <div class="panel" id="panel-pressure" role="tabpanel" aria-labelledby="tab-pressure">
@@ -818,16 +829,20 @@
 <div id="onboardingModal" aria-hidden="true" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(5,16,20,.75);">
   <div style="width:min(1100px, 75vw); max-height:82vh; overflow:auto; margin:6vh auto 0; background:rgba(11,42,49,.98); border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:18px 20px; box-shadow:0 28px 60px rgba(0,0,0,.45);">
     <h2 style="margin:0 0 8px;">How to prepare your SD ZIP</h2>
-    <p style="margin:0 0 10px; color:var(--muted);">Follow these steps so CalmCPAP can parse your data correctly:</p>
+    <p style="margin:0 0 10px; color:var(--muted);">This is not medical advice. This program is for entertainment purposes only. When in doubt contact a Dr.</p><p style="margin:0 0 10px; color:var(--muted);">Follow these steps:</p>
     <ol style="margin:0 0 14px 20px; line-height:1.5; color:var(--text);">
-      <li>Power off your machine and safely remove the SD card.</li>
+      <li>Power off your CPAP Device and safely remove the SD card.</li>
       <li>Copy the <b>entire root of the SD card</b> to your computer.</li>
       <li>If you want a smaller file, remove older day folders from <code>DATALOG/</code>.</li>
       <li>Create one ZIP from that root copy.</li>
       <li>Upload that ZIP in this app.</li>
     </ol>
+    <label style="display:flex; align-items:center; gap:8px; margin:2px 0 12px; color:var(--text);">
+      <input type="checkbox" id="onboardingAgree" />
+      I have read and agree
+    </label>
     <div style="display:flex; justify-content:center; gap:10px;">
-      <button class="btn" id="onboardingCloseBtn" type="button" style="min-width:280px; font-size:16px; padding:12px 18px; text-align:center;">Got it — Continue</button>
+      <button class="btn" id="onboardingCloseBtn" type="button" disabled style="min-width:280px; font-size:16px; padding:12px 18px; text-align:center;">Got it — Continue</button>
     </div>
   </div>
 </div>
@@ -843,7 +858,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.42-alpha (AirSense 11 SD)
+   CalmCPAP 0.43-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -851,7 +866,6 @@ const els = {
   zipInput: document.getElementById('zipInput'),
   dropZone: document.getElementById('dropZone'),
   chooseZipBtn: document.getElementById('chooseZipBtn'),
-  statusBadge: document.getElementById('statusBadge'),
   fileBadge: document.getElementById('fileBadge'),
   zipStats: document.getElementById('zipStats'),
 
@@ -859,12 +873,12 @@ const els = {
   floatingSidebarBtn: document.getElementById('floatingSidebarBtn'),
   onboardingModal: document.getElementById('onboardingModal'),
   onboardingCloseBtn: document.getElementById('onboardingCloseBtn'),
+  onboardingAgree: document.getElementById('onboardingAgree'),
   globalLoadOverlay: document.getElementById('globalLoadOverlay'),
   globalLoadStep: document.getElementById('globalLoadStep'),
   globalLoadPct: document.getElementById('globalLoadPct'),
   globalLoadBar: document.getElementById('globalLoadBar'),
   globalLoadDetail: document.getElementById('globalLoadDetail'),
-  clearBtn: document.getElementById('clearBtn'),
   demoBtn: document.getElementById('demoBtn'),
 
   progressStep: document.getElementById('progressStep'),
@@ -877,8 +891,6 @@ const els = {
   rangeControls: document.getElementById('rangeControls'),
   rangeModeSeg: document.getElementById('rangeModeSeg'),
   modeNight: document.getElementById('modeNight'),
-  modeWeek: document.getElementById('modeWeek'),
-  modeMonth: document.getElementById('modeMonth'),
   modeCustom: document.getElementById('modeCustom'),
   loadRangeBtn: document.getElementById('loadRangeBtn'),
   calPrev: document.getElementById('calPrev'),
@@ -902,6 +914,8 @@ const els = {
 
   overviewSummary: document.getElementById('overviewSummary'),
   overviewNarrative: document.getElementById('overviewNarrative'),
+  compareNarrative: document.getElementById('compareNarrative'),
+  compareControls: document.getElementById('compareControls'),
   leakNarrative: document.getElementById('leakNarrative'),
   pressureNarrative: document.getElementById('pressureNarrative'),
   flowNarrative: document.getElementById('flowNarrative'),
@@ -916,6 +930,7 @@ const els = {
   rawDump: document.getElementById('rawDump'),
 
   plotOverview: document.getElementById('plotOverview'),
+  plotCompare: document.getElementById('plotCompare'),
   plotLeak: document.getElementById('plotLeak'),
   plotPressure: document.getElementById('plotPressure'),
   plotFlow: document.getElementById('plotFlow'),
@@ -946,6 +961,7 @@ const state = {
   selectedDateISO: null,
   selectedRange: { mode:'night', startISO:null, endISO:null, pickingStart:true },
   calendarView: null,
+  calendarDrag: false,
   current: {
     session: null,
     edfFiles: [],
@@ -967,15 +983,16 @@ function toast(msg){
   toast._t = setTimeout(()=> els.toast.style.display = 'none', 2400);
 }
 function setStatus(text, tone='neutral'){
-  els.statusBadge.textContent = text;
+  const st = document.getElementById('statusText');
+  if (!st) return;
+  st.textContent = text;
   const map = {
     neutral: 'rgba(255,255,255,.06)',
     good: 'rgba(110,231,166,.12)',
     warn: 'rgba(255,204,102,.14)',
     bad: 'rgba(255,107,122,.14)',
   };
-  els.statusBadge.style.background = map[tone] || map.neutral;
-  els.statusBadge.style.borderColor = 'rgba(255,255,255,.14)';
+  st.parentElement.style.background = map[tone] || map.neutral;
 }
 function log(line){
   state.notes.push(line);
@@ -1035,6 +1052,7 @@ function formatSettingsLabel(s){
   t = t.replace(/\bFeature\b/g, 'Features');
   t = t.replace(/\bFeatures\s+Features\b/gi, 'Features');
   t = t.replace(/\b(\w+)\s+\1\b/gi, '$1');
+  t = t.replace(/\b(\w+)\s+\1\b/gi, '$1');
   return t;
 }
 
@@ -1084,12 +1102,13 @@ function CALM_LAYOUT(title){
 const plotConfig = { responsive:true, displayModeBar:true, modeBarButtonsToRemove:['autoScale2d'] };
 
 function purgePlots(){
-  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
+  [els.plotOverview, els.plotCompare, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p => Plotly.purge(p));
 }
 function placeholderPlots(){
   const data = [{ x:[0,1,2,3], y:[0,1,0.4,0.8], type:'scatter', mode:'lines', hoverinfo:'skip',
     line:{ color:'rgba(97,212,195,.55)', width:3 }}];
   Plotly.newPlot(els.plotOverview, data, {...CALM_LAYOUT('Upload a ZIP to see your report'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
+  Plotly.newPlot(els.plotCompare, data, {...CALM_LAYOUT('Compare'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotLeak, data, {...CALM_LAYOUT('Leaks'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotPressure, data, {...CALM_LAYOUT('Pressure'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
   Plotly.newPlot(els.plotFlow, data, {...CALM_LAYOUT('Flow'), xaxis:{visible:false}, yaxis:{visible:false}}, plotConfig);
@@ -1129,7 +1148,7 @@ function resetAll(){
   els.settingsArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
 
   els.loadRangeBtn.disabled = true;
-  els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
+  els.rangeHint.textContent = 'Upload ZIP to enable.';
   els.rangeControls.classList.add('disabled');
   els.rangeControls.classList.remove('ready');
 
@@ -1143,6 +1162,8 @@ function resetAll(){
 
   els.overviewSummary.innerHTML = `<b>Status</b><br/>Upload a ZIP to begin.`;
   els.overviewNarrative.innerHTML = '';
+  if (els.compareNarrative) els.compareNarrative.innerHTML = '<b>Compare:</b> choose graphs to overlay.';
+  if (els.compareControls) els.compareControls.innerHTML = '';
   els.leakNarrative.innerHTML = '';
   els.pressureNarrative.innerHTML = '';
   els.flowNarrative.innerHTML = '';
@@ -1184,7 +1205,7 @@ function setActiveTab(tabId){
     p.classList.toggle('active', wants);
   }
   setTimeout(()=>{
-    [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
+    [els.plotOverview, els.plotCompare, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
       if (p) Plotly.Plots.resize(p);
     });
   }, 20);
@@ -1218,12 +1239,17 @@ function maybeShowOnboarding(){
   if (!els.onboardingModal) return;
   els.onboardingModal.style.display = 'block';
   els.onboardingModal.setAttribute('aria-hidden','false');
+  if (els.onboardingAgree) els.onboardingAgree.checked = false;
+  if (els.onboardingCloseBtn) els.onboardingCloseBtn.disabled = true;
 }
 function closeOnboarding(){
   if (!els.onboardingModal) return;
   els.onboardingModal.style.display = 'none';
   els.onboardingModal.setAttribute('aria-hidden','true');
 }
+els.onboardingAgree?.addEventListener('change', ()=>{
+  if (els.onboardingCloseBtn) els.onboardingCloseBtn.disabled = !els.onboardingAgree.checked;
+});
 els.onboardingCloseBtn?.addEventListener('click', closeOnboarding);
 els.onboardingModal?.addEventListener('click', (e)=>{ if (e.target === els.onboardingModal) closeOnboarding(); });
 document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && els.onboardingModal?.style.display === 'block') closeOnboarding(); });
@@ -1255,7 +1281,6 @@ els.zipInput.addEventListener('change', ()=>{
   const f = els.zipInput.files?.[0];
   if (f) handleZip(f);
 });
-els.clearBtn.addEventListener('click', ()=>{ resetAll(); toast('Cleared.'); });
 
 function updateSidebarToggleUI(collapsed){
   els.toggleLeftBtn.textContent = collapsed ? 'Open Sidebar' : 'Hide Sidebar';
@@ -1265,7 +1290,7 @@ function updateSidebarToggleUI(collapsed){
     els.floatingSidebarBtn.textContent = 'Open Sidebar';
   }
   setTimeout(()=>{
-    [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
+    [els.plotOverview, els.plotCompare, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
       if (p) Plotly.Plots.resize(p);
     });
   }, 40);
@@ -1280,20 +1305,19 @@ els.floatingSidebarBtn?.addEventListener('click', ()=>{
   updateSidebarToggleUI(false);
 });
 window.addEventListener('resize', ()=>{
-  [els.plotOverview, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
+  [els.plotOverview, els.plotCompare, els.plotLeak, els.plotPressure, els.plotFlow, els.plotSnore, els.plotRespRate, els.plotTidalVolume, els.plotEpr, els.plotEvents, els.plotExplore].forEach(p=>{
     if (p) Plotly.Plots.resize(p);
   });
 });
 
 /* ---------- Picker ---------- */
 els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
-els.modeWeek.addEventListener('click', ()=> applyRangeMode('week'));
-els.modeMonth.addEventListener('click', ()=> applyRangeMode('month'));
 els.modeCustom.addEventListener('click', ()=> applyRangeMode('custom'));
 els.loadRangeBtn.addEventListener('click', async ()=>{ await loadRange(); });
 els.calPrev.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()-1); state.calendarView = d; renderCalendar(); });
 els.calNext.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()+1); state.calendarView = d; renderCalendar(); });
 els.calToday.addEventListener('click', ()=>{ state.calendarView = isoToDate(state.selectedDateISO || localDateISO(new Date())); renderCalendar(); });
+document.addEventListener('mouseup', ()=>{ state.calendarDrag = false; });
 els.calMonthSelect.addEventListener('change', ()=>{
   const v = els.calMonthSelect.value;
   if (!v) return;
@@ -1744,26 +1768,16 @@ function renderIdentification(obj){
   const headline = (make + ' ' + model).trim() || 'Unknown';
 
   const headerRow = `
-    <div class="row">
-      <span><b>Detected device</b></span>
-      <span class="badge">${escapeHtml(headline)}</span>
-    </div>
-    ${productCode ? `
+    ${productName ? `
       <div class="row">
-        <span style="opacity:.85">Product Code</span>
-        <span><b>${escapeHtml(productCode)}</b></span>
+        <span style="opacity:.85">Product Name</span>
+        <span><b>${escapeHtml(productName)}</b></span>
       </div>
     ` : ''}
     ${productGeographicIdentifier ? `
       <div class="row">
         <span style="opacity:.85">Product Geographic Identifier</span>
         <span><b>${escapeHtml(productGeographicIdentifier)}</b></span>
-      </div>
-    ` : ''}
-    ${productName ? `
-      <div class="row">
-        <span style="opacity:.85">Product Name</span>
-        <span><b>${escapeHtml(productName)}</b></span>
       </div>
     ` : ''}
   `;
@@ -2224,7 +2238,7 @@ function enablePicker(autoSelectMostRecent){
   if (!max){
     state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
     state.selectedDateISO = null;
-    els.rangeHint.textContent = 'Upload a ZIP to enable calendar range selection.';
+    els.rangeHint.textContent = 'Upload ZIP to enable.';
     els.rangeControls.classList.add('disabled');
     els.rangeControls.classList.remove('ready');
     renderCalendar();
@@ -2259,7 +2273,7 @@ function monthBoundsISO(iso){
 
 function applyRangeMode(mode){
   state.selectedRange.mode = mode;
-  const btns = [els.modeNight, els.modeWeek, els.modeMonth, els.modeCustom];
+  const btns = [els.modeNight, els.modeCustom].filter(Boolean);
   for (const b of btns) b.classList.toggle('active', b.id === `mode${mode[0].toUpperCase()+mode.slice(1)}`);
 
   const anchor = state.selectedDateISO || Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0];
@@ -2299,7 +2313,7 @@ function applyRangeMode(mode){
 function updateRangeHint(){
   const {startISO, endISO, mode} = state.selectedRange;
   if (!startISO || !endISO){
-    els.rangeHint.textContent = 'Select a date range.';
+    els.rangeHint.textContent = 'Pick range.';
     return;
   }
   const labelMode = humanizeWords(mode).replace(/^./, c=>c.toUpperCase());
@@ -2335,24 +2349,25 @@ function renderCalendar(){
     }
     b.textContent = String(d.getDate());
     b.disabled = !dates.has(iso);
-    b.addEventListener('click', ()=>{
+    b.addEventListener('mousedown', ()=>{
       state.selectedDateISO = iso;
       if (state.selectedRange.mode === 'custom'){
-        if (state.selectedRange.pickingStart){
-          state.selectedRange.startISO = iso;
-          state.selectedRange.endISO = iso;
-          state.selectedRange.pickingStart = false;
-        } else {
-          state.selectedRange.endISO = iso;
-          if (state.selectedRange.startISO > state.selectedRange.endISO){
-            const t = state.selectedRange.startISO;
-            state.selectedRange.startISO = state.selectedRange.endISO;
-            state.selectedRange.endISO = t;
-          }
-          state.selectedRange.pickingStart = true;
-        }
+        state.calendarDrag = true;
+        state.selectedRange.startISO = iso;
+        state.selectedRange.endISO = iso;
       } else {
         applyRangeMode(state.selectedRange.mode);
+      }
+      updateRangeHint();
+      renderCalendar();
+    });
+    b.addEventListener('mouseenter', ()=>{
+      if (state.selectedRange.mode !== 'custom' || !state.calendarDrag) return;
+      state.selectedRange.endISO = iso;
+      if (state.selectedRange.startISO > state.selectedRange.endISO){
+        const t = state.selectedRange.startISO;
+        state.selectedRange.startISO = state.selectedRange.endISO;
+        state.selectedRange.endISO = t;
       }
       updateRangeHint();
       renderCalendar();
@@ -2560,7 +2575,11 @@ function autoMapSignals(){
       if (labelN === 'epr' || labelN.includes(' epr ')) score += 14;
       if (unitN.includes('cm') && (unitN.includes('h2o') || unitN.includes('h2'))) score += 8;
     }
-    if (targetKey === 'annotations' && (labelN.includes('annot') || labelN.includes('event'))) score += 12;
+    if (targetKey === 'annotations') {
+      if (labelN.includes('annot') || labelN.includes('event')) score += 12;
+      if (fileN.includes('eve')) score += 120;
+      else score -= 25;
+    }
 
     if (targetKey !== 'annotations'){
       if (fileN.includes('str edf') || fileN.endsWith('str edf')) score -= 6;
@@ -2571,9 +2590,14 @@ function autoMapSignals(){
   }
 
   function pickBest(targetKey){
+    let pool = cat;
+    if (targetKey === 'annotations'){
+      const eveOnly = cat.filter(s => normalizeLabelLoose(s.file || '').includes('eve'));
+      if (eveOnly.length) pool = eveOnly;
+    }
     let best = null;
     let bestScore = -Infinity;
-    for (const s of cat){
+    for (const s of pool){
       const sc = scoreSignal(targetKey, s);
       if (sc > bestScore){
         bestScore = sc;
@@ -2888,6 +2912,40 @@ function analyzeAndRender(){
   els.kpiAHINote.textContent = stats.ahiEst != null ? 'Estimated from annotations.' : 'No annotations mapped/found.';
 
   renderPlotsAndText();
+  renderComparePlot();
+}
+
+
+function renderComparePlot(){
+  if (!els.plotCompare || !els.compareControls) return;
+  const s = state.current.signals || {};
+  const defs = [
+    ['leak','Leak','rgba(255,107,122,.85)'],
+    ['pressure','Pressure','rgba(97,212,195,.92)'],
+    ['flow','Flow','rgba(122,167,255,.92)'],
+    ['snore','Snore','rgba(255,204,102,.95)'],
+    ['respRate','Respiratory Rate','rgba(110,231,166,.95)'],
+    ['tidalVolume','Tidal Volume','rgba(186,148,255,.95)'],
+    ['epr','EPR','rgba(141,211,255,.95)']
+  ];
+  const available = defs.filter(([k]) => s[k]?.t?.length);
+  els.compareControls.innerHTML = available.map(([k,label]) => `<label style="display:inline-flex;align-items:center;gap:6px;margin-right:10px;"><input type="checkbox" data-compare="${k}" ${['pressure','flow'].includes(k)?'checked':''}/> ${label}</label>`).join('') || '<span class="tiny">No signals available to compare.</span>';
+  const draw = ()=>{
+    const checked = Array.from(els.compareControls.querySelectorAll('input[data-compare]:checked')).map(i=>i.getAttribute('data-compare'));
+    const traces = checked.map(k=>{
+      const d = defs.find(x=>x[0]===k);
+      return { x:s[k].t, y:s[k].y, type:'scatter', mode:'lines', name:d[1], line:{color:d[2], width:2} };
+    });
+    if (!traces.length){
+      Plotly.newPlot(els.plotCompare, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Compare')}, plotConfig);
+      if (els.compareNarrative) els.compareNarrative.innerHTML = '<b>Compare:</b> choose graphs to overlay.';
+      return;
+    }
+    Plotly.newPlot(els.plotCompare, traces, {...CALM_LAYOUT('Compare Signals')}, plotConfig);
+    if (els.compareNarrative) els.compareNarrative.innerHTML = `<b>Compare:</b> ${checked.length} signal(s) overlaid.`;
+  };
+  els.compareControls.querySelectorAll('input[data-compare]').forEach(i=> i.addEventListener('change', draw));
+  draw();
 }
 
 function renderPlotsAndText(){
