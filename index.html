@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.43-alpha</title>
+  <title>CalmCPAP — 0.45-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -248,11 +248,11 @@
     .kv .row b{ color: rgba(231,246,246,.93); font-weight:850; }
 
     .drawer{ margin-top:12px; border:1px solid rgba(122,167,255,.35); border-radius:16px; background:rgba(11,42,49,.52); overflow:hidden; box-shadow:0 12px 24px rgba(0,0,0,.18); }
-    .drawer > summary{ cursor:pointer; list-style:none; padding:13px 14px; font-size:14px; color:rgba(231,246,246,.95); font-weight:900; display:flex; align-items:center; justify-content:space-between; letter-spacing:.15px; background:rgba(18,58,68,.6); border-bottom:1px solid rgba(255,255,255,.08); }
+    .drawer > summary{ cursor:pointer; list-style:none; padding:15px 16px; font-size:15px; color:rgba(231,246,246,.98); font-weight:900; display:flex; align-items:center; justify-content:space-between; letter-spacing:.2px; background:rgba(18,58,68,.68); border-bottom:1px solid rgba(255,255,255,.12); }
     .drawer > summary::-webkit-details-marker{ display:none; }
     .drawer > summary::after{ content:'▾'; color:rgba(231,246,246,.92); font-size:14px; }
     .drawer:not([open]) > summary::after{ content:'▸'; }
-    .drawerBody{ padding:8px 12px 12px; font-size:13.5px; }
+    .drawerBody{ padding:10px 13px 14px; font-size:14px; }
 
     .picker{
       display:flex; gap:10px; align-items:center; flex-wrap:wrap;
@@ -265,8 +265,8 @@
     .picker label{ font-size:12px; color: var(--muted2); }
 
     .rangeControls{ margin-top:10px; display:grid; gap:8px; transition:filter .2s ease, opacity .2s ease; }
-    .rangeControls.disabled{ opacity:.42; filter:saturate(.2) grayscale(.35) brightness(.82); pointer-events:none; }
-    .rangeControls.ready .seg, .rangeControls.ready .calendarWrap{ background: rgba(18,58,68,.72); border-color: rgba(122,167,255,.35); }
+    .rangeControls.disabled{ opacity:.3; filter:saturate(.05) grayscale(.65) brightness(.65); pointer-events:none; }
+    .rangeControls.ready .seg, .rangeControls.ready .calendarWrap{ background: rgba(18,58,68,.72); border-color: rgba(122,167,255,.35); box-shadow: inset 0 0 0 1px rgba(122,167,255,.15); }
     .rangeControls.ready .rangeHint{ color: var(--muted); }
     .seg{
       display:flex; gap:6px; flex-wrap:wrap;
@@ -583,7 +583,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.43-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.45-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -714,7 +714,7 @@
           <summary>Manual Signal Mapping</summary>
           <div class="drawerBody">
             <div class="callout">
-              <div class="tiny">If auto-mapping misses labels, set them here.</div>
+              <div class="tiny">If auto-mapping misses labels, pick one entry per signal type here (deduplicated labels).</div>
               <div class="mapGrid" id="mapGrid"></div>
               <button class="btn ghost" id="applyMappingBtn" disabled style="margin-top:10px;">Apply mapping</button>
             </div>
@@ -858,7 +858,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.43-alpha (AirSense 11 SD)
+   CalmCPAP 0.45-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -1043,6 +1043,9 @@ function humanizeWords(s){
     .replace(/\bProduct\s+Product\s+Name\b/gi, 'Product Name')
     .replace(/\bProduct\s*Geographic\s*Identifier\b/gi, 'Product Geographic Identifier')
     .replace(/\bProduct\s*Code\b/gi, 'Product Code')
+    .replace(/\bHardware\s+Hardware\b/gi, 'Hardware')
+    .replace(/\bProduct\s+Product\b/gi, 'Product')
+    .replace(/\b(\w+)\s+\1\b/gi, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -1789,9 +1792,15 @@ function renderIdentification(obj){
     const sk = it.short;
     if (used.has(sk)) continue;
     if (typeof it.val === 'object') continue;
+    const label = humanizeWords(sk)
+      .replace(/^Product\s+/i, '')
+      .replace(/^Detected\s+Device$/i, '')
+      .trim();
+    if (!label) continue;
+    if (/^Product\s*Code$/i.test(label) || /^Detected\s+Device$/i.test(label)) continue;
     rows.push(`
       <div class="row">
-        <span>${escapeHtml(humanizeWords(sk))}</span>
+        <span>${escapeHtml(label)}</span>
         <span><b>${escapeHtml(shortValue(it.val))}</b></span>
       </div>
     `);
@@ -2623,11 +2632,20 @@ function autoMapSignals(){
 function renderMappingUI(){
   const cat = state.current.signalCatalog;
 
+  const uniqueSignals = [];
+  const seenSignals = new Set();
+  for (const c of cat){
+    const uniq = `${normalizeLabelLoose(c.label)}|${normalizeLabelLoose(c.unit || '')}`;
+    if (seenSignals.has(uniq)) continue;
+    seenSignals.add(uniq);
+    uniqueSignals.push(c);
+  }
+
   const opts = [
     { value:'', text:'(not set)' },
-    ...cat.map(c => ({
+    ...uniqueSignals.map(c => ({
       value: c.key,
-      text: `${c.label}${c.unit ? ` [${c.unit}]` : ''} — ${c.file.split('/').pop()}`
+      text: `${c.label}${c.unit ? ` [${c.unit}]` : ''}`
     }))
   ];
 
@@ -2669,7 +2687,7 @@ function renderMappingUI(){
 
   els.applyMappingBtn.disabled = false;
 
-  populateExploreOptions(cat);
+  populateExploreOptions();
 
   els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signal labels found.`;
   els.rawDump.textContent = JSON.stringify({
@@ -2682,48 +2700,53 @@ function renderMappingUI(){
 }
 
 
-function populateExploreOptions(cat){
+function populateExploreOptions(){
   if (!els.exploreSelect) return;
-  els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
-  for (const c of cat){
+  const defs = [
+    ['leak','Leak'],
+    ['pressure','Pressure'],
+    ['flow','Flow'],
+    ['snore','Snore'],
+    ['respRate','Respiratory Rate'],
+    ['tidalVolume','Tidal Volume'],
+    ['epr','EPR']
+  ];
+  const s = state.current.signals || {};
+  const available = defs.filter(([k]) => s[k]?.t?.length);
+  const prev = els.exploreSelect.value;
+  els.exploreSelect.innerHTML = '<option value="">Choose a signal type…</option>';
+  for (const [key,label] of available){
     const opt = document.createElement('option');
-    opt.value = c.key;
-    opt.textContent = `${c.label}${c.unit ? ` [${c.unit}]` : ''} — ${c.file.split('/').pop()}`;
+    opt.value = key;
+    opt.textContent = label;
     els.exploreSelect.appendChild(opt);
   }
-  els.exploreSelect.disabled = cat.length === 0;
+  els.exploreSelect.disabled = available.length === 0;
+  if (available.some(([k]) => k === prev)) els.exploreSelect.value = prev;
 }
 
 async function renderExplorePlot(){
   const key = els.exploreSelect?.value;
   if (!key){
     Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (select a signal)')}, plotConfig);
-    els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a mapped signal from the dropdown below to display it here.';
+    els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a signal type to show all data for that reading.';
     return;
   }
-  const merged = { t:[], y:[], unit:'', label:'' };
-  for (const f of state.current.edfFiles){
-    const { series } = await readSelectedSignalsFromEDF(f, { custom:key }, 120000);
-    const ser = series.custom;
-    if (!ser?.t?.length) continue;
-    merged.t = merged.t.concat(ser.t);
-    merged.y = merged.y.concat(ser.y);
-    merged.unit = merged.unit || ser.unit;
-    merged.label = merged.label || ser.label;
-  }
-  if (!merged.t.length){
+  const merged = state.current.signals?.[key] || null;
+  if (!merged?.t?.length){
     Plotly.newPlot(els.plotExplore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Explore (no data for selected signal)')}, plotConfig);
-    els.exploreNarrative.innerHTML = '<b>No data for selected mapping in this timeframe.</b>';
+    els.exploreNarrative.innerHTML = '<b>No data for selected signal in this timeframe.</b>';
     return;
   }
-  const idx = merged.t.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
-  const t = idx.map(i=>merged.t[i]);
-  const y = idx.map(i=>merged.y[i]);
-  Plotly.newPlot(els.plotExplore, [{x:t,y:y,type:'scatter',mode:'lines',line:{color:'rgba(97,212,195,.95)',width:2}}], {
-    ...CALM_LAYOUT(`Explore — ${merged.label || 'Custom signal'}`),
-    yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: merged.unit ? `${merged.label} (${merged.unit})` : (merged.label || 'Value') } }
+  const labelMap = {
+    leak:'Leak', pressure:'Pressure', flow:'Flow', snore:'Snore', respRate:'Respiratory Rate', tidalVolume:'Tidal Volume', epr:'EPR'
+  };
+  const label = merged.label || labelMap[key] || 'Selected signal';
+  Plotly.newPlot(els.plotExplore, [{x:merged.t,y:merged.y,type:'scatter',mode:'lines',line:{color:'rgba(97,212,195,.95)',width:2}}], {
+    ...CALM_LAYOUT(`Explore — ${label}`),
+    yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: merged.unit ? `${label} (${merged.unit})` : label } }
   }, plotConfig);
-  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(merged.label || 'selected signal')}</b> across the selected timeframe.`;
+  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(label)}</b> across the selected timeframe.`;
 }
 
 function applyMappingFromUI(){
@@ -2822,6 +2845,7 @@ async function extractSignalsAndRender(){
   progress('Analyzing', 97, 'Computing stats + writing explanations…');
   try {
     analyzeAndRender();
+    populateExploreOptions();
     await renderExplorePlot();
     progress('Done', 100, 'Report ready.');
     setStatus('Ready','good');
@@ -2916,6 +2940,16 @@ function analyzeAndRender(){
 }
 
 
+function normalizeForCompare(arr){
+  const vals = (arr || []).filter(v => Number.isFinite(v));
+  if (!vals.length) return arr || [];
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min;
+  if (!Number.isFinite(span) || span <= 1e-9) return (arr || []).map(()=>0.5);
+  return (arr || []).map(v => Number.isFinite(v) ? (v - min) / span : null);
+}
+
 function renderComparePlot(){
   if (!els.plotCompare || !els.compareControls) return;
   const s = state.current.signals || {};
@@ -2929,22 +2963,35 @@ function renderComparePlot(){
     ['epr','EPR','rgba(141,211,255,.95)']
   ];
   const available = defs.filter(([k]) => s[k]?.t?.length);
-  els.compareControls.innerHTML = available.map(([k,label]) => `<label style="display:inline-flex;align-items:center;gap:6px;margin-right:10px;"><input type="checkbox" data-compare="${k}" ${['pressure','flow'].includes(k)?'checked':''}/> ${label}</label>`).join('') || '<span class="tiny">No signals available to compare.</span>';
+  els.compareControls.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+      ${available.map(([k,label]) => `<label style="display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(8,36,43,.55);font-size:13px;"><input type="checkbox" data-compare="${k}" ${['pressure','flow'].includes(k)?'checked':''}/> <span>${label}</span></label>`).join('')}
+      ${available.length ? '<label style="display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(122,167,255,.35);border-radius:10px;background:rgba(12,44,56,.65);font-size:13px;"><input type="checkbox" id="compareNormalize" checked/> <span>Normalize scales</span></label>' : ''}
+    </div>
+  ` || '<span class="tiny">No signals available to compare.</span>';
+  if (!available.length){
+    els.compareControls.innerHTML = '<span class="tiny">No signals available to compare.</span>';
+  }
   const draw = ()=>{
     const checked = Array.from(els.compareControls.querySelectorAll('input[data-compare]:checked')).map(i=>i.getAttribute('data-compare'));
+    const normalize = !!document.getElementById('compareNormalize')?.checked;
     const traces = checked.map(k=>{
       const d = defs.find(x=>x[0]===k);
-      return { x:s[k].t, y:s[k].y, type:'scatter', mode:'lines', name:d[1], line:{color:d[2], width:2} };
+      const srcY = s[k].y || [];
+      const y = normalize ? normalizeForCompare(srcY) : srcY;
+      return { x:s[k].t, y, type:'scatter', mode:'lines', name:d[1], line:{color:d[2], width:2.3} };
     });
     if (!traces.length){
       Plotly.newPlot(els.plotCompare, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Compare')}, plotConfig);
       if (els.compareNarrative) els.compareNarrative.innerHTML = '<b>Compare:</b> choose graphs to overlay.';
       return;
     }
-    Plotly.newPlot(els.plotCompare, traces, {...CALM_LAYOUT('Compare Signals')}, plotConfig);
-    if (els.compareNarrative) els.compareNarrative.innerHTML = `<b>Compare:</b> ${checked.length} signal(s) overlaid.`;
+    const layout = {...CALM_LAYOUT(normalize ? 'Compare Signals (normalized)' : 'Compare Signals')};
+    if (normalize) layout.yaxis.title = { text:'Normalized value' };
+    Plotly.newPlot(els.plotCompare, traces, layout, plotConfig);
+    if (els.compareNarrative) els.compareNarrative.innerHTML = `<b>Compare:</b> ${checked.length} signal(s) overlaid${normalize ? ' (normalized)' : ''}.`;
   };
-  els.compareControls.querySelectorAll('input[data-compare]').forEach(i=> i.addEventListener('change', draw));
+  els.compareControls.querySelectorAll('input[data-compare], #compareNormalize').forEach(i=> i.addEventListener('change', draw));
   draw();
 }
 
