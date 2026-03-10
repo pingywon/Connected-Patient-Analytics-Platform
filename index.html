@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.46-alpha</title>
+  <title>CalmCPAP — 0.51-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -583,7 +583,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.46-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.51-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -644,8 +644,8 @@
           </div>
           <div class="seg" id="rangeModeSeg" aria-label="Range mode">
             <button type="button" id="modeNight" class="active">Night</button>
-            <button type="button" id="modeCustom">Custom</button>
-            <button type="button" id="loadRangeBtn">Load Range</button>
+            <button type="button" id="modeCustom" style="display:none">Custom</button>
+            <button type="button" id="loadRangeBtn" style="display:none">Load Range</button>
           </div>
           <div class="rangeHint" id="rangeHint">Upload ZIP to enable.</div>
         </div></div></details>
@@ -801,7 +801,7 @@
 
         <div class="panel" id="panel-events" role="tabpanel" aria-labelledby="tab-events">
           <div class="plot" id="plotEvents"></div>
-          <div class="callout" id="eventsLegend" style="margin-top:10px"></div>
+          <div class="callout" id="eventsLegend" style="display:none"></div>
           <div class="callout" style="margin-top:12px" id="eventsNarrative"></div>
         </div>
 
@@ -827,10 +827,10 @@
 <div class="toast" id="toast"></div>
 <button id="floatingSidebarBtn" class="btn ghost" style="display:none; position:fixed; left:14px; bottom:18px; z-index:30;">Open Sidebar</button>
 <div id="onboardingModal" aria-hidden="true" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(5,16,20,.75);">
-  <div style="width:min(1100px, 75vw); max-height:82vh; overflow:auto; margin:6vh auto 0; background:rgba(11,42,49,.98); border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:18px 20px; box-shadow:0 28px 60px rgba(0,0,0,.45);">
+  <div style="width:min(1100px, 75vw); max-height:82vh; overflow:auto; margin:6vh auto 0; background:rgba(11,42,49,.98); border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:18px 20px; box-shadow:0 28px 60px rgba(0,0,0,.45); text-align:center;">
     <h2 style="margin:0 0 8px;">How to prepare your SD ZIP</h2>
     <p style="margin:0 0 10px; color:var(--muted);">This is not medical advice. This program is for entertainment purposes only. When in doubt contact a Dr.</p><p style="margin:0 0 10px; color:var(--muted);">Follow these steps:</p>
-    <ol style="margin:0 0 14px 20px; line-height:1.5; color:var(--text);">
+    <ol style="margin:0 auto 14px; max-width:760px; text-align:left; line-height:1.5; color:var(--text);">
       <li>Power off your CPAP Device and safely remove the SD card.</li>
       <li>Copy the <b>entire root of the SD card</b> to your computer.</li>
       <li>If you want a smaller file, remove older day folders from <code>DATALOG/</code>.</li>
@@ -839,8 +839,9 @@
     </ol>
     <label style="display:flex; align-items:center; gap:8px; margin:2px 0 12px; color:var(--text);">
       <input type="checkbox" id="onboardingAgree" />
-      I have read and agree
+      I have read and agree. I understand no person or party can be held responsible for misuse, interpretation errors, or inaccurate output from this app.
     </label>
+    <p style="margin:0 auto 12px; max-width:820px; color:var(--muted);">This app is not intended for diagnosis, treatment decisions, emergency guidance, or clinical care. It may be incomplete, wrong, or misleading. By continuing, you acknowledge this is for entertainment/educational use only and no one is liable for misuse, interpretation, or outcomes based on this information.</p>
     <div style="display:flex; justify-content:center; gap:10px;">
       <button class="btn" id="onboardingCloseBtn" type="button" disabled style="min-width:280px; font-size:16px; padding:12px 18px; text-align:center;">Got it — Continue</button>
     </div>
@@ -858,7 +859,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.46-alpha (AirSense 11 SD)
+   CalmCPAP 0.51-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -1151,7 +1152,7 @@ function resetAll(){
   els.settingsArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
 
   els.loadRangeBtn.disabled = true;
-  els.rangeHint.textContent = 'Upload ZIP to enable.';
+  els.rangeHint.textContent = 'Upload ZIP to enable night picker.';
   els.rangeControls.classList.add('disabled');
   els.rangeControls.classList.remove('ready');
 
@@ -1315,8 +1316,8 @@ window.addEventListener('resize', ()=>{
 
 /* ---------- Picker ---------- */
 els.modeNight.addEventListener('click', ()=> applyRangeMode('night'));
-els.modeCustom.addEventListener('click', ()=> applyRangeMode('custom'));
-els.loadRangeBtn.addEventListener('click', async ()=>{ await loadRange(); });
+els.modeCustom?.addEventListener('click', ()=> applyRangeMode('night'));
+els.loadRangeBtn?.addEventListener('click', async ()=>{ /* single-night mode: no range loading */ });
 els.calPrev.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()-1); state.calendarView = d; renderCalendar(); });
 els.calNext.addEventListener('click', ()=>{ const d = state.calendarView || new Date(); d.setMonth(d.getMonth()+1); state.calendarView = d; renderCalendar(); });
 els.calToday.addEventListener('click', ()=>{ state.calendarView = isoToDate(state.selectedDateISO || localDateISO(new Date())); renderCalendar(); });
@@ -2247,7 +2248,7 @@ function enablePicker(autoSelectMostRecent){
   if (!max){
     state.selectedRange = { mode:'night', startISO:null, endISO:null, pickingStart:true };
     state.selectedDateISO = null;
-    els.rangeHint.textContent = 'Upload ZIP to enable.';
+    els.rangeHint.textContent = 'Upload ZIP to enable night picker.';
     els.rangeControls.classList.add('disabled');
     els.rangeControls.classList.remove('ready');
     renderCalendar();
@@ -2281,40 +2282,24 @@ function monthBoundsISO(iso){
 }
 
 function applyRangeMode(mode){
-  state.selectedRange.mode = mode;
+  state.selectedRange.mode = 'night';
   const btns = [els.modeNight, els.modeCustom].filter(Boolean);
-  for (const b of btns) b.classList.toggle('active', b.id === `mode${mode[0].toUpperCase()+mode.slice(1)}`);
+  btns.forEach(b => b.classList.remove('active'));
+  els.modeNight?.classList.add('active');
 
   const anchor = state.selectedDateISO || Array.from(state.sessionsByDate.keys()).filter(d=>d!=='unknown').sort().slice(-1)[0];
   if (!anchor) return;
-  if (mode === 'night'){
-    state.selectedRange.pickingStart = true;
-    state.selectedRange.startISO = anchor;
-    state.selectedRange.endISO = anchor;
-  } else if (mode === 'week'){
-    state.selectedRange.pickingStart = true;
-    state.selectedRange.startISO = addDaysISO(anchor, -6);
-    state.selectedRange.endISO = anchor;
-  } else if (mode === 'month'){
-    state.selectedRange.pickingStart = true;
-    const b = monthBoundsISO(anchor);
-    state.selectedRange.startISO = b.start;
-    state.selectedRange.endISO = b.end;
-  } else if (mode === 'custom'){
-    state.selectedRange.pickingStart = true;
-    state.selectedRange.startISO = state.selectedRange.startISO || anchor;
-    state.selectedRange.endISO = state.selectedRange.endISO || anchor;
-  }
+
+  state.selectedRange.pickingStart = true;
+  state.selectedRange.startISO = anchor;
+  state.selectedRange.endISO = anchor;
+
   const dates = Array.from(state.sessionsByDate.keys()).filter(d => d !== 'unknown').sort();
   const min = dates[0] || '';
   const max = dates[dates.length-1] || '';
   if (min && state.selectedRange.startISO < min) state.selectedRange.startISO = min;
   if (max && state.selectedRange.endISO > max) state.selectedRange.endISO = max;
-  if (state.selectedRange.startISO > state.selectedRange.endISO){
-    const t = state.selectedRange.startISO;
-    state.selectedRange.startISO = state.selectedRange.endISO;
-    state.selectedRange.endISO = t;
-  }
+
   updateRangeHint();
   renderCalendar();
 }
@@ -2322,11 +2307,10 @@ function applyRangeMode(mode){
 function updateRangeHint(){
   const {startISO, endISO, mode} = state.selectedRange;
   if (!startISO || !endISO){
-    els.rangeHint.textContent = 'Pick range.';
+    els.rangeHint.textContent = 'Pick a night to auto-load.';
     return;
   }
-  const labelMode = humanizeWords(mode).replace(/^./, c=>c.toUpperCase());
-  els.rangeHint.textContent = `${labelMode}: ${startISO} → ${endISO}`;
+  els.rangeHint.textContent = `Night: ${startISO} (auto-load)`;
 }
 
 function renderCalendar(){
@@ -2358,28 +2342,14 @@ function renderCalendar(){
     }
     b.textContent = String(d.getDate());
     b.disabled = !dates.has(iso);
-    b.addEventListener('mousedown', ()=>{
+    b.addEventListener('mousedown', async ()=>{
       state.selectedDateISO = iso;
-      if (state.selectedRange.mode === 'custom'){
-        state.calendarDrag = true;
-        state.selectedRange.startISO = iso;
-        state.selectedRange.endISO = iso;
-      } else {
-        applyRangeMode(state.selectedRange.mode);
-      }
+      applyRangeMode('night');
       updateRangeHint();
       renderCalendar();
-    });
-    b.addEventListener('mouseenter', ()=>{
-      if (state.selectedRange.mode !== 'custom' || !state.calendarDrag) return;
-      state.selectedRange.endISO = iso;
-      if (state.selectedRange.startISO > state.selectedRange.endISO){
-        const t = state.selectedRange.startISO;
-        state.selectedRange.startISO = state.selectedRange.endISO;
-        state.selectedRange.endISO = t;
-      }
-      updateRangeHint();
-      renderCalendar();
+      const day = state.sessionsByDate.get(iso);
+      const firstKey = day?.sessions?.[0]?.key;
+      if (firstKey) await loadSession(iso, firstKey);
     });
     els.calGrid.appendChild(b);
   }
@@ -2980,7 +2950,7 @@ function renderComparePlot(){
       const d = defs.find(x=>x[0]===k);
       const srcY = s[k].y || [];
       const y = normalize ? normalizeForCompare(srcY) : srcY;
-      return { x:s[k].t, y, type:'scatter', mode:'lines', name:d[1], line:{color:d[2], width:2.3} };
+      return { x:s[k].t, y, customdata: srcY, type:'scatter', mode:'lines', name:d[1], line:{color:d[2], width:2.3}, hovertemplate: normalize ? '%{x|%Y-%m-%d %H:%M:%S}<br><b>%{fullData.name}</b><br>Raw: %{customdata:.3f}<br>Normalized: %{y:.3f}<extra></extra>' : '%{x|%Y-%m-%d %H:%M:%S}<br><b>%{fullData.name}: %{y:.3f}</b><extra></extra>' };
     });
     if (!traces.length){
       Plotly.newPlot(els.plotCompare, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}], {...CALM_LAYOUT('Compare')}, plotConfig);
@@ -3138,7 +3108,7 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Snore'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore (${s.snore.unit})` : 'Snore' } }
     }, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.<br/>Scale meaning: this is often a device-specific index, so compare against your own baseline night-to-night rather than a single universal cutoff.`;
+    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.<br/>Scale meaning: think of this like a snore activity meter. If your usual baseline is low and this line runs higher for long stretches, that means more snore-related vibration than your normal night.`;
   } else {
     Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Snore (not mapped)')}, plotConfig);
@@ -3272,8 +3242,6 @@ function renderPlotsAndText(){
 
     Plotly.newPlot(els.plotEvents, traces, layout, plotConfig);
 
-    const legendItems = topCats.slice(0,6).map((cat, i)=>`<span class="eventLegendItem" title="${escapeHtml(humanizeEventCategory(cat))}: annotation category from EDF events"><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:999px;background:${colors[i % colors.length]};margin-right:6px;vertical-align:middle;"></span>${escapeHtml(humanizeEventCategory(cat))}</span>`).join(' ');
-    els.eventsLegend.innerHTML = `<b>Legend:</b> ${legendItems || 'No categories'}<div class="tiny" style="margin-top:6px">Dots are labeled by parsed event category. Hover a dot to see exact timestamp and label.</div>`;
 
     const top = ranked.slice(0,5)
       .map(([k,v])=>`• ${escapeHtml(humanizeEventCategory(k))}: <b>${v}</b>`).join('<br/>');
@@ -3292,7 +3260,6 @@ function renderPlotsAndText(){
   } else {
     Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
-    els.eventsLegend.innerHTML = '<b>Legend:</b> none (no parsed events).';
     els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
   }
 }
