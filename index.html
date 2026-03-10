@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.45-alpha</title>
+  <title>CalmCPAP — 0.46-alpha</title>
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -583,7 +583,7 @@
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>CalmCPAP <span class="badge">0.45-alpha</span></h1>
+        <h1>CalmCPAP <span class="badge">0.46-alpha</span></h1>
         <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
       </div>
     </div>
@@ -858,7 +858,7 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.45-alpha (AirSense 11 SD)
+   CalmCPAP 0.46-alpha (AirSense 11 SD)
    ✔️ Robust ZIP indexing + EDF parsing + charts
    ============================ */
 
@@ -2746,7 +2746,8 @@ async function renderExplorePlot(){
     ...CALM_LAYOUT(`Explore — ${label}`),
     yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: merged.unit ? `${label} (${merged.unit})` : label } }
   }, plotConfig);
-  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(label)}</b> across the selected timeframe.`;
+  const exploreScale = merged.unit ? `Scale: <b>${escapeHtml(merged.unit)}</b>.` : 'Scale: device-native units.';
+  els.exploreNarrative.innerHTML = `<b>Explore:</b> showing <b>${escapeHtml(label)}</b> across the selected timeframe.<br/>${exploreScale} Plain language: watch for sustained shifts from your normal baseline, not just single spikes.`;
 }
 
 function applyMappingFromUI(){
@@ -3049,7 +3050,9 @@ function renderPlotsAndText(){
 
   els.overviewNarrative.innerHTML = `
     <b>What you’re looking at:</b><br/>
-    Overview helps you spot whether leak spikes line up with pressure changes.<br/><br/>
+    Overview helps you spot whether leak spikes line up with pressure changes.<br/>
+    Plain-language scale guide: leak is usually <b>L/min</b> (liters of air escaping per minute), and pressure is usually <b>cmH₂O</b> (air push strength).<br/>
+    Scientific detail: <b>1 cmH₂O ≈ 98 Pascals</b> (about <b>0.014 psi</b>)—a small pressure unit used in breathing medicine.<br/><br/>
     <b>Indexing rule:</b> Sessions are grouped by <b>DATALOG/YYYYMMDD</b> folders.
   `;
 
@@ -3075,6 +3078,8 @@ function renderPlotsAndText(){
 
     els.leakNarrative.innerHTML = `
       <b>Leak explained:</b> extra air escaping beyond expected venting. Sampled <b>every 2 seconds</b>.<br/>
+      Scale meaning: usually <b>L/min</b>, which means how many liters of air are escaping each minute. Lower is usually better if therapy comfort is good.<br/>
+      Scientific detail: the dotted guide uses <b>${thr} L/min</b> as a common large-leak reference point in CPAP reporting.<br/>
       <b>Your reading:</b> <b>${tone}</b><br/>
       • Median: <b>${st.leakP50 != null ? st.leakP50.toFixed(1) : '—'}</b><br/>
       • P95: <b>${st.leakP95 != null ? st.leakP95.toFixed(1) : '—'}</b><br/>
@@ -3096,8 +3101,10 @@ function renderPlotsAndText(){
     }, plotConfig);
 
     els.pressureNarrative.innerHTML = `
-      <b>Pressure explained:</b> the “air support” keeping your airway open.<br/>Sample rate: <b>every 1 second</b>.<br/><br/>
-      • Median: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
+      <b>Pressure explained:</b> the “air support” keeping your airway open.<br/>Sample rate: <b>every 1 second</b>.<br/>
+      Scale meaning: pressure is usually shown in <b>cmH₂O</b>. Think of it as gentle airflow push; higher numbers mean stronger support.
+      <br/>Scientific detail: <b>1 cmH₂O ≈ 98 Pa ≈ 0.014 psi</b>.
+      <br/><br/>• Median: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
       • P95: <b>${st.p95 != null ? st.p95.toFixed(1) : '—'}</b>
     `;
   } else {
@@ -3115,7 +3122,7 @@ function renderPlotsAndText(){
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.flow.unit ? `Flow (${s.flow.unit})` : 'Flow' } }
     }, plotConfig);
 
-    els.flowNarrative.innerHTML = `<b>Flow explained:</b> your breathing waveform (useful for pattern context).`;
+    els.flowNarrative.innerHTML = `<b>Flow explained:</b> your breathing waveform (useful for pattern context).<br/>Scale meaning: positive vs negative flow usually represents in-breath vs out-breath, and larger magnitude means stronger airflow. <br/>Scientific detail: units are commonly <b>L/s</b> or <b>L/min</b> depending on the device export.`;
   } else {
     Plotly.newPlot(els.plotFlow, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Flow (not mapped)')}, plotConfig);
@@ -3131,7 +3138,7 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Snore'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore (${s.snore.unit})` : 'Snore' } }
     }, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.`;
+    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.<br/>Scale meaning: this is often a device-specific index, so compare against your own baseline night-to-night rather than a single universal cutoff.`;
   } else {
     Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Snore (not mapped)')}, plotConfig);
@@ -3146,7 +3153,7 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Respiratory Rate'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `Respiratory Rate (${s.respRate.unit})` : 'Respiratory Rate' } }
     }, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM means Breaths Per Minute</b>. Watch for sustained rises/falls compared with your usual baseline.`;
+    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM means Breaths Per Minute</b>.<br/>Scale meaning: if the graph shows 12, that means about 12 breaths each minute. Many resting adults are roughly in the low-to-mid teens, but your normal baseline matters most.`;
   } else {
     Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Respiratory Rate (not mapped)')}, plotConfig);
@@ -3170,7 +3177,7 @@ function renderPlotsAndText(){
       x:s.tidalVolume.t, y:s.tidalVolume.y, type:'scatter', mode:'lines',
       name:'Tidal Volume', line:{ color:'rgba(186,148,255,.95)', width:2.1 }
     }], layTv, plotConfig);
-    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath. Typical resting baseline is about <b>${asLiters ? '0.5 L' : '500 mL'} for men</b> and <b>${asLiters ? '0.4 L' : '400 mL'} for women</b> (shown as reference lines).`;
+    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath.<br/>Scale meaning: this is “air per breath.” For context, about <b>${asLiters ? '0.5 L' : '500 mL'}</b> is roughly half a liter (about half of a 1-liter bottle).<br/>Scientific detail: typical resting baseline is about <b>${asLiters ? '0.5 L' : '500 mL'} for men</b> and <b>${asLiters ? '0.4 L' : '400 mL'} for women</b> (shown as reference lines).`;
   } else {
     Plotly.newPlot(els.plotTidalVolume, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Tidal Volume (not mapped)')}, plotConfig);
@@ -3185,7 +3192,7 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Expiratory Pressure Relief (EPR)'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.epr.unit ? `EPR (${s.epr.unit})` : 'EPR' } }
     }, plotConfig);
-    els.eprNarrative.innerHTML = `<b>Expiratory Pressure Relief (EPR):</b> comfort reduction in pressure during exhale. Parsed from <b>EprPress.2s</b> variants when available.`;
+    els.eprNarrative.innerHTML = `<b>Expiratory Pressure Relief (EPR):</b> comfort reduction in pressure during exhale. Parsed from <b>EprPress.2s</b> variants when available.<br/>Scale meaning: EPR is pressure drop during exhale, usually in <b>cmH₂O</b>. In plain terms, <b>EPR 1/2/3</b> feels like small/medium/larger exhale relief. <br/>Scientific detail: expected EPR values are typically low (commonly around 0–3 cmH₂O depending on settings).`;
   } else {
     Plotly.newPlot(els.plotEpr, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('EPR (not mapped)')}, plotConfig);
@@ -3273,7 +3280,8 @@ function renderPlotsAndText(){
     const rangeLabel = state.selectedRange?.startISO && state.selectedRange?.endISO ? `${state.selectedRange.startISO} → ${state.selectedRange.endISO}` : (state.current.session?.label || 'Selected session');
     const perHour = st.usageHrs && st.usageHrs > 0 ? (ev.t.length / st.usageHrs) : null;
     els.eventsNarrative.innerHTML = `
-      <b>Events explained:</b> each dot is one parsed annotation event, grouped by category (including decoded device event codes where possible).<br/><br/>
+      <b>Events explained:</b> each dot is one parsed annotation event, grouped by category (including decoded device event codes where possible).<br/>
+      Scale meaning: this chart is event timing + category (not pressure strength). Higher rows are different categories, not “more severe” by height.<br/><br/>
       • Range: <b>${escapeHtml(rangeLabel)}</b><br/>
       • Total events: <b>${ev.t.length}</b><br/>
       • Events/hour (raw): <b>${perHour != null ? perHour.toFixed(2) : '—'}</b><br/>
