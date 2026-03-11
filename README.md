@@ -14,6 +14,8 @@ CPAP users and maintainers often need lightweight tools and repeatable workflows
 
 The repository is currently in an **early, documentation-first stage**, with emphasis on establishing clear conventions before scaling implementation.
 
+![Screenshot 2026-03-10 135211](https://github.com/user-attachments/assets/c002f469-8a64-4c9f-8772-89363e27b0c0)
+---![Screenshot 2026-03-10 135104](https://github.com/user-attachments/assets/9b38fc19-c9b4-4da6-9e4a-00a8bdbf91d9)
 ---
 
 ## Current status
@@ -22,7 +24,6 @@ The repository is currently in an **early, documentation-first stage**, with emp
 
 Right now, this project is focused on defining standards for development and collaboration. If you are joining early, your feedback on structure, naming, and process is especially valuable.
 
----
 
 ## Getting started
 
