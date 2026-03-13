@@ -1,96 +1,55 @@
 # CalmCPAP
 
-A focused, contributor-friendly repository for CPAP-related tooling, workflows, and practical experiments.
+Sleep is serious. This app is not trying to act like serious medical software.
 
----
+CalmCPAP is a small browser app that turns CPAP data into charts, plain-English notes, and a simple PDF. The point is to make sleep data feel less stiff, less intimidating, and a little more interesting to explore.
 
-## Why this project exists
+## The Short Version
 
-CPAP users and maintainers often need lightweight tools and repeatable workflows for handling therapy-related tasks. CalmCPAP is intended to be a home for:
+This is a fun way to look at your sleep.
 
-- Small utilities that improve day-to-day CPAP workflows.
-- Documentation that makes recurring tasks easier and more consistent.
-- Iterative experiments that can graduate into stable tooling.
+It is not a doctor.
 
-The repository is currently in an **early, documentation-first stage**, with emphasis on establishing clear conventions before scaling implementation.
+It is not a diagnosis tool.
 
-![Screenshot 2026-03-10 135211](https://github.com/user-attachments/assets/c002f469-8a64-4c9f-8772-89363e27b0c0)
----![Screenshot 2026-03-10 135104](https://github.com/user-attachments/assets/9b38fc19-c9b4-4da6-9e4a-00a8bdbf91d9)
----
+It is not medical advice.
 
-## Current status
+If something looks off, or you are worried about your sleep, breathing, therapy, or settings, talk to a qualified clinician.
 
-> **Stage:** Early baseline / foundation building
+## What It Does
 
-Right now, this project is focused on defining standards for development and collaboration. If you are joining early, your feedback on structure, naming, and process is especially valuable.
+- Opens AirSense 11 SD card ZIP exports in the browser
+- Builds charts for leak, pressure, flow, and events when that data is available
+- Explains the numbers in plain English
+- Exports a simple PDF report
+- Includes a demo mode so people can click around without using real data
 
+## Why It Exists
 
-## Getting started
+Sleep data matters, but a lot of sleep tools feel dry, confusing, or built only for experts. CalmCPAP is a different lens. Same subject, lighter tone.
 
-### 1) Clone the repository
+Think of it as a sleep-data curiosity machine, not a medical device.
 
-```bash
-git clone <repo-url>
-cd CalmCPAP
-```
+## Privacy
 
-### 2) Create a branch for your work
+Everything runs locally in your browser.
 
-```bash
-git checkout -b feat/short-description
-```
+No account. No cloud upload. No server processing.
 
-### 3) Make focused changes
+## How To Try It
 
-Keep changes small and reviewable:
+1. Open `index.html` in a modern browser.
+2. Click `Load demo` if you want to explore fake sample data.
+3. Or drop in an AirSense 11 SD ZIP and pick a night.
+4. Use the tabs to move between overview, leaks, pressure, flow, events, and raw data.
+5. Click `Share report (PDF)` if you want an export.
 
-- one feature/fix per branch
-- clear commit messages
-- update docs alongside behavior changes
+## Current Status
 
-### 4) Validate your work
+Alpha. Single-file prototype. Useful, strange, and still a little rough around the edges.
 
-Before opening a PR:
+## Important Disclaimer
 
-- run relevant tests/checks for files you touched
-- review diffs for accidental edits
-- confirm docs/examples still match current behavior
+CalmCPAP is for fun, education, and entertainment.
 
-### 5) Open a pull request
-
-Include:
-
-- **what** changed
-- **why** it changed
-- **how** it was validated
-
----
-
-## Contribution guidelines
-
-To keep the repo easy to maintain:
-
-- Prefer straightforward, readable solutions over clever ones.
-- Document assumptions and trade-offs in PR descriptions.
-- Avoid broad refactors unless they are directly required.
-- Keep naming consistent and intent obvious.
-
-If a change affects behavior or workflow, add or update documentation in the same PR.
-
----
-
-## Suggested roadmap
-
-Near-term direction for the project:
-
-1. Define core problem areas and success metrics.
-2. Add initial tooling skeletons with basic validation.
-3. Expand docs with concrete examples and troubleshooting notes.
-4. Establish release/versioning conventions.
-
----
-
-## License
-
-No license has been specified yet. Add one before publishing or distributing artifacts broadly.
-
+It is not medical advice, not a diagnostic tool, and not a replacement for a sleep doctor, respiratory therapist, or official CPAP reporting software.
