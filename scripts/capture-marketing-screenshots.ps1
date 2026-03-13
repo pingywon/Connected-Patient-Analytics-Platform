@@ -1,5 +1,5 @@
 param(
-  [string]$OutputDir = (Join-Path (Split-Path -Parent $PSScriptRoot) "marketing")
+  [string]$OutputDir = (Join-Path (Split-Path -Parent $PSScriptRoot) "assets")
 )
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
