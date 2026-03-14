@@ -25,7 +25,7 @@ The screenshots above use the built-in synthetic demo data, so the README stays 
 
 1. Open `index.html` in a browser.
 2. Drop in a CPAP ZIP export, or click `Load demo` for the built-in sample night.
-3. Hop through the tabs and pretend the fake patient had a very eventful evening.
+3. Hop through the tabs and explore.
 
 ## Notes
 
