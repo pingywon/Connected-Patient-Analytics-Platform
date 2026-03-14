@@ -25,13 +25,13 @@ $indexUri = ([System.Uri](Get-Item $indexPath).FullName).AbsoluteUri
 
 $shots = @(
   @{ Name = "calmcpap-overview.png"; Tab = "overview" },
-  @{ Name = "calmcpap-leaks.png"; Tab = "leaks" },
   @{ Name = "calmcpap-pressure.png"; Tab = "pressure" },
+  @{ Name = "calmcpap-compare.png"; Tab = "compare" },
   @{ Name = "calmcpap-events.png"; Tab = "events" }
 )
 
 foreach ($shot in $shots) {
-  $url = "$indexUri#demo=1&tab=$($shot.Tab)"
+  $url = "$indexUri#demo=1&skipOnboarding=1&tab=$($shot.Tab)"
   $outputPath = Join-Path $OutputDir $shot.Name
   $profileDir = Join-Path $env:TEMP ("calmcpap-headless-" + [guid]::NewGuid().ToString())
 

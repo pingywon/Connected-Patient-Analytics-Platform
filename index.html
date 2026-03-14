@@ -952,6 +952,7 @@ const els = {
 
 const state = {
   jobId: 0,
+  skipOnboarding: false,
 
   zip: null,
   entries: [],
@@ -975,6 +976,24 @@ const state = {
   },
   notes: []
 };
+
+function parseBoolish(v){
+  return ['1','true','yes','on'].includes(String(v || '').trim().toLowerCase());
+}
+function getStartupOptions(){
+  const params = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+  const tab = String(params.get('tab') || '').trim().toLowerCase();
+  return {
+    demo: parseBoolish(params.get('demo')),
+    tab,
+    skipOnboarding: parseBoolish(params.get('skipOnboarding')) || parseBoolish(params.get('demo'))
+  };
+}
+function resolveTabId(tabKey){
+  if (!tabKey) return '';
+  const id = `tab-${tabKey}`;
+  return document.getElementById(id) ? id : '';
+}
 
 /* ---------- UI helpers ---------- */
 function toast(msg){
@@ -1241,6 +1260,7 @@ els.tablist.addEventListener('keydown', (e)=>{
 /* ---------- Upload handling ---------- */
 function maybeShowOnboarding(){
   if (!els.onboardingModal) return;
+  if (state.skipOnboarding) return;
   els.onboardingModal.style.display = 'block';
   els.onboardingModal.setAttribute('aria-hidden','false');
   if (els.onboardingAgree) els.onboardingAgree.checked = false;
@@ -1343,7 +1363,7 @@ els.applyMappingBtn.addEventListener('click', async ()=>{
 els.exploreSelect.addEventListener('change', async ()=>{ await renderExplorePlot(); });
 
 /* ---------- Demo ---------- */
-els.demoBtn.addEventListener('click', ()=>{
+function loadDemoData({ tabId='', skipToast=false } = {}){
   resetAll();
   setStatus('Demo','good');
   els.fileBadge.textContent = 'demo.zip';
@@ -1412,8 +1432,10 @@ els.demoBtn.addEventListener('click', ()=>{
   state.current.events = { t: evtT, type: evtType };
 
   analyzeAndRender();
-  toast('Demo ready ✔️');
-});
+  if (tabId) setActiveTab(tabId);
+  if (!skipToast) toast('Demo ready ✔️');
+}
+els.demoBtn.addEventListener('click', ()=>{ loadDemoData(); });
 
 /* ============================
    ZIP scan helpers
@@ -3262,6 +3284,16 @@ function renderPlotsAndText(){
       {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
     els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
   }
+}
+
+const startupOptions = getStartupOptions();
+state.skipOnboarding = startupOptions.skipOnboarding;
+if (startupOptions.demo){
+  closeOnboarding();
+  loadDemoData({ tabId: resolveTabId(startupOptions.tab), skipToast:true });
+} else {
+  const startupTabId = resolveTabId(startupOptions.tab);
+  if (startupTabId) setActiveTab(startupTabId);
 }
 
 </script>
