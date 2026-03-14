@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CalmCPAP mask badge favicon">
+  <rect width="64" height="64" rx="16" fill="#114a55"/>
+  <path d="M29 8h6v7h-6z" fill="#eaf7f7"/>
+  <path d="M32 14v6" fill="none" stroke="#eaf7f7" stroke-linecap="round" stroke-width="4"/>
+  <path d="M14 25h7" fill="none" stroke="#9ce6db" stroke-linecap="round" stroke-width="4"/>
+  <path d="M43 25h7" fill="none" stroke="#9ce6db" stroke-linecap="round" stroke-width="4"/>
+  <path d="M22 18h20c2.8 0 5 2.2 5 5v16c0 4.4-3.6 8-8 8H25c-4.4 0-8-3.6-8-8V23c0-2.8 2.2-5 5-5Z" fill="#bfeee8" stroke="#eaf7f7" stroke-linejoin="round" stroke-width="4"/>
+  <path d="M32 47v6" fill="none" stroke="#eaf7f7" stroke-linecap="round" stroke-width="4"/>
+  <circle cx="32" cy="56" r="3" fill="#9ce6db" stroke="#eaf7f7" stroke-width="2"/>
+</svg>

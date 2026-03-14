@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CalmCPAP full face mask favicon">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0d4f58"/>
+      <stop offset="100%" stop-color="#133942"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#bff7ef" stop-opacity=".78"/>
+      <stop offset="100%" stop-color="#7fd8ff" stop-opacity=".48"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <circle cx="32" cy="32" r="24" fill="rgba(255,255,255,.04)"/>
+  <path d="M28 10h8v8h-8z" fill="#e7f6f6"/>
+  <path d="M32 18v8" stroke="#e7f6f6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M22 20c-4 2-7 5-9 9" stroke="#8df0e1" stroke-width="4" stroke-linecap="round"/>
+  <path d="M42 20c4 2 7 5 9 9" stroke="#8df0e1" stroke-width="4" stroke-linecap="round"/>
+  <path d="M19 28c0-8 6-14 13-14s13 6 13 14v15c0 5-3 9-8 10l-5 1-5-1c-5-1-8-5-8-10z" fill="url(#glass)" stroke="#e7f6f6" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M24 32c2-2 5-3 8-3s6 1 8 3" stroke="#0d4f58" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M24 38c2 2 5 3 8 3s6-1 8-3" stroke="#0d4f58" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M28 52v5c0 2 2 4 4 4s4-2 4-4v-5" stroke="#e7f6f6" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <circle cx="32" cy="55" r="3.5" fill="#8df0e1"/>
+</svg>

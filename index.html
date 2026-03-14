@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CalmCPAP — 0.511-alpha</title>
+  <title>CalmCPAP — 0.9-alpha</title>
+  <link rel="icon" type="image/svg+xml" href="assets/calmcpap-mask-badge.svg" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/calmcpap-mask-badge-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/calmcpap-mask-badge-32.png" />
+  <link rel="shortcut icon" type="image/x-icon" href="assets/calmcpap-mask-badge.ico" />
 
   <!-- Unzip -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -64,10 +68,47 @@
         linear-gradient(135deg, rgba(97,212,195,.95), rgba(122,167,255,.85));
       box-shadow: var(--shadow);
     }
-    h1{ margin:0; font-size:18px; letter-spacing:.2px; }
-    .subtitle{ margin:2px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35; }
+    h1{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .brandStack{ display:grid; gap:5px; }
+    .headerMeta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .versionTag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(97,212,195,.42);
+      background: linear-gradient(135deg, rgba(97,212,195,.18), rgba(122,167,255,.20));
+      color: rgba(231,246,246,.98);
+      font-size:12.5px;
+      font-weight:900;
+      letter-spacing:.18px;
+      box-shadow: inset 0 0 0 1px rgba(122,167,255,.08);
+    }
+    .subtitle{ margin:0; color:var(--muted); font-size:12.5px; line-height:1.35; max-width:640px; }
 
     .top-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .headerLink{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:42px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      text-decoration:none;
+      font-weight:850;
+      box-shadow:none;
+      transition: transform .12s ease, filter .12s ease, border-color .12s ease;
+    }
+    .headerLink:hover{
+      transform: translateY(-1px);
+      filter:brightness(1.04);
+      border-color: rgba(122,167,255,.45);
+    }
     .badge{
       font-size:11px;
       padding:4px 10px;
@@ -204,6 +245,72 @@
       font-size: 13px;
     }
     .callout b{ color: rgba(231,246,246,.94); }
+    .callout strong{ color: rgba(231,246,246,.96); }
+    .sourceGrid, .legendGrid{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .sourceRow, .legendRow{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:10px;
+      align-items:start;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(11,42,49,.58);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .legendRow{
+      grid-template-columns:auto 1fr;
+    }
+    .sourceMain, .legendMain{
+      display:grid;
+      gap:3px;
+    }
+    .sourceTitle, .legendTitle{
+      color: rgba(231,246,246,.97);
+      font-weight:900;
+      font-size:13px;
+    }
+    .sourceMeta, .legendMeta{
+      color: var(--muted);
+      font-size:12.25px;
+      line-height:1.45;
+    }
+    .sourcePill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:74px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color: rgba(231,246,246,.95);
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.22px;
+    }
+    .legendChip{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.28);
+      margin-top:2px;
+    }
+    #eventsLegend:empty, #sourceArea:empty{ display:none; }
+    .callout details{
+      margin-top:10px;
+      border-top:1px solid rgba(255,255,255,.08);
+      padding-top:10px;
+    }
+    .callout details summary{
+      cursor:pointer;
+      font-weight:850;
+      color: rgba(231,246,246,.96);
+    }
 
     .progressWrap{
       padding:12px;
@@ -404,6 +511,128 @@
       backdrop-filter: blur(10px);
       z-index: 9999;
     }
+    .modalShell{
+      position:fixed;
+      inset:0;
+      z-index:50;
+      display:none;
+      padding:24px;
+      background:rgba(5,16,20,.75);
+      backdrop-filter: blur(8px);
+    }
+    .modalShell[aria-hidden="false"]{
+      display:grid;
+      place-items:center;
+    }
+    .modalCard{
+      width:min(860px, 100%);
+      max-height:min(82vh, 880px);
+      overflow:auto;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(11,42,49,.98);
+      box-shadow: 0 28px 60px rgba(0,0,0,.45);
+      padding:22px 22px 20px;
+    }
+    .modalEyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      margin-bottom:10px;
+      border-radius:999px;
+      border:1px solid rgba(255,204,102,.38);
+      background: rgba(255,204,102,.12);
+      color: rgba(255,241,214,.98);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.25px;
+      text-transform:uppercase;
+    }
+    .modalCard h2{
+      margin:0 0 10px;
+      font-size:26px;
+      line-height:1.12;
+      color: rgba(231,246,246,.98);
+    }
+    .modalLead{
+      margin:0;
+      color: var(--muted);
+      line-height:1.55;
+      font-size:14px;
+    }
+    .modalGrid{
+      display:grid;
+      gap:14px;
+      margin-top:18px;
+    }
+    .modalPanel{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:16px;
+      background: rgba(7,26,31,.34);
+    }
+    .modalPanel h3{
+      margin:0 0 10px;
+      font-size:15px;
+      text-transform:uppercase;
+      letter-spacing:.24px;
+      color: rgba(231,246,246,.96);
+    }
+    .modalPanel ol{
+      margin:0;
+      padding-left:20px;
+      color: var(--text);
+      line-height:1.6;
+    }
+    .dangerNote{
+      border-left:4px solid rgba(255,107,122,.88);
+      background: rgba(255,107,122,.10);
+      padding:12px 14px;
+      border-radius:14px;
+      color: rgba(255,226,230,.95);
+      line-height:1.55;
+      font-size:13.5px;
+    }
+    .agreeRow{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+    .agreeBox{
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:12px;
+      align-items:start;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(231,246,246,.96);
+      line-height:1.55;
+    }
+    .checkWrap{
+      display:grid;
+      place-items:center;
+      width:28px;
+      height:28px;
+      margin-top:2px;
+      border-radius:10px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    #onboardingAgree{
+      width:18px;
+      height:18px;
+      accent-color: #61d4c3;
+      cursor:pointer;
+    }
+    .modalActions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:16px;
+    }
 
     /* ============================
        Pretty PDF styles (used in hidden shell)
@@ -582,13 +811,19 @@
   <header>
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>CalmCPAP <span class="badge">0.51-alpha</span></h1>
-        <div class="subtitle">AirSense 11 SD ZIP → unzip → Identification.json + EDF → DATALOG/YYYYMMDD sessions → charts + explanations.</div>
+      <div class="brandStack">
+        <h1>CalmCPAP</h1>
+        <div class="headerMeta">
+          <span class="versionTag" id="headerVersion">Version 0.9-alpha</span>
+          <span class="badge">Single-file app</span>
+        </div>
+        <div class="subtitle">Drop in a CPAP ZIP, review one anchored night at a time, and get plain-language charts, events, and source summaries without sending anything to a server.</div>
       </div>
     </div>
 
-    <div class="top-actions"></div>
+    <div class="top-actions">
+      <a class="headerLink" href="https://github.com/pingywon/CalmCPAP" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
   </header>
 
   <main>
@@ -703,6 +938,16 @@
             <div class="kv" id="settingsArea" style="margin-top:0;">
               <div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>
             </div>
+          </div>
+        </details>
+
+        <details class="drawer" open>
+          <summary>Data Sources</summary>
+          <div class="drawerBody">
+            <div class="callout">
+              This panel shows which file families were found for the current selection, what they contribute, and whether the report is actively using them.
+            </div>
+            <div class="sourceGrid" id="sourceArea"></div>
           </div>
         </details>
 
@@ -826,24 +1071,34 @@
 
 <div class="toast" id="toast"></div>
 <button id="floatingSidebarBtn" class="btn ghost" style="display:none; position:fixed; left:14px; bottom:18px; z-index:30;">Open Sidebar</button>
-<div id="onboardingModal" aria-hidden="true" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(5,16,20,.75);">
-  <div style="width:min(1100px, 75vw); max-height:82vh; overflow:auto; margin:6vh auto 0; background:rgba(11,42,49,.98); border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:18px 20px; box-shadow:0 28px 60px rgba(0,0,0,.45); text-align:center;">
-    <h2 style="margin:0 0 8px;">How to prepare your SD ZIP</h2>
-    <p style="margin:0 0 10px; color:var(--muted);">This is not medical advice. This program is for entertainment purposes only. When in doubt contact a Dr.</p><p style="margin:0 0 10px; color:var(--muted);">Follow these steps:</p>
-    <ol style="margin:0 auto 14px; max-width:760px; text-align:left; line-height:1.5; color:var(--text);">
-      <li>Power off your CPAP Device and safely remove the SD card.</li>
-      <li>Copy the <b>entire root of the SD card</b> to your computer.</li>
-      <li>If you want a smaller file, remove older day folders from <code>DATALOG/</code>.</li>
-      <li>Create one ZIP from that root copy.</li>
-      <li>Upload that ZIP in this app.</li>
-    </ol>
-    <label style="display:flex; align-items:center; gap:8px; margin:2px 0 12px; color:var(--text);">
-      <input type="checkbox" id="onboardingAgree" />
-      I have read and agree. I understand no person or party can be held responsible for misuse, interpretation errors, or inaccurate output from this app.
-    </label>
-    <p style="margin:0 auto 12px; max-width:820px; color:var(--muted);">This app is not intended for diagnosis, treatment decisions, emergency guidance, or clinical care. It may be incomplete, wrong, or misleading. By continuing, you acknowledge this is for entertainment/educational use only and no one is liable for misuse, interpretation, or outcomes based on this information.</p>
-    <div style="display:flex; justify-content:center; gap:10px;">
-      <button class="btn" id="onboardingCloseBtn" type="button" disabled style="min-width:280px; font-size:16px; padding:12px 18px; text-align:center;">Got it — Continue</button>
+<div id="onboardingModal" class="modalShell" aria-hidden="true">
+  <div class="modalCard">
+    <div class="modalEyebrow">Read before using</div>
+    <h2>Load local ZIPs, inspect nights, keep expectations realistic.</h2>
+    <p class="modalLead">CalmCPAP is a local browser tool for exploring CPAP export data. It is not medical advice, not a diagnosis tool, and not a substitute for a clinician. It should be treated as an educational and for-fun viewer that may still be incomplete, wrong, or misleading.</p>
+    <div class="modalGrid">
+      <div class="modalPanel">
+        <h3>How to prepare your SD ZIP</h3>
+        <ol>
+          <li>Power off the CPAP device and safely remove the SD card.</li>
+          <li>Copy the <b>entire root of the SD card</b> to your computer.</li>
+          <li>If you want a smaller test ZIP, trim older folders from <code>DATALOG/</code>.</li>
+          <li>Create one ZIP from that copied root folder.</li>
+          <li>Upload that ZIP here, or use the built-in demo data.</li>
+        </ol>
+      </div>
+      <div class="dangerNote">
+        This app is not intended for treatment decisions, emergencies, or clinical care. By continuing, you agree that the charts, explanations, and summaries may be inaccurate or incomplete and must not be treated as professional medical guidance.
+      </div>
+    </div>
+    <div class="agreeRow">
+      <label class="agreeBox" for="onboardingAgree">
+        <span class="checkWrap"><input type="checkbox" id="onboardingAgree" /></span>
+        <span>I have read this warning and understand that CalmCPAP is a local exploratory viewer for educational and personal-use experimentation only. I will not rely on it for diagnosis, treatment, or emergency decisions.</span>
+      </label>
+    </div>
+    <div class="modalActions">
+      <button class="btn" id="onboardingCloseBtn" type="button" disabled>Continue to CalmCPAP</button>
     </div>
   </div>
 </div>
@@ -859,8 +1114,8 @@
 
 <script>
 /* ============================
-   CalmCPAP 0.51-alpha (AirSense 11 SD)
-   ✔️ Robust ZIP indexing + EDF parsing + charts
+   CalmCPAP 0.9-alpha (AirSense 11 SD)
+   Single-file CPAP viewer with embedded demo datasets
    ============================ */
 
 const els = {
@@ -889,6 +1144,7 @@ const els = {
 
   idArea: document.getElementById('idArea'),
   settingsArea: document.getElementById('settingsArea'),
+  sourceArea: document.getElementById('sourceArea'),
   rangeControls: document.getElementById('rangeControls'),
   rangeModeSeg: document.getElementById('rangeModeSeg'),
   modeNight: document.getElementById('modeNight'),
@@ -968,13 +1224,15 @@ const state = {
     session: null,
     edfFiles: [],
     signalCatalog: [],
-    mapping: { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null },
+    mapping: { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, pulse:null, spo2:null, annotations:null },
     signals: {},
     events: null,
     stats: {},
-    raw: {}
+    raw: {},
+    sourceSummary: []
   },
-  notes: []
+  notes: [],
+  demoSetId: null
 };
 
 function parseBoolish(v){
@@ -983,9 +1241,11 @@ function parseBoolish(v){
 function getStartupOptions(){
   const params = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
   const tab = String(params.get('tab') || '').trim().toLowerCase();
+  const demoSetRaw = parseInt(String(params.get('demoSet') || '').trim(), 10);
   return {
     demo: parseBoolish(params.get('demo')),
     tab,
+    demoSet: Number.isFinite(demoSetRaw) && demoSetRaw > 0 ? demoSetRaw : null,
     skipOnboarding: parseBoolish(params.get('skipOnboarding')) || parseBoolish(params.get('demo'))
   };
 }
@@ -993,6 +1253,22 @@ function resolveTabId(tabKey){
   if (!tabKey) return '';
   const id = `tab-${tabKey}`;
   return document.getElementById(id) ? id : '';
+}
+function getActiveTabKey(){
+  const active = document.querySelector('[role="tab"].active');
+  return active?.getAttribute('data-tab') || '';
+}
+function updateHashParams(patch){
+  const params = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+  for (const [key, value] of Object.entries(patch || {})){
+    if (value == null || value === '' || value === false) params.delete(key);
+    else params.set(key, String(value));
+  }
+  const next = params.toString();
+  const nextHash = next ? `#${next}` : '';
+  if (location.hash !== nextHash){
+    history.replaceState(null, '', `${location.pathname}${location.search}${nextHash}`);
+  }
 }
 
 /* ---------- UI helpers ---------- */
@@ -1158,10 +1434,11 @@ function resetAll(){
   state.calendarView = null;
   state.current = {
     session:null, edfFiles:[], signalCatalog:[],
-    mapping:{ leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null },
-    signals:{}, events:null, stats:{}, raw:{}
+    mapping:{ leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, pulse:null, spo2:null, annotations:null },
+    signals:{}, events:null, stats:{}, raw:{}, sourceSummary:[]
   };
   state.notes = [];
+  state.demoSetId = null;
 
   els.zipInput.value = '';
   els.fileBadge.textContent = 'No file';
@@ -1169,6 +1446,7 @@ function resetAll(){
 
   els.idArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
   els.settingsArea.innerHTML = `<div class="row"><span>Waiting for upload…</span><span class="badge">—</span></div>`;
+  els.sourceArea.innerHTML = '';
 
   els.loadRangeBtn.disabled = true;
   els.rangeHint.textContent = 'Upload ZIP to enable night picker.';
@@ -1195,6 +1473,7 @@ function resetAll(){
   els.tidalNarrative.innerHTML = '';
   els.eprNarrative.innerHTML = '';
   els.eventsLegend.innerHTML = '';
+  els.eventsLegend.style.display = 'none';
   els.eventsNarrative.innerHTML = '';
   els.exploreNarrative.innerHTML = '<b>Explore:</b> choose a mapped signal from the dropdown below to display it here.';
   els.exploreSelect.innerHTML = '<option value="">Choose a mapped signal…</option>';
@@ -1363,79 +1642,398 @@ els.applyMappingBtn.addEventListener('click', async ()=>{
 els.exploreSelect.addEventListener('change', async ()=>{ await renderExplorePlot(); });
 
 /* ---------- Demo ---------- */
-function loadDemoData({ tabId='', skipToast=false } = {}){
-  resetAll();
-  setStatus('Demo','good');
-  els.fileBadge.textContent = 'demo.zip';
-  els.zipStats.textContent = 'demo';
-  progress('Demo', 100, 'Loaded synthetic data for layout + charts.');
+const DEMO_DATASETS = [
+  {
+    id: 1,
+    title: 'Demo Night 1',
+    fakeDateISO: '2026-03-03',
+    startHour: 22,
+    startMinute: 18,
+    durationHours: 7.07,
+    pressureMedian: 10.7,
+    exhaleMedian: 7.7,
+    reliefMedian: 3,
+    leakP95: 15.6,
+    respMedian: 17.4,
+    tidalMedianMl: 480,
+    pulseMedian: 66,
+    spo2Median: 96,
+    sourceCounts: { 'STR.edf':1, PLD:1, BRP:1, EVE:1, CSL:1, SA2:1 },
+    eventMix: [
+      ['Hypopnea', 9],
+      ['Obstructive Apnea', 8],
+      ['Central Apnea', 3],
+      ['RERA', 2],
+      ['Arousal', 1]
+    ]
+  },
+  {
+    id: 2,
+    title: 'Demo Night 2',
+    fakeDateISO: '2026-03-08',
+    startHour: 22,
+    startMinute: 42,
+    durationHours: 7.4,
+    pressureMedian: 10.34,
+    exhaleMedian: 7.34,
+    reliefMedian: 3,
+    leakP95: 12.0,
+    respMedian: 16.4,
+    tidalMedianMl: 480,
+    pulseMedian: 67,
+    spo2Median: 95.8,
+    sourceCounts: { 'STR.edf':1, PLD:3, BRP:3, EVE:3, CSL:3, SA2:3 },
+    eventMix: [
+      ['Obstructive Apnea', 6],
+      ['Central Apnea', 5],
+      ['Hypopnea', 4],
+      ['Arousal', 2],
+      ['RERA', 1]
+    ]
+  },
+  {
+    id: 3,
+    title: 'Demo Night 3',
+    fakeDateISO: '2026-03-14',
+    startHour: 23,
+    startMinute: 6,
+    durationHours: 6.05,
+    pressureMedian: 10.0,
+    exhaleMedian: 7.0,
+    reliefMedian: 3,
+    leakP95: 3.6,
+    respMedian: 15.2,
+    tidalMedianMl: 460,
+    pulseMedian: 64,
+    spo2Median: 96.4,
+    sourceCounts: { 'STR.edf':1, PLD:4, BRP:4, EVE:4, CSL:4, SA2:4 },
+    eventMix: [
+      ['Obstructive Apnea', 6],
+      ['Hypopnea', 3],
+      ['Central Apnea', 2],
+      ['RERA', 1]
+    ]
+  },
+  {
+    id: 4,
+    title: 'Demo Night 4',
+    fakeDateISO: '2026-03-21',
+    startHour: 21,
+    startMinute: 54,
+    durationHours: 8.28,
+    pressureMedian: 10.38,
+    exhaleMedian: 7.38,
+    reliefMedian: 3,
+    leakP95: 4.8,
+    respMedian: 17.4,
+    tidalMedianMl: 520,
+    pulseMedian: 65,
+    spo2Median: 95.6,
+    sourceCounts: { 'STR.edf':1, PLD:3, BRP:3, EVE:3, CSL:3, SA2:3 },
+    eventMix: [
+      ['Obstructive Apnea', 7],
+      ['Central Apnea', 6],
+      ['Hypopnea', 3],
+      ['RERA', 2]
+    ]
+  },
+  {
+    id: 5,
+    title: 'Demo Night 5',
+    fakeDateISO: '2026-03-29',
+    startHour: 22,
+    startMinute: 11,
+    durationHours: 8.68,
+    pressureMedian: 10.0,
+    exhaleMedian: 7.0,
+    reliefMedian: 3,
+    leakP95: 1.2,
+    respMedian: 15.6,
+    tidalMedianMl: 500,
+    pulseMedian: 68,
+    spo2Median: 95.4,
+    sourceCounts: { 'STR.edf':1, PLD:6, BRP:6, EVE:7, CSL:6, SA2:6 },
+    eventMix: [
+      ['Obstructive Apnea', 11],
+      ['Hypopnea', 3],
+      ['Central Apnea', 2],
+      ['RERA', 1],
+      ['Arousal', 1]
+    ]
+  }
+];
 
-  state.identification = {
-    Manufacturer: "ResMed (demo)",
-    Model: "AirSense 11 (demo)",
-    Mode: "AutoSet (demo)",
-    SerialNumber: "DEMO-12345"
+function mulberry32(seed){
+  let t = seed >>> 0;
+  return function(){
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
-  renderIdentification(state.identification);
+}
+function clamp(n, min, max){
+  return Math.min(max, Math.max(min, n));
+}
+function fakeSerial(length){
+  return Array.from({ length }, (_, idx) => String((idx + 1) % 10)).join('');
+}
+function pickDemoDataset(requestedId=null){
+  if (requestedId != null){
+    return DEMO_DATASETS.find(set => set.id === requestedId) || DEMO_DATASETS[0];
+  }
+  return DEMO_DATASETS[Math.floor(Math.random() * DEMO_DATASETS.length)];
+}
+function makeDemoFiles(seed, dateISO){
+  const out = [];
+  const defs = [
+    ['STR.edf', 'STR'],
+    ['PLD', 'PLD'],
+    ['BRP', 'BRP'],
+    ['EVE', 'EVE'],
+    ['CSL', 'CSL'],
+    ['SA2', 'SA2']
+  ];
+  for (const [family, suffix] of defs){
+    const count = seed.sourceCounts[family] || 0;
+    for (let i=0;i<count;i++){
+      const pad = String(i + 1).padStart(2, '0');
+      const name = family === 'STR.edf'
+        ? `demo/embedded/${dateISO}/DEMO_STR_${pad}.edf`
+        : `demo/embedded/${dateISO}/DEMO_${suffix}_${pad}.edf`;
+      out.push({ path:name, entry:null, _folderDateISO:dateISO });
+    }
+  }
+  return out;
+}
+function buildDemoSettings(seed){
+  const minPressure = Math.max(4, +(seed.pressureMedian - 1.8).toFixed(1));
+  const maxPressure = Math.min(20, +(seed.pressureMedian + 3.8).toFixed(1));
+  return {
+    FlowGenerator: {
+      SettingProfiles: {
+        Attributes: {
+          AppliedDateTime: `${seed.fakeDateISO}T12:00:00.000Z`,
+          Source: 'DEMO',
+          TransactionIdentifier: seed.id
+        },
+        ActiveProfiles: {
+          TherapyProfile: 'AutoSetProfile',
+          FeatureProfiles: ['ComfortFeature','EprFeature','CircuitFeature']
+        },
+        TherapyProfiles: {
+          AutoSetProfile: {
+            TherapyMode: 'AutoSet',
+            MaxPressure: maxPressure,
+            MinPressure: minPressure,
+            StartPressure: Math.max(4, +(minPressure - 1.5).toFixed(1))
+          }
+        },
+        FeatureProfiles: {
+          ComfortFeature: { AutoSetComfort: 'On' },
+          EprFeature: { EprEnable: 'On', EprType: 'FullTime', EprPressure: 3 },
+          CircuitFeature: { MaskType: 'FullFace', TubeType: '15mmNonHeated', AntiBacterialFilter: 'No' }
+        }
+      }
+    }
+  };
+}
+function buildDemoCatalog(signals){
+  const rows = [];
+  const labels = {
+    leak:'Leak',
+    pressure:'Pressure',
+    flow:'Flow',
+    snore:'Snore',
+    respRate:'Respiratory Rate',
+    tidalVolume:'Tidal Volume',
+    epr:'Exhalation Pressure',
+    pulse:'Pulse',
+    spo2:'SpO2'
+  };
+  let idx = 0;
+  for (const [key, series] of Object.entries(signals)){
+    if (!series?.t?.length) continue;
+    rows.push({
+      key: `demo::${idx}`,
+      normKey: normalizeLabelLoose(labels[key] || key),
+      normKeyStrict: normalizeLabel(labels[key] || key),
+      signalIndex: idx++,
+      label: series.label || labels[key] || key,
+      unit: series.unit || '',
+      sr: series.sampleRate || 1,
+      file: 'demo/embedded'
+    });
+  }
+  return rows;
+}
+function materializeDemoDataset(seed){
+  const rng = mulberry32(9000 + seed.id * 97);
+  const start = new Date(`${seed.fakeDateISO}T${pad2(seed.startHour)}:${pad2(seed.startMinute)}:00`);
+  const totalMinutes = Math.round(seed.durationHours * 60);
+  const t = [];
+  const leak = [];
+  const pressure = [];
+  const flow = [];
+  const snore = [];
+  const respRate = [];
+  const tidalVolume = [];
+  const exhalePressure = [];
+  const pulse = [];
+  const spo2 = [];
 
-  const start = new Date(); start.setHours(23,0,0,0);
+  const pressureWaves = [
+    { start: Math.floor(totalMinutes * (0.18 + rng() * 0.08)), end: Math.floor(totalMinutes * (0.32 + rng() * 0.08)), amp: 1.3 + rng() * 1.2 },
+    { start: Math.floor(totalMinutes * (0.52 + rng() * 0.06)), end: Math.floor(totalMinutes * (0.74 + rng() * 0.10)), amp: 0.9 + rng() * 1.1 }
+  ];
+  const leakWaves = [
+    { start: Math.floor(totalMinutes * (0.23 + rng() * 0.10)), width: 22 + Math.floor(rng() * 35), amp: 6 + rng() * 8 },
+    { start: Math.floor(totalMinutes * (0.67 + rng() * 0.09)), width: 18 + Math.floor(rng() * 28), amp: 5 + rng() * 7 }
+  ];
+
+  for (let i=0;i<=totalMinutes;i++){
+    const d = new Date(start.getTime() + i * 60 * 1000);
+    t.push(d);
+
+    let p = seed.pressureMedian + 0.38 * Math.sin(i / 34) + 0.18 * Math.sin(i / 9);
+    for (const wave of pressureWaves){
+      if (i >= wave.start && i <= wave.end){
+        const prog = (i - wave.start) / Math.max(1, wave.end - wave.start);
+        p += wave.amp * Math.sin(prog * Math.PI);
+      }
+    }
+    p += (rng() - 0.5) * 0.14;
+    p = clamp(p, 4.5, 18.5);
+
+    let relief = seed.reliefMedian + 0.06 * Math.sin(i / 37) + (rng() - 0.5) * 0.08;
+    relief = clamp(relief, 0, 3.1);
+    let e = clamp(p - relief + 0.05 * Math.sin(i / 18), 0, p);
+
+    let leakValue = Math.max(0, seed.leakP95 * 0.28 + 1.8 * Math.sin(i / 31));
+    for (const wave of leakWaves){
+      const dist = Math.abs(i - wave.start);
+      if (dist <= wave.width){
+        leakValue += wave.amp * (1 - dist / wave.width);
+      }
+    }
+    leakValue = clamp(leakValue + (rng() - 0.5) * 1.1, 0, Math.max(seed.leakP95 + 6, 12));
+
+    const flowAmp = 0.75 + 0.12 * Math.sin(i / 41);
+    const flowValue = flowAmp * Math.sin(i / 1.75) + 0.14 * Math.cos(i / 0.85);
+    const snoreValue = clamp(0.04 + 0.03 * Math.sin(i / 27) + (rng() - 0.5) * 0.03 + leakValue / 90, 0, 0.9);
+    const respValue = clamp(seed.respMedian + 1.6 * Math.sin(i / 26) + (rng() - 0.5) * 0.9, 9, 30);
+    const tidalValue = clamp(seed.tidalMedianMl + 42 * Math.sin(i / 24) + (rng() - 0.5) * 35, 260, 820);
+    const pulseValue = clamp(seed.pulseMedian + 2.4 * Math.sin(i / 39) + (rng() - 0.5) * 2.8, 48, 104);
+    const spo2Value = clamp(seed.spo2Median + 0.35 * Math.sin(i / 52) - leakValue / 220 + (rng() - 0.5) * 0.35, 91.5, 99.2);
+
+    pressure.push(+p.toFixed(2));
+    exhalePressure.push(+e.toFixed(2));
+    leak.push(+leakValue.toFixed(2));
+    flow.push(+flowValue.toFixed(3));
+    snore.push(+snoreValue.toFixed(3));
+    respRate.push(+respValue.toFixed(2));
+    tidalVolume.push(+tidalValue.toFixed(1));
+    pulse.push(+pulseValue.toFixed(1));
+    spo2.push(+spo2Value.toFixed(1));
+  }
+
+  const evtT = [];
+  const evtType = [];
+  const occupied = new Set();
+  for (const [label, count] of seed.eventMix){
+    for (let i=0;i<count;i++){
+      let minute = Math.floor((0.08 + rng() * 0.84) * totalMinutes);
+      while (occupied.has(minute)) minute = (minute + 7) % totalMinutes;
+      occupied.add(minute);
+      evtT.push(new Date(start.getTime() + minute * 60 * 1000));
+      evtType.push(label);
+    }
+  }
+  const eventIdx = evtT.map((d,i)=>[d.getTime(), i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  const sortedEvents = { t:eventIdx.map(i=>evtT[i]), type:eventIdx.map(i=>evtType[i]) };
   const dateISO = localDateISO(start);
-  const end = new Date(start.getTime() + 7*3600*1000);
-
+  const files = makeDemoFiles(seed, dateISO);
   const sess = {
     key: `${dateISO}__DAY`,
-    label: `${dateISO} — Day`,
-    start, end,
-    files: [{ path:'demo/STR.edf', entry:null, _folderDateISO: dateISO }]
+    label: `${dateISO} — Embedded demo night ${seed.id}`,
+    start,
+    end: new Date(start.getTime() + totalMinutes * 60 * 1000),
+    files
   };
-  state.sessionsByDate.set(dateISO, { dateISO, sessions:[sess] });
+  const serial = fakeSerial(11);
+  const identification = {
+    Manufacturer: 'ResMed (demo)',
+    Model: 'AirSense 11 AutoSet (demo)',
+    Mode: 'AutoSet (demo)',
+    ProductName: 'AirSense 11 AutoSet (demo)',
+    SerialNumber: serial,
+    DeviceProfile: `Embedded demo set ${seed.id}`
+  };
+  const signals = {
+    leak: { t:[...t], y:leak, unit:'L/min', label:'Leak', sampleRate:1/60, _source:'embedded-demo' },
+    pressure: { t:[...t], y:pressure, unit:'cmH₂O', label:'Therapy Pressure', sampleRate:1/60, _source:'embedded-demo' },
+    flow: { t:[...t], y:flow, unit:'a.u.', label:'Flow', sampleRate:1/60, _source:'embedded-demo' },
+    snore: { t:[...t], y:snore, unit:'a.u.', label:'Snore', sampleRate:1/60, _source:'embedded-demo' },
+    respRate: { t:[...t], y:respRate, unit:'BPM', label:'Respiratory Rate', sampleRate:1/60, _source:'embedded-demo' },
+    tidalVolume: { t:[...t], y:tidalVolume, unit:'mL', label:'Tidal Volume', sampleRate:1/60, _source:'embedded-demo' },
+    epr: { t:[...t], y:exhalePressure, unit:'cmH₂O', label:'Exhalation Pressure', sampleRate:1/60, _source:'embedded-demo' },
+    pulse: { t:[...t], y:pulse, unit:'BPM', label:'Pulse', sampleRate:1/60, _source:'embedded-demo' },
+    spo2: { t:[...t], y:spo2, unit:'%', label:'SpO₂', sampleRate:1/60, _source:'embedded-demo' }
+  };
+  return { sess, identification, currentSettings: buildDemoSettings(seed), signals, events: sortedEvents, sourceSummary: buildSourceSummary({ demoSourceCounts: seed.sourceCounts }), signalCatalog: buildDemoCatalog(signals) };
+}
+function loadDemoData({ tabId='', skipToast=false, datasetId=null } = {}){
+  resetAll();
+  const seed = pickDemoDataset(datasetId);
+  const demo = materializeDemoDataset(seed);
+  state.demoSetId = seed.id;
+  state.identification = demo.identification;
+  state.currentSettings = demo.currentSettings;
+  state.current.session = demo.sess;
+  state.current.sourceSummary = demo.sourceSummary;
+  state.current.signals = demo.signals;
+  state.current.events = demo.events;
+  state.current.signalCatalog = demo.signalCatalog;
+  state.current.mapping = {
+    leak:'demo::0', pressure:'demo::1', flow:'demo::2', snore:'demo::3',
+    respRate:'demo::4', tidalVolume:'demo::5', epr:'demo::6', pulse:'demo::7', spo2:'demo::8', annotations:'embedded-demo-events'
+  };
+  state.current.raw = {
+    'embedded-demo': {
+      note:`Pseudo-random demo dataset ${seed.id} generated from the provided sample archive and embedded in index.html.`,
+      sourceFamilies: seed.sourceCounts,
+      fakeDateISO: seed.fakeDateISO,
+      serialNumber: fakeSerial(11)
+    }
+  };
+  state.notes = [
+    `Embedded demo set ${seed.id} selected.`,
+    'All displayed demo data is transformed and does not expose original sample identifiers or timestamps.'
+  ];
+
+  setStatus('Demo','good');
+  els.fileBadge.textContent = `embedded-demo-${seed.id}.zip`;
+  els.zipStats.textContent = `demo ${seed.id} / ${DEMO_DATASETS.length}`;
+  progress('Demo', 100, `Loaded embedded demo set ${seed.id} with pseudo-random sample-derived data.`);
+
+  renderIdentification(state.identification);
+  renderCurrentSettings(state.currentSettings);
+  renderSourceSummary(state.current.sourceSummary);
+
+  const dateISO = localDateISO(demo.sess.start);
+  state.sessionsByDate.set(dateISO, { dateISO, sessions:[demo.sess] });
   enablePicker(true);
 
-  const t = [], leak = [], pressure = [], flow = [], snore = [], respRate = [], tidalVolume = [], epr = [];
-  const mins = 7*60;
-  for (let i=0;i<=mins;i++){
-    const d = new Date(start.getTime() + i*60*1000);
-    t.push(d);
-    const baseLeak = 6 + 2*Math.sin(i/33);
-    const spike = (i>180 && i<210) ? 18 + 7*Math.sin(i/2) : 0;
-    const spike2 = (i>330 && i<360) ? 26 + 7*Math.sin(i/3) : 0;
-    leak.push(Math.max(0, baseLeak + spike + spike2 + (Math.random()-0.5)*1.0));
-    const baseP = 8 + 0.6*Math.sin(i/70);
-    const bump = (i>120 && i<260) ? 2.4 : 0;
-    const bump2 = (i>320 && i<420) ? 1.6 : 0;
-    pressure.push(baseP + bump + bump2 + (Math.random()-0.5)*0.25);
-    flow.push(Math.sin(i/2) * (0.5 + Math.random()*0.2));
-    snore.push(Math.max(0, 0.08 + 0.06*Math.sin(i/29) + (Math.random()-0.5)*0.04));
-    respRate.push(12 + 1.4*Math.sin(i/26) + (Math.random()-0.5)*0.8);
-    tidalVolume.push(480 + 50*Math.sin(i/24) + (Math.random()-0.5)*40);
-    epr.push(Math.max(0, Math.min(3, 1.6 + 0.9*Math.sin(i/40) + (Math.random()-0.5)*0.35)));
-  }
-  const evtT = [], evtType = [];
-  for (let k=0;k<22;k++){
-    const m = Math.floor(Math.random()*mins);
-    evtT.push(new Date(start.getTime() + m*60*1000));
-    const r = Math.random();
-    evtType.push(r < 0.5 ? 'H' : r < 0.85 ? 'OA' : r < 0.95 ? 'RERA' : 'CA');
-  }
-  evtT.sort((a,b)=>a-b);
-
-  state.current.session = sess;
-  state.current.signals = {
-    leak: { t:[...t], y:leak, unit:'L/min', label:'Leak', _source:'demo' },
-    pressure: { t:[...t], y:pressure, unit:'cmH₂O', label:'Pressure', _source:'demo' },
-    flow: { t:[...t], y:flow, unit:'a.u.', label:'Flow', _source:'demo' },
-    snore: { t:[...t], y:snore, unit:'a.u.', label:'Snore', _source:'demo' },
-    respRate: { t:[...t], y:respRate, unit:'BPM', label:'Respiratory Rate', _source:'demo' },
-    tidalVolume: { t:[...t], y:tidalVolume, unit:'mL', label:'Tidal Volume', _source:'demo' },
-    epr: { t:[...t], y:epr, unit:'cmH₂O', label:'EPR', _source:'demo' }
-  };
-  state.current.events = { t: evtT, type: evtType };
-
+  renderMappingUI();
+  renderRawDump();
   analyzeAndRender();
   if (tabId) setActiveTab(tabId);
-  if (!skipToast) toast('Demo ready ✔️');
+  if (!skipToast) toast(`Demo set ${seed.id} ready ✔️`);
 }
-els.demoBtn.addEventListener('click', ()=>{ loadDemoData(); });
+els.demoBtn.addEventListener('click', ()=>{
+  updateHashParams({ demo:1, demoSet:null, tab:getActiveTabKey() || null });
+  loadDemoData({ tabId: resolveTabId(getActiveTabKey()) });
+});
 
 /* ============================
    ZIP scan helpers
@@ -1445,6 +2043,7 @@ async function handleZip(file){
   const jobId = newJob();
   resetAll();
   state.jobId = jobId;
+  updateHashParams({ demo:null, demoSet:null });
 
   els.fileBadge.textContent = file.name;
   setStatus('Reading ZIP…','neutral');
@@ -1639,9 +2238,7 @@ async function indexSessionsFromSDStructure(entries, jobId){
         const buf = await files[fi].entry.async('arraybuffer');
         assertActive(jobId);
         const header = parseEDFHeader(buf);
-        const parsedStart = header?.start instanceof Date && Number.isFinite(header.start.getTime()) && header.start.getFullYear() >= 2000
-          ? header.start
-          : new Date(`${dateISO}T12:00:00`);
+        const parsedStart = bestFileStartDate(files[fi].path, header?.start, dateISO);
         if (parsedStart && Number.isFinite(parsedStart.getTime())){
           const durSec = estimateDurationSeconds(buf, header);
           const end = new Date(parsedStart.getTime() + durSec*1000);
@@ -1655,7 +2252,7 @@ async function indexSessionsFromSDStructure(entries, jobId){
 
     const session = {
       key: `${dateISO}__DAY`,
-      label: `${dateISO} — Day`,
+      label: `${dateISO} — Anchored night`,
       start: minStart || new Date(dateISO + 'T00:00:00'),
       end: maxEnd || new Date(dateISO + 'T08:00:00'),
       files
@@ -1673,7 +2270,8 @@ async function indexSessionsFromSDStructure(entries, jobId){
       const buf = await strEntry.entry.async('arraybuffer');
       assertActive(jobId);
       const header = parseEDFHeader(buf);
-      if (header?.start) attachISO = localDateISO(header.start);
+      const strStart = bestFileStartDate(strEntry.path, header?.start, null);
+      if (strStart) attachISO = localDateISO(strStart);
 
       if (attachISO){
         if (!sessionsByDate.has(attachISO)){
@@ -1681,9 +2279,9 @@ async function indexSessionsFromSDStructure(entries, jobId){
             dateISO: attachISO,
             sessions: [{
               key: `${attachISO}__DAY`,
-              label: `${attachISO} — Day`,
-              start: header.start,
-              end: new Date(header.start.getTime() + estimateDurationSeconds(buf, header)*1000),
+              label: `${attachISO} — Anchored night`,
+              start: strStart,
+              end: new Date(strStart.getTime() + estimateDurationSeconds(buf, header)*1000),
               files: []
             }]
           });
@@ -1931,6 +2529,340 @@ function renderCurrentSettings(obj){
   els.settingsArea.innerHTML = rows.slice(0,14).join('');
 }
 
+const SOURCE_FAMILY_DEFS = {
+  'Identification.json': { title:'Identification.json', role:'Device identity and product metadata.', pill:'active' },
+  'CurrentSettings.json': { title:'CurrentSettings.json', role:'Configured therapy, comfort, and device settings.', pill:'active' },
+  'Identification.crc': { title:'Identification.crc', role:'Integrity marker retained for reference only.', pill:'reference' },
+  'CurrentSettings.crc': { title:'CurrentSettings.crc', role:'Integrity marker retained for reference only.', pill:'reference' },
+  'STR.edf': { title:'STR.edf', role:'Summary cross-checks and longer-horizon nightly rollups.', pill:'retained' },
+  'PLD': { title:'PLD', role:'Primary 2-second therapy metrics used in the nightly report.', pill:'active' },
+  'BRP': { title:'BRP', role:'Higher-rate waveform and pressure context used for flow/pressure views.', pill:'active' },
+  'EVE': { title:'EVE', role:'Annotation events and device-coded event markers.', pill:'active' },
+  'CSL': { title:'CSL', role:'Companion annotation/event source retained with EVE.', pill:'active' },
+  'SA2': { title:'SA2', role:'Pulse and oxygen signals available for source review and Explore.', pill:'retained' },
+};
+
+function classifySourceFamily(path){
+  const lower = String(path || '').toLowerCase();
+  if (lower.endsWith('identification.json')) return 'Identification.json';
+  if (lower.endsWith('currentsettings.json')) return 'CurrentSettings.json';
+  if (lower.endsWith('identification.crc')) return 'Identification.crc';
+  if (lower.endsWith('currentsettings.crc')) return 'CurrentSettings.crc';
+  if (lower.endsWith('str.edf')) return 'STR.edf';
+  if (/_pld\.edf$/.test(lower)) return 'PLD';
+  if (/_brp\.edf$/.test(lower)) return 'BRP';
+  if (/_eve\.edf$/.test(lower)) return 'EVE';
+  if (/_csl\.edf$/.test(lower)) return 'CSL';
+  if (/_sa2\.edf$/.test(lower)) return 'SA2';
+  return 'Other';
+}
+
+function sourceEntryPathForFamily(family){
+  const matchers = {
+    'Identification.json': /identification\.json$/i,
+    'CurrentSettings.json': /currentsettings\.json$/i,
+    'Identification.crc': /identification\.crc$/i,
+    'CurrentSettings.crc': /currentsettings\.crc$/i,
+    'STR.edf': /str\.edf$/i
+  };
+  const re = matchers[family];
+  if (!re) return null;
+  return state.entries.find(e => re.test(e.path || ''))?.path || null;
+}
+
+function buildSourceSummary({ files = [], demoSourceCounts = null } = {}){
+  const counts = new Map();
+  const push = (family, path=null) => {
+    if (!family) return;
+    const current = counts.get(family) || { family, count:0, samplePath:path };
+    current.count += 1;
+    if (!current.samplePath && path) current.samplePath = path;
+    counts.set(family, current);
+  };
+
+  for (const f of files || []){
+    push(classifySourceFamily(f.path), f.path);
+  }
+
+  if (demoSourceCounts){
+    for (const [family, count] of Object.entries(demoSourceCounts)){
+      counts.set(family, { family, count, samplePath:null });
+    }
+  } else {
+    for (const family of ['Identification.json','CurrentSettings.json','Identification.crc','CurrentSettings.crc']){
+      const path = sourceEntryPathForFamily(family);
+      if (path) push(family, path);
+    }
+  }
+
+  const order = ['Identification.json','CurrentSettings.json','PLD','BRP','EVE','CSL','SA2','STR.edf','Identification.crc','CurrentSettings.crc'];
+  return order
+    .map(family => counts.get(family))
+    .filter(Boolean)
+    .map(item => {
+      const meta = SOURCE_FAMILY_DEFS[item.family] || { title:item.family, role:'Retained for reference.', pill:'retained' };
+      return { ...item, ...meta };
+    });
+}
+
+function renderSourceSummary(summary){
+  if (!els.sourceArea) return;
+  if (!summary?.length){
+    els.sourceArea.innerHTML = '';
+    return;
+  }
+  els.sourceArea.innerHTML = summary.map(item => `
+    <div class="sourceRow">
+      <div class="sourceMain">
+        <div class="sourceTitle">${escapeHtml(item.title)}</div>
+        <div class="sourceMeta">${escapeHtml(item.role)}</div>
+      </div>
+      <div class="sourceMeta">${item.count} file${item.count === 1 ? '' : 's'}${item.samplePath ? `<br/><span class="tiny">${escapeHtml(item.samplePath.split('/').slice(-2).join('/'))}</span>` : ''}</div>
+      <div class="sourcePill">${escapeHtml(item.pill)}</div>
+    </div>
+  `).join('');
+}
+
+function buildRawDumpPayload(){
+  return {
+    mode: state.demoSetId ? `embedded-demo-${state.demoSetId}` : 'zip-upload',
+    demoSetId: state.demoSetId,
+    sdMarkers: state.meta.rootMarkers,
+    device: state.identification,
+    currentSettings: state.currentSettings,
+    session: {
+      label: state.current.session?.label || null,
+      start: state.current.session?.start?.toISOString?.() || null,
+      end: state.current.session?.end?.toISOString?.() || null,
+      files: state.current.edfFiles.map(f=>f.path)
+    },
+    sourceSummary: state.current.sourceSummary,
+    signalCatalog: state.current.signalCatalog,
+    mapping: state.current.mapping,
+    stats: state.current.stats,
+    edfHeaders: state.current.raw,
+    notes: state.notes
+  };
+}
+
+function renderRawDump(){
+  const sourceFileCount = (state.current.sourceSummary || []).reduce((sum, item) => sum + (item.count || 0), 0);
+  const modeLabel = state.demoSetId ? `Embedded demo set ${state.demoSetId}` : 'Uploaded ZIP';
+  els.rawSummary.innerHTML = `<b>Raw / debug snapshot:</b><br/>${escapeHtml(modeLabel)} • ${state.current.signalCatalog.length} detected signal labels • ${sourceFileCount} retained source files in ${state.current.sourceSummary.length} source families.`;
+  els.rawDump.textContent = JSON.stringify(buildRawDumpPayload(), null, 2);
+}
+
+function friendlyUnit(unit, fallback='device units'){
+  return unit ? escapeHtml(unit) : fallback;
+}
+
+function leakThresholdForUnit(unit){
+  const unitN = normalizeLabelLoose(unit || '');
+  if (unitN.includes('l') && unitN.includes('s')) return { value: 24/60, label:'0.40 L/s', plain:'24 L/min' };
+  return { value: 24, label:'24 L/min', plain:'24 L/min' };
+}
+
+function getSessionAnchorDate(sess){
+  const fromFiles = (sess?.files || []).map(f => f?._folderDateISO).find(Boolean);
+  if (fromFiles) return fromFiles;
+  const match = String(sess?.label || '').match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : null;
+}
+
+function formatSessionRange(sess){
+  if (!(sess?.start instanceof Date) || !(sess?.end instanceof Date)) return '—';
+  return `${fmtTime(sess.start)} → ${fmtTime(sess.end)}`;
+}
+
+function configuredEprReference(obj){
+  const ref = { setting:null, enabled:'', type:'' };
+  if (!obj || typeof obj !== 'object') return ref;
+  const flat = flattenObject(obj, 6);
+  for (const [key, value] of Object.entries(flat)){
+    const nk = normalizeLabelLoose(key);
+    if (ref.setting == null && nk.includes('eprpressure')){
+      const num = Number(value);
+      if (Number.isFinite(num)) ref.setting = num;
+    }
+    if (!ref.type && nk.includes('eprtype') && value != null) ref.type = String(value);
+    if (!ref.enabled && (nk.includes('eprenable') || nk === 'epr') && value != null) ref.enabled = String(value);
+  }
+  return ref;
+}
+
+function nearestSeriesValueAt(series, targetMs, toleranceMs=15000){
+  const times = series?.t || [];
+  const vals = series?.y || [];
+  if (!times.length || !vals.length) return null;
+  let lo = 0;
+  let hi = times.length - 1;
+  while (lo < hi){
+    const mid = Math.floor((lo + hi) / 2);
+    if ((times[mid]?.getTime?.() ?? NaN) < targetMs) lo = mid + 1;
+    else hi = mid;
+  }
+  const candidates = [lo, lo - 1].filter(i => i >= 0 && i < times.length);
+  let bestIdx = -1;
+  let bestDiff = Infinity;
+  for (const idx of candidates){
+    const ms = times[idx]?.getTime?.() ?? NaN;
+    if (!Number.isFinite(ms)) continue;
+    const diff = Math.abs(ms - targetMs);
+    if (diff < bestDiff){
+      bestDiff = diff;
+      bestIdx = idx;
+    }
+  }
+  if (bestIdx < 0 || bestDiff > toleranceMs) return null;
+  const value = vals[bestIdx];
+  return Number.isFinite(value) ? value : null;
+}
+
+function buildDerivedReliefSeries(pressureSeries, exhaleSeries){
+  if (!pressureSeries?.t?.length || !exhaleSeries?.t?.length) return null;
+  const t = [];
+  const y = [];
+  const toleranceMs = 15000;
+  for (let i=0; i<exhaleSeries.t.length; i++){
+    const when = exhaleSeries.t[i]?.getTime?.() ?? NaN;
+    const exhale = exhaleSeries.y[i];
+    if (!Number.isFinite(when) || !Number.isFinite(exhale)) continue;
+    const pressure = nearestSeriesValueAt(pressureSeries, when, toleranceMs);
+    if (!Number.isFinite(pressure)) continue;
+    const relief = pressure - exhale;
+    if (!Number.isFinite(relief) || relief < -0.5 || relief > 10) continue;
+    t.push(exhaleSeries.t[i]);
+    y.push(relief);
+  }
+  if (!t.length) return null;
+  return { t, y, unit:'cmH₂O', label:'Derived EPR Relief', sampleRate: exhaleSeries.sampleRate || pressureSeries.sampleRate || 0, _source:'derived' };
+}
+
+function isAhiLikeEvent(raw){
+  return /(Apnea|Hypopnea)/i.test(humanizeEventCategory(raw));
+}
+
+function countLabel(n, singular, plural=`${singular}s`){
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+const SESSION_START_COLOR = 'rgba(97,212,195,.98)';
+const SESSION_STOP_COLOR = 'rgba(255,107,122,.98)';
+
+function legendRowHtml({ color, title, meta='', description='' }){
+  return `
+    <div class="legendRow">
+      <div class="legendChip" style="background:${color}"></div>
+      <div class="legendMain">
+        <div class="legendTitle">${escapeHtml(title)}</div>
+        <div class="legendMeta">${escapeHtml(description)}</div>
+      </div>
+      <div class="legendMeta">${escapeHtml(meta)}</div>
+    </div>
+  `;
+}
+
+function buildSessionBoundaryTraces(sess, yMin, yMax){
+  const traces = [];
+  if (sess?.start instanceof Date){
+    traces.push({
+      x:[sess.start, sess.start],
+      y:[yMin, yMax],
+      type:'scatter',
+      mode:'lines',
+      name:'Session start',
+      line:{ color:SESSION_START_COLOR, width:2.4, dash:'dash' },
+      hovertemplate:'Session start<br>%{x|%Y-%m-%d %H:%M:%S}<extra></extra>'
+    });
+  }
+  if (sess?.end instanceof Date){
+    traces.push({
+      x:[sess.end, sess.end],
+      y:[yMin, yMax],
+      type:'scatter',
+      mode:'lines',
+      name:'Session stop',
+      line:{ color:SESSION_STOP_COLOR, width:2.4, dash:'dash' },
+      hovertemplate:'Session stop<br>%{x|%Y-%m-%d %H:%M:%S}<extra></extra>'
+    });
+  }
+  return traces;
+}
+
+function renderEventsLegend(counts, sess){
+  if (!els.eventsLegend) return;
+  const rows = [];
+  if (sess?.start instanceof Date){
+    rows.push(legendRowHtml({
+      color: SESSION_START_COLOR,
+      title: 'Session start',
+      meta: fmtTime(sess.start),
+      description: 'Vertical marker for the first timestamp included in this anchored night.'
+    }));
+  }
+  if (sess?.end instanceof Date){
+    rows.push(legendRowHtml({
+      color: SESSION_STOP_COLOR,
+      title: 'Session stop',
+      meta: fmtTime(sess.end),
+      description: 'Vertical marker for the last timestamp included in this anchored night.'
+    }));
+  }
+
+  const present = Object.entries(counts || {}).sort((a,b) => b[1] - a[1] || humanizeEventCategory(a[0]).localeCompare(humanizeEventCategory(b[0])));
+  present.forEach(([raw, count], idx) => {
+    rows.push(legendRowHtml({
+      color: eventColor(raw, idx),
+      title: humanizeEventCategory(raw),
+      meta: countLabel(count, 'event'),
+      description: eventDescription(raw)
+    }));
+  });
+
+  const glossaryRows = [
+    legendRowHtml({
+      color: SESSION_START_COLOR,
+      title: 'Session start',
+      meta: 'Boundary',
+      description: 'First timestamp included in the selected anchored night.'
+    }),
+    legendRowHtml({
+      color: SESSION_STOP_COLOR,
+      title: 'Session stop',
+      meta: 'Boundary',
+      description: 'Last timestamp included in the selected anchored night.'
+    }),
+    ...Object.entries(EVENT_CODE_LABELS).map(([code, label], idx) => legendRowHtml({
+      color: eventColor(code, idx),
+      title: `${label} (code ${code})`,
+      meta: 'Known code',
+      description: EVENT_DESCRIPTIONS[label] || 'Device-coded event retained from the source EDF annotations.'
+    })),
+    legendRowHtml({
+      color: eventColor('Arousal', 20),
+      title: 'Arousal',
+      meta: 'Known label',
+      description: EVENT_DESCRIPTIONS.Arousal
+    }),
+    legendRowHtml({
+      color: eventColor('Recording starts', 21),
+      title: 'Recording starts',
+      meta: 'Known label',
+      description: EVENT_DESCRIPTIONS['Recording starts']
+    })
+  ];
+
+  els.eventsLegend.innerHTML = `
+    <div><b>Legend for this night</b></div>
+    <div class="legendGrid" style="margin-top:12px">${rows.join('') || '<div class="tiny">No session boundaries or event categories to display.</div>'}</div>
+    <details style="margin-top:12px">
+      <summary><b>Known event glossary</b></summary>
+      <div class="legendGrid" style="margin-top:12px">${glossaryRows.join('')}</div>
+    </details>
+  `;
+  els.eventsLegend.style.display = 'block';
+}
+
 /* ============================
    EDF parsing
    ============================ */
@@ -1953,6 +2885,32 @@ function parseEDFStartDateTime(ddmmyy, hhmmss){
   if ([dd,mm,yy,HH,MM,SS].some(x => x == null)) return null;
   const fullY = (yy <= 84) ? (2000 + yy) : (1900 + yy);
   return new Date(fullY, mm-1, dd, HH, MM, SS);
+}
+function parseTimestampFromPath(path){
+  const m = String(path || '').match(/(\d{8})_(\d{6})/);
+  if (!m) return null;
+  const stamp = `${m[1]}${m[2]}`;
+  const y = parseIntSafe(stamp.slice(0,4));
+  const mo = parseIntSafe(stamp.slice(4,6));
+  const d = parseIntSafe(stamp.slice(6,8));
+  const h = parseIntSafe(stamp.slice(8,10));
+  const mi = parseIntSafe(stamp.slice(10,12));
+  const s = parseIntSafe(stamp.slice(12,14));
+  if ([y,mo,d,h,mi,s].some(v => v == null)) return null;
+  return new Date(y, mo-1, d, h, mi, s);
+}
+function bestFileStartDate(path, headerStart, folderDateISO=null){
+  const parsed = headerStart instanceof Date && Number.isFinite(headerStart.getTime()) ? headerStart : null;
+  const fromPath = parseTimestampFromPath(path);
+  if (fromPath && parsed){
+    const skewHours = Math.abs(fromPath.getTime() - parsed.getTime()) / 1000 / 3600;
+    if (skewHours <= 18) return parsed;
+    return fromPath;
+  }
+  if (parsed) return parsed;
+  if (fromPath) return fromPath;
+  if (folderDateISO) return new Date(`${folderDateISO}T12:00:00`);
+  return new Date(0);
 }
 
 function parseEDFHeader(buffer){
@@ -2054,7 +3012,19 @@ const EVENT_CODE_LABELS = {
   '11':'Hypopnea (H)',
   '12':'Central Apnea (CA)',
   '13':'Unclassified Apnea',
-  '14':'RERA / Flow Limitation-related event'
+  '14':'RERA / Flow Limitation-related event',
+  '16':'Flow Limitation / Device-defined respiratory event'
+};
+const EVENT_DESCRIPTIONS = {
+  'Obstructive Apnea (OA)':'Airflow appears blocked while breathing effort continues.',
+  'Hypopnea (H)':'Breathing looks partially reduced rather than fully blocked.',
+  'Central Apnea (CA)':'Breathing effort drops along with airflow.',
+  'Unclassified Apnea':'The device flagged an apnea but did not map it to a cleaner subtype.',
+  'RERA / Flow Limitation-related event':'A breathing disturbance that may not count as apnea or hypopnea but can still fragment sleep.',
+  'Flow Limitation / Device-defined respiratory event':'A device-coded breathing restriction or related respiratory marker.',
+  'Arousal':'A brief sleep disruption marker.',
+  'Recording starts':'The device started a new recording segment at that timestamp.',
+  'Unknown / Unspecified event':'The device recorded an event code without a clearer label.'
 };
 function humanizeEventCategory(raw){
   const clean = cleanEventLabel(raw);
@@ -2063,6 +3033,30 @@ function humanizeEventCategory(raw){
   if (!m) return clean;
   const code = m[1];
   return EVENT_CODE_LABELS[code] ? `${EVENT_CODE_LABELS[code]} (code ${code})` : `Device event code ${code}`;
+}
+function eventDescription(raw){
+  const label = humanizeEventCategory(raw).replace(/\s+\(code \d+\)$/, '');
+  return EVENT_DESCRIPTIONS[label] || 'Device event or annotation retained exactly as recorded in the source files.';
+}
+function eventColor(raw, idx=0){
+  const label = humanizeEventCategory(raw);
+  const map = {
+    'Obstructive Apnea (OA) (code 10)':'rgba(255,107,122,.96)',
+    'Hypopnea (H) (code 11)':'rgba(255,204,102,.96)',
+    'Central Apnea (CA) (code 12)':'rgba(122,167,255,.96)',
+    'Unclassified Apnea (code 13)':'rgba(186,148,255,.96)',
+    'RERA / Flow Limitation-related event (code 14)':'rgba(110,231,166,.96)',
+    'Flow Limitation / Device-defined respiratory event (code 16)':'rgba(141,211,255,.96)',
+    'Arousal':'rgba(255,154,102,.96)',
+    'Recording starts':'rgba(231,246,246,.92)'
+  };
+  if (map[label]) return map[label];
+  const fallback = [
+    'rgba(255,107,122,.96)','rgba(255,204,102,.96)','rgba(122,167,255,.96)',
+    'rgba(110,231,166,.96)','rgba(186,148,255,.96)','rgba(141,211,255,.96)',
+    'rgba(255,154,102,.96)','rgba(231,246,246,.92)'
+  ];
+  return fallback[idx % fallback.length];
 }
 
 function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, nRec, file){
@@ -2123,12 +3117,8 @@ function readEDFAnnotations(buffer, header, annSig, sigByteOffset, recordBytes, 
 
 
 function resolveFileStartDate(file, header){
-  const parsed = header?.start instanceof Date && Number.isFinite(header.start.getTime()) ? header.start : null;
-  if (parsed && parsed.getFullYear() >= 2000) return parsed;
   const fallbackISO = file?.folderDateISO || file?._folderDateISO || null;
-  if (!fallbackISO) return parsed || new Date(0);
-  const d = new Date(`${fallbackISO}T12:00:00`);
-  return Number.isFinite(d.getTime()) ? d : (parsed || new Date(0));
+  return bestFileStartDate(file?.path || '', header?.start, fallbackISO);
 }
 
 async function readSelectedSignalsFromEDF(file, mappingKeys, maxPoints=90000){
@@ -2418,12 +3408,14 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
   };
   state.current.edfFiles = [];
   state.current.signalCatalog = [];
-  state.current.mapping = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, annotations:null };
+  state.current.mapping = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, pulse:null, spo2:null, annotations:null };
   state.current.signals = {};
   state.current.events = null;
   state.current.stats = {};
   state.current.raw = {};
+  state.current.sourceSummary = buildSourceSummary({ files: state.current.session.files });
 
+  renderSourceSummary(state.current.sourceSummary);
 
   setStatus('Loading selection…','neutral');
   progress('Loading selection', 62, `Loading ${state.current.session.files.length} EDF file(s)… This can take a bit for large ranges.`);
@@ -2441,9 +3433,12 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
     const buffer = await seg.entry.async('arraybuffer');
     assertActive(jobId);
     const header = parseEDFHeader(buffer);
+    const resolvedStart = bestFileStartDate(seg.path, header.start, seg._folderDateISO || null);
     state.current.edfFiles.push({ path: seg.path, entry: seg.entry, header, buffer: null, folderDateISO: seg._folderDateISO || null });
     state.current.raw[seg.path] = {
-      start: header.start?.toISOString?.() || null,
+      anchorDateISO: seg._folderDateISO || null,
+      headerStart: header.start?.toISOString?.() || null,
+      start: resolvedStart?.toISOString?.() || null,
       patientId: header.patientId,
       recordingId: header.recordingId,
       signals: header.signals.map(s => ({ label:s.label, unit:s.physDim, sr:+(s.sampleRate||0).toFixed(3), spr:s.samplesPerRecord }))
@@ -2485,6 +3480,7 @@ async function loadSessionsAggregate(sessions, label, jobId = state.jobId){
 
   autoMapSignals();
   renderMappingUI();
+  renderRawDump();
 
   progress('Extracting signals', 88, 'Reading samples for mapped signals…');
   await tick();
@@ -2527,6 +3523,12 @@ function autoMapSignals(){
     ],
     epr: [
       'eprpress.2s', 'epr press 2s', 'epr pressure', 'epr', 'expiratory pressure relief', 'exp pressure relief'
+    ],
+    pulse: [
+      'pulse.1s', 'pulse', 'heart rate'
+    ],
+    spo2: [
+      'spo2.1s', 'spo2', 'sp o2', 'oxygen saturation'
     ],
     annotations: [
       'edf annotations', 'annotations', 'annotation'
@@ -2576,6 +3578,8 @@ function autoMapSignals(){
       if (labelN === 'epr' || labelN.includes(' epr ')) score += 14;
       if (unitN.includes('cm') && (unitN.includes('h2o') || unitN.includes('h2'))) score += 8;
     }
+    if (targetKey === 'pulse' && (labelN.includes('pulse') || labelN.includes('heart'))) score += 22;
+    if (targetKey === 'spo2' && (labelN.includes('spo2') || labelN.includes('oxygen') || labelN.includes('saturation'))) score += 24;
     if (targetKey === 'annotations') {
       if (labelN.includes('annot') || labelN.includes('event')) score += 12;
       if (fileN.includes('eve')) score += 120;
@@ -2616,6 +3620,8 @@ function autoMapSignals(){
   state.current.mapping.respRate = pickBest('respRate');
   state.current.mapping.tidalVolume = pickBest('tidalVolume');
   state.current.mapping.epr = pickBest('epr');
+  state.current.mapping.pulse = pickBest('pulse');
+  state.current.mapping.spo2 = pickBest('spo2');
   state.current.mapping.annotations = pickBest('annotations');
 
   log(`Auto-map: ${JSON.stringify(state.current.mapping)}`);
@@ -2662,7 +3668,9 @@ function renderMappingUI(){
     { label:'Snore', key:'snore' },
     { label:'Respiratory Rate', key:'respRate' },
     { label:'Tidal Volume', key:'tidalVolume' },
-    { label:'EPR', key:'epr' },
+    { label:'Exhalation Pressure', key:'epr' },
+    { label:'Pulse', key:'pulse' },
+    { label:'SpO₂', key:'spo2' },
     { label:'Events', key:'annotations' },
   ];
 
@@ -2681,14 +3689,8 @@ function renderMappingUI(){
 
   populateExploreOptions();
 
-  els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signal labels found.`;
-  els.rawDump.textContent = JSON.stringify({
-    sdMarkers: state.meta.rootMarkers,
-    device: state.identification,
-    session: { label: state.current.session?.label, files: state.current.edfFiles.map(f=>f.path) },
-    signalCatalog: cat,
-    mapping: state.current.mapping
-  }, null, 2);
+  els.rawSummary.innerHTML = `<b>Signal catalog:</b><br/>${cat.length} unique signal labels found across the current selection.`;
+  renderRawDump();
 }
 
 
@@ -2701,7 +3703,9 @@ function populateExploreOptions(){
     ['snore','Snore'],
     ['respRate','Respiratory Rate'],
     ['tidalVolume','Tidal Volume'],
-    ['epr','EPR']
+    ['epr','Exhalation Pressure'],
+    ['pulse','Pulse'],
+    ['spo2','SpO₂']
   ];
   const s = state.current.signals || {};
   const available = defs.filter(([k]) => s[k]?.t?.length);
@@ -2731,7 +3735,7 @@ async function renderExplorePlot(){
     return;
   }
   const labelMap = {
-    leak:'Leak', pressure:'Pressure', flow:'Flow', snore:'Snore', respRate:'Respiratory Rate', tidalVolume:'Tidal Volume', epr:'EPR'
+    leak:'Leak', pressure:'Pressure', flow:'Flow', snore:'Snore', respRate:'Respiratory Rate', tidalVolume:'Tidal Volume', epr:'Exhalation Pressure', pulse:'Pulse', spo2:'SpO₂'
   };
   const label = merged.label || labelMap[key] || 'Selected signal';
   Plotly.newPlot(els.plotExplore, [{x:merged.t,y:merged.y,type:'scatter',mode:'lines',line:{color:'rgba(97,212,195,.95)',width:2}}], {
@@ -2750,6 +3754,8 @@ function applyMappingFromUI(){
   const respRate = document.getElementById('map_respRate')?.value || '';
   const tidalVolume = document.getElementById('map_tidalVolume')?.value || '';
   const epr = document.getElementById('map_epr')?.value || '';
+  const pulse = document.getElementById('map_pulse')?.value || '';
+  const spo2 = document.getElementById('map_spo2')?.value || '';
   const annotations = document.getElementById('map_annotations')?.value || '';
   state.current.mapping = {
     leak: leak||null,
@@ -2759,15 +3765,12 @@ function applyMappingFromUI(){
     respRate: respRate||null,
     tidalVolume: tidalVolume||null,
     epr: epr||null,
+    pulse: pulse||null,
+    spo2: spo2||null,
     annotations: annotations||null
   };
   log(`Applied manual mapping: ${JSON.stringify(state.current.mapping)}`);
-  els.rawDump.textContent = JSON.stringify({
-    identification: state.identification,
-    session: { label: state.current.session?.label, files: state.current.edfFiles.map(f=>f.path) },
-    mapping: state.current.mapping,
-    edfHeaders: state.current.raw
-  }, null, 2);
+  renderRawDump();
 }
 
 /* ============================
@@ -2778,7 +3781,7 @@ async function extractSignalsAndRender(){
   setStatus('Processing…','neutral');
 
   const mapping = state.current.mapping;
-  const merged = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null };
+  const merged = { leak:null, pressure:null, flow:null, snore:null, respRate:null, tidalVolume:null, epr:null, pulse:null, spo2:null };
   let mergedEvents = { t:[], type:[] };
 
   const files = state.current.edfFiles;
@@ -2797,6 +3800,8 @@ async function extractSignalsAndRender(){
     merged.respRate = mergeSeriesPickBest(merged.respRate, series.respRate);
     merged.tidalVolume = mergeSeriesPickBest(merged.tidalVolume, series.tidalVolume);
     merged.epr = mergeSeriesPickBest(merged.epr, series.epr);
+    merged.pulse = mergeSeriesPickBest(merged.pulse, series.pulse);
+    merged.spo2 = mergeSeriesPickBest(merged.spo2, series.spo2);
 
     if (events?.t?.length){
       mergedEvents.t.push(...events.t);
@@ -2823,6 +3828,8 @@ async function extractSignalsAndRender(){
   const clippedRespRate = clipSeriesToWindow(merged.respRate, state.current.session?.start, state.current.session?.end);
   const clippedTidalVolume = clipSeriesToWindow(merged.tidalVolume, state.current.session?.start, state.current.session?.end);
   const clippedEpr = clipSeriesToWindow(merged.epr, state.current.session?.start, state.current.session?.end);
+  const clippedPulse = clipSeriesToWindow(merged.pulse, state.current.session?.start, state.current.session?.end);
+  const clippedSpo2 = clipSeriesToWindow(merged.spo2, state.current.session?.start, state.current.session?.end);
 
   state.current.signals = {
     leak: clippedLeak,
@@ -2831,7 +3838,9 @@ async function extractSignalsAndRender(){
     snore: clippedSnore,
     respRate: clippedRespRate,
     tidalVolume: clippedTidalVolume,
-    epr: clippedEpr
+    epr: clippedEpr,
+    pulse: clippedPulse,
+    spo2: clippedSpo2
   };
   state.current.events = eventsOut;
 
@@ -2898,6 +3907,11 @@ function analyzeAndRender(){
     timeSpanHours(s.leak) ?? 0,
     timeSpanHours(s.pressure) ?? 0,
     timeSpanHours(s.flow) ?? 0,
+    timeSpanHours(s.respRate) ?? 0,
+    timeSpanHours(s.tidalVolume) ?? 0,
+    timeSpanHours(s.epr) ?? 0,
+    timeSpanHours(s.pulse) ?? 0,
+    timeSpanHours(s.spo2) ?? 0,
     sess ? (sess.end - sess.start)/1000/3600 : 0
   );
   stats.usageHrs = usage || null;
@@ -2905,8 +3919,10 @@ function analyzeAndRender(){
   if (s.leak?.y?.length){
     stats.leakP50 = percentile(s.leak.y, 0.50);
     stats.leakP95 = percentile(s.leak.y, 0.95);
-    // "Common" ResMed large-leak reference point; we label it as a rule-of-thumb.
-    stats.largeLeakThreshold = 24;
+    const thrInfo = leakThresholdForUnit(s.leak.unit);
+    stats.largeLeakThreshold = thrInfo.value;
+    stats.largeLeakThresholdLabel = thrInfo.label;
+    stats.largeLeakThresholdPlain = thrInfo.plain;
     const thr = stats.largeLeakThreshold;
     stats.largeLeakPct = s.leak.y.filter(v => v >= thr).length / s.leak.y.length * 100;
   }
@@ -2914,22 +3930,45 @@ function analyzeAndRender(){
     stats.p50 = percentile(s.pressure.y, 0.50);
     stats.p95 = percentile(s.pressure.y, 0.95);
   }
+  if (s.epr?.y?.length){
+    stats.exhaleP50 = percentile(s.epr.y, 0.50);
+    stats.exhaleP95 = percentile(s.epr.y, 0.95);
+  }
+  const reliefSeries = buildDerivedReliefSeries(s.pressure, s.epr);
+  if (reliefSeries?.y?.length){
+    stats.eprReliefP50 = percentile(reliefSeries.y, 0.50);
+    stats.eprReliefP95 = percentile(reliefSeries.y, 0.95);
+  }
+  const eprRef = configuredEprReference(state.currentSettings);
+  stats.configuredEpr = eprRef.setting;
+  stats.configuredEprType = eprRef.type || null;
+  stats.configuredEprEnabled = eprRef.enabled || null;
+  if (s.pulse?.y?.length){
+    stats.pulseP50 = percentile(s.pulse.y, 0.50);
+  }
+  if (s.spo2?.y?.length){
+    stats.spo2P50 = percentile(s.spo2.y, 0.50);
+    stats.spo2Min = percentile(s.spo2.y, 0.01);
+  }
   if (ev?.t?.length && stats.usageHrs && stats.usageHrs > 0.1){
-    stats.ahiEst = ev.t.length / stats.usageHrs;
+    stats.eventsPerHour = ev.t.length / stats.usageHrs;
+    stats.ahiLikeCount = ev.type.filter(isAhiLikeEvent).length;
+    stats.ahiEst = stats.ahiLikeCount / stats.usageHrs;
   }
   state.current.stats = stats;
 
   els.kpiUsage.textContent = stats.usageHrs != null ? `${stats.usageHrs.toFixed(2)} h` : '—';
-  els.kpiUsageNote.textContent = stats.usageHrs != null ? 'Based on detected signal time span.' : 'No usable time span.';
+  els.kpiUsageNote.textContent = stats.usageHrs != null ? 'Merged anchored-night session span.' : 'No usable time span.';
   els.kpiLeak95.textContent = stats.leakP95 != null ? stats.leakP95.toFixed(1) : '—';
-  els.kpiLeak95Note.textContent = stats.leakP95 != null ? '95% of the night was at/below this leak.' : 'Leak not mapped.';
+  els.kpiLeak95Note.textContent = stats.leakP95 != null ? `95% of the night was at or below this leak (${stats.largeLeakThresholdLabel || 'rule-of-thumb threshold available'}).` : 'Leak not mapped.';
   els.kpiP50.textContent = stats.p50 != null ? stats.p50.toFixed(1) : '—';
-  els.kpiP50Note.textContent = stats.p50 != null ? 'Median pressure.' : 'Pressure not mapped.';
+  els.kpiP50Note.textContent = stats.p50 != null ? 'Median therapy pressure.' : 'Pressure not mapped.';
   els.kpiAHI.textContent = stats.ahiEst != null ? stats.ahiEst.toFixed(2) : '—';
-  els.kpiAHINote.textContent = stats.ahiEst != null ? 'Estimated from annotations.' : 'No annotations mapped/found.';
+  els.kpiAHINote.textContent = stats.ahiEst != null ? 'Estimated from apnea/hypopnea-like annotations.' : 'No qualifying annotations mapped/found.';
 
   renderPlotsAndText();
   renderComparePlot();
+  renderRawDump();
 }
 
 
@@ -2953,7 +3992,9 @@ function renderComparePlot(){
     ['snore','Snore','rgba(255,204,102,.95)'],
     ['respRate','Respiratory Rate','rgba(110,231,166,.95)'],
     ['tidalVolume','Tidal Volume','rgba(186,148,255,.95)'],
-    ['epr','EPR','rgba(141,211,255,.95)']
+    ['epr','Exhalation Pressure','rgba(141,211,255,.95)'],
+    ['pulse','Pulse','rgba(255,154,102,.95)'],
+    ['spo2','SpO₂','rgba(231,246,246,.88)']
   ];
   const available = defs.filter(([k]) => s[k]?.t?.length);
   els.compareControls.innerHTML = `
@@ -2993,6 +4034,9 @@ function renderPlotsAndText(){
   const ev = state.current.events;
   const st = state.current.stats;
   const sess = state.current.session;
+  const anchorDate = getSessionAnchorDate(sess);
+  const actualRange = formatSessionRange(sess);
+  const activeSources = (state.current.sourceSummary || []).filter(item => item.pill === 'active').map(item => item.title).join(', ');
 
   const traces = [];
   let needY2 = false;
@@ -3037,19 +4081,21 @@ function renderPlotsAndText(){
   els.overviewSummary.innerHTML = `
     <b>Status</b><br/>
     Loaded: <b>${escapeHtml(sess?.label || '—')}</b><br/>
+    Anchor date: <b>${escapeHtml(anchorDate || '—')}</b><br/>
+    Actual session: <b>${escapeHtml(actualRange)}</b><br/>
     Device: <b>${escapeHtml(deviceHeadline())}</b>
   `;
 
   els.overviewNarrative.innerHTML = `
-    <b>What you’re looking at:</b><br/>
-    Overview helps you spot whether leak spikes line up with pressure changes.<br/>
-    Plain-language scale guide: leak is usually <b>L/min</b> (liters of air escaping per minute), and pressure is usually <b>cmH₂O</b> (air push strength).<br/>
-    Scientific detail: <b>1 cmH₂O ≈ 98 Pascals</b> (about <b>0.014 psi</b>)—a small pressure unit used in breathing medicine.<br/><br/>
-    <b>Indexing rule:</b> Sessions are grouped by <b>DATALOG/YYYYMMDD</b> folders.
+    <b>Overview:</b> this is the fastest way to see whether leaks and therapy pressure moved together during the selected anchored night.<br/>
+    The calendar stays tied to the raw <b>DATALOG/YYYYMMDD</b> folder date, but the report itself uses the full detected session window: <b>${escapeHtml(actualRange)}</b>.<br/>
+    Leak is usually shown in <b>${friendlyUnit(s.leak?.unit, 'L/min')}</b>, and pressure is usually shown in <b>${friendlyUnit(s.pressure?.unit, 'cmH₂O')}</b>. In plain English, that means “how much air escaped” and “how hard the machine was pushing.”<br/>
+    Source families active for this report: <b>${escapeHtml(activeSources || 'No active sources detected')}</b>.
   `;
 
   if (s.leak?.t?.length){
-    const thr = st.largeLeakThreshold ?? 24;
+    const thrInfo = leakThresholdForUnit(s.leak.unit);
+    const thr = st.largeLeakThreshold ?? thrInfo.value;
     const lay = CALM_LAYOUT('Mask leak rate');
     lay.yaxis.title = { text: s.leak.unit ? `Leak (${s.leak.unit})` : 'Leak' };
     lay.shapes = [{
@@ -3069,18 +4115,17 @@ function renderPlotsAndText(){
       'Mostly controlled';
 
     els.leakNarrative.innerHTML = `
-      <b>Leak explained:</b> extra air escaping beyond expected venting. Sampled <b>every 2 seconds</b>.<br/>
-      Scale meaning: usually <b>L/min</b>, which means how many liters of air are escaping each minute. Lower is usually better if therapy comfort is good.<br/>
-      Scientific detail: the dotted guide uses <b>${thr} L/min</b> as a common large-leak reference point in CPAP reporting.<br/>
+      <b>Leak:</b> this line shows extra air escaping beyond the mask’s expected venting.<br/>
+      A quieter, lower line usually means the mask seal was steadier. The dotted guide uses <b>${escapeHtml(thrInfo.label)}</b> as the large-leak rule of thumb (${escapeHtml(thrInfo.plain)} in the more common ResMed phrasing).<br/>
       <b>Your reading:</b> <b>${tone}</b><br/>
-      • Median: <b>${st.leakP50 != null ? st.leakP50.toFixed(1) : '—'}</b><br/>
-      • P95: <b>${st.leakP95 != null ? st.leakP95.toFixed(1) : '—'}</b><br/>
-      • Time ≥ ${thr}: <b>${pct != null ? pct.toFixed(1)+'%' : '—'}</b>
+      Median leak: <b>${st.leakP50 != null ? st.leakP50.toFixed(1) : '—'}</b><br/>
+      95th percentile leak: <b>${st.leakP95 != null ? st.leakP95.toFixed(1) : '—'}</b><br/>
+      Time at or above the reference line: <b>${pct != null ? pct.toFixed(1)+'%' : '—'}</b>
     `;
   } else {
     Plotly.newPlot(els.plotLeak, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Leaks (not mapped)')}, plotConfig);
-    els.leakNarrative.innerHTML = `<b>No leak signal mapped.</b> Use the mapping UI on the left.`;
+    els.leakNarrative.innerHTML = `<b>No leak signal mapped.</b> Use the mapping panel if your ZIP exposes a leak channel.`;
   }
 
   if (s.pressure?.t?.length){
@@ -3093,16 +4138,15 @@ function renderPlotsAndText(){
     }, plotConfig);
 
     els.pressureNarrative.innerHTML = `
-      <b>Pressure explained:</b> the “air support” keeping your airway open.<br/>Sample rate: <b>every 1 second</b>.<br/>
-      Scale meaning: pressure is usually shown in <b>cmH₂O</b>. Think of it as gentle airflow push; higher numbers mean stronger support.
-      <br/>Scientific detail: <b>1 cmH₂O ≈ 98 Pa ≈ 0.014 psi</b>.
-      <br/><br/>• Median: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
-      • P95: <b>${st.p95 != null ? st.p95.toFixed(1) : '—'}</b>
+      <b>Pressure:</b> this is the therapy pressure the machine delivered across the night.<br/>
+      Higher values mean more airway support, but the number still uses the small breathing-pressure unit <b>${friendlyUnit(s.pressure.unit, 'cmH₂O')}</b> rather than household PSI.<br/>
+      Median therapy pressure: <b>${st.p50 != null ? st.p50.toFixed(1) : '—'}</b><br/>
+      95th percentile therapy pressure: <b>${st.p95 != null ? st.p95.toFixed(1) : '—'}</b>
     `;
   } else {
     Plotly.newPlot(els.plotPressure, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Pressure (not mapped)')}, plotConfig);
-    els.pressureNarrative.innerHTML = `<b>No pressure signal mapped.</b> Use the mapping UI on the left.`;
+    els.pressureNarrative.innerHTML = `<b>No pressure signal mapped.</b> Use the mapping panel if your ZIP exposes a therapy-pressure channel.`;
   }
 
   if (s.flow?.t?.length){
@@ -3114,11 +4158,11 @@ function renderPlotsAndText(){
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.flow.unit ? `Flow (${s.flow.unit})` : 'Flow' } }
     }, plotConfig);
 
-    els.flowNarrative.innerHTML = `<b>Flow explained:</b> your breathing waveform (useful for pattern context).<br/>Scale meaning: positive vs negative flow usually represents in-breath vs out-breath, and larger magnitude means stronger airflow. <br/>Scientific detail: units are commonly <b>L/s</b> or <b>L/min</b> depending on the device export.`;
+    els.flowNarrative.innerHTML = `<b>Flow:</b> this is the breathing waveform. It is the best place to look for shape changes, pauses, flattening, or unusually ragged breathing segments.<br/>Positive and negative swings usually represent inhaling vs exhaling, while bigger swings mean stronger airflow. The exact units depend on the export, but the pattern matters more than any one number.`;
   } else {
     Plotly.newPlot(els.plotFlow, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Flow (not mapped)')}, plotConfig);
-    els.flowNarrative.innerHTML = `<b>No flow signal mapped.</b> Use the mapping UI on the left.`;
+    els.flowNarrative.innerHTML = `<b>No flow signal mapped.</b> Use the mapping panel if your ZIP exposes a breathing-waveform channel.`;
   }
 
 
@@ -3130,11 +4174,11 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Snore'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.snore.unit ? `Snore (${s.snore.unit})` : 'Snore' } }
     }, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>Snore:</b> snore-related signal over time (sampled every 2 seconds). Higher values may indicate increased upper-airway vibration.<br/>Scale meaning: think of this like a snore activity meter. If your usual baseline is low and this line runs higher for long stretches, that means more snore-related vibration than your normal night.`;
+    els.snoreNarrative.innerHTML = `<b>Snore:</b> this is a vibration-style signal. Think of it as a snore activity meter rather than a volume meter.<br/>A low baseline with only short bumps usually means quieter breathing. Longer raised stretches suggest more upper-airway vibration than your usual calm baseline.`;
   } else {
     Plotly.newPlot(els.plotSnore, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Snore (not mapped)')}, plotConfig);
-    els.snoreNarrative.innerHTML = `<b>No Snore signal mapped.</b> Set Snore in the mapping panel if available.`;
+    els.snoreNarrative.innerHTML = `<b>No snore signal mapped.</b> Set Snore in the mapping panel if your ZIP includes one.`;
   }
 
   if (s.respRate?.t?.length){
@@ -3145,11 +4189,11 @@ function renderPlotsAndText(){
       ...CALM_LAYOUT('Respiratory Rate'),
       yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.respRate.unit ? `Respiratory Rate (${s.respRate.unit})` : 'Respiratory Rate' } }
     }, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>Respiratory Rate (BPM):</b> respiratory rate trend (sampled every 2 seconds). <b>BPM means Breaths Per Minute</b>.<br/>Scale meaning: if the graph shows 12, that means about 12 breaths each minute. Many resting adults are roughly in the low-to-mid teens, but your normal baseline matters most.`;
+    els.respRateNarrative.innerHTML = `<b>Respiratory Rate:</b> this is breaths per minute over time.<br/>It helps answer whether the night stayed calm and steady or drifted into faster, slower, or more erratic breathing. Many adults sleep in the low-to-mid teens, but your own baseline matters more than any generic number.`;
   } else {
     Plotly.newPlot(els.plotRespRate, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Respiratory Rate (not mapped)')}, plotConfig);
-    els.respRateNarrative.innerHTML = `<b>No Respiratory Rate signal mapped.</b> Set Respiratory Rate in the mapping panel if available.`;
+    els.respRateNarrative.innerHTML = `<b>No respiratory-rate signal mapped.</b> Set Respiratory Rate in the mapping panel if your ZIP includes one.`;
   }
 
   if (s.tidalVolume?.t?.length){
@@ -3169,39 +4213,69 @@ function renderPlotsAndText(){
       x:s.tidalVolume.t, y:s.tidalVolume.y, type:'scatter', mode:'lines',
       name:'Tidal Volume', line:{ color:'rgba(186,148,255,.95)', width:2.1 }
     }], layTv, plotConfig);
-    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> the amount of air you breathe in one normal resting breath.<br/>Scale meaning: this is “air per breath.” For context, about <b>${asLiters ? '0.5 L' : '500 mL'}</b> is roughly half a liter (about half of a 1-liter bottle).<br/>Scientific detail: typical resting baseline is about <b>${asLiters ? '0.5 L' : '500 mL'} for men</b> and <b>${asLiters ? '0.4 L' : '400 mL'} for women</b> (shown as reference lines).`;
+    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> this is the air moved with each normal breath.<br/>Think of it as “air per breath” rather than “air per minute.” The dotted reference lines are rough resting-ballpark guides, not pass/fail targets, and your own comfortable baseline matters most.`;
   } else {
     Plotly.newPlot(els.plotTidalVolume, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Tidal Volume (not mapped)')}, plotConfig);
-    els.tidalNarrative.innerHTML = `<b>No Tidal Volume signal mapped.</b> Tidal Volume uses <b>TidVol.2s</b> when available.`;
+    els.tidalNarrative.innerHTML = `<b>No tidal-volume signal mapped.</b> Tidal Volume usually comes from <b>TidVol.2s</b> when the ZIP includes it.`;
   }
 
   if (s.epr?.t?.length){
-    Plotly.newPlot(els.plotEpr, [{
-      x:s.epr.t, y:s.epr.y, type:'scatter', mode:'lines',
-      name:'EPR', line:{ color:'rgba(141,211,255,.95)', width:2.1 }
-    }], {
-      ...CALM_LAYOUT('Expiratory Pressure Relief (EPR)'),
-      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.epr.unit ? `EPR (${s.epr.unit})` : 'EPR' } }
+    const eprTraces = [];
+    if (s.pressure?.t?.length){
+      eprTraces.push({
+        x:s.pressure.t,
+        y:s.pressure.y,
+        type:'scatter',
+        mode:'lines',
+        name:'Therapy Pressure',
+        line:{ color:'rgba(97,212,195,.92)', width:2.3 },
+        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>Therapy Pressure: %{y:.2f}</b><extra></extra>'
+      });
+    }
+    eprTraces.push({
+      x:s.epr.t,
+      y:s.epr.y,
+      type:'scatter',
+      mode:'lines',
+      name:'Exhalation Pressure',
+      line:{ color:'rgba(141,211,255,.95)', width:2.1 },
+      hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>Exhalation Pressure: %{y:.2f}</b><extra></extra>'
+    });
+    Plotly.newPlot(els.plotEpr, eprTraces, {
+      ...CALM_LAYOUT('Therapy vs exhalation pressure'),
+      yaxis: { ...CALM_LAYOUT('').yaxis, title: { text: s.epr.unit ? `Pressure (${s.epr.unit})` : 'Pressure' } }
     }, plotConfig);
-    els.eprNarrative.innerHTML = `<b>Expiratory Pressure Relief (EPR):</b> comfort reduction in pressure during exhale. Parsed from <b>EprPress.2s</b> variants when available.<br/>Scale meaning: EPR is pressure drop during exhale, usually in <b>cmH₂O</b>. In plain terms, <b>EPR 1/2/3</b> feels like small/medium/larger exhale relief. <br/>Scientific detail: expected EPR values are typically low (commonly around 0–3 cmH₂O depending on settings).`;
+
+    const derivedReliefText = st.eprReliefP50 == null
+      ? 'The relief amount could not be derived confidently from the mapped pressure pair.'
+      : st.eprReliefP50 < 0.3
+        ? `Derived relief was near zero (median <b>${st.eprReliefP50.toFixed(2)} cmH₂O</b>), which usually means relief was off, inactive, or not inferable from the mapped channels.`
+        : `Derived relief was about <b>${st.eprReliefP50.toFixed(2)} cmH₂O</b> at the median and <b>${st.eprReliefP95.toFixed(2)} cmH₂O</b> at the 95th percentile.`;
+    const configBits = [
+      st.configuredEpr != null ? `configured setting <b>${st.configuredEpr}</b>` : '',
+      st.configuredEprType ? `type <b>${escapeHtml(st.configuredEprType)}</b>` : '',
+      st.configuredEprEnabled ? `enabled flag <b>${escapeHtml(st.configuredEprEnabled)}</b>` : ''
+    ].filter(Boolean).join(', ');
+    const crossCheck = configBits ? `Cross-check from <b>CurrentSettings.json</b>: ${configBits}.` : 'No explicit EPR setting was found in CurrentSettings.json.';
+
+    els.eprNarrative.innerHTML = `
+      <b>EPR:</b> in this app, <b>EprPress.2s</b> is treated as <b>absolute exhalation pressure</b>, not as the 0-3 comfort setting itself.<br/>
+      That is why values like <b>${st.exhaleP50 != null ? st.exhaleP50.toFixed(1) : '4-7'}</b> can be correct: they are still real pressure values in <b>${friendlyUnit(s.epr.unit, 'cmH₂O')}</b>, just measured during exhale.<br/>
+      The comfort-relief amount is the difference between therapy pressure and exhalation pressure. ${derivedReliefText}<br/>
+      ${crossCheck}
+    `;
   } else {
     Plotly.newPlot(els.plotEpr, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
-      {...CALM_LAYOUT('EPR (not mapped)')}, plotConfig);
-    els.eprNarrative.innerHTML = `<b>No EPR signal mapped.</b> EPR uses <b>EprPress.2s</b> (or close label variants) when available.`;
+      {...CALM_LAYOUT('Exhalation pressure (not mapped)')}, plotConfig);
+    els.eprNarrative.innerHTML = `<b>No exhalation-pressure signal mapped.</b> When present, <b>EprPress.2s</b> is treated as exhalation pressure and the relief amount is derived from the pressure difference.`;
   }
 
   if (ev?.t?.length){
     const counts = {};
     for (const t of ev.type) counts[t] = (counts[t] || 0) + 1;
-    const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-    const topCats = ranked.slice(0, 10).map(x=>x[0]);
-    const catIndex = new Map(topCats.map((c,i)=>[c,i]));
-
-    const colors = [
-      'rgba(122,167,255,.92)','rgba(97,212,195,.92)','rgba(255,204,102,.90)',
-      'rgba(255,107,122,.90)','rgba(110,231,166,.90)','rgba(231,246,246,.85)',
-    ];
+    const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1] || humanizeEventCategory(a[0]).localeCompare(humanizeEventCategory(b[0])));
+    const topCats = ranked.map(x=>x[0]);
 
     const layout = CALM_LAYOUT('Events over time (annotations)');
     layout.margin = { ...layout.margin, l: 130 };
@@ -3210,79 +4284,66 @@ function renderPlotsAndText(){
       automargin: true,
       title: { text: 'Event Category', standoff: 14 },
       tickmode: 'array',
-      tickvals: [...topCats.map((_,i)=>i), topCats.length],
-      ticktext: [...topCats.map(c=>humanizeEventCategory(c)), 'Other'],
+      tickvals: topCats.map((_,i)=>i),
+      ticktext: topCats.map(c=>humanizeEventCategory(c)),
+      range: [-0.6, Math.max(0, topCats.length - 1) + 0.6]
     };
 
     const buckets = new Map(topCats.map((c, i) => [c, { idx: i, x: [], y: [], text: [] }]));
-    const otherX = [];
-    const otherY = [];
-    const otherText = [];
 
     for (let j=0;j<ev.t.length;j++){
       const raw = ev.type[j];
       const b = buckets.get(raw);
-      if (b){
-        const clean = cleanEventLabel(raw);
-        b.x.push(ev.t[j]);
-        b.y.push(b.idx);
-        b.text.push(clean);
-      } else {
-        otherX.push(ev.t[j]);
-        otherY.push(topCats.length);
-        otherText.push(humanizeEventCategory(raw));
-      }
+      if (!b) continue;
+      b.x.push(ev.t[j]);
+      b.y.push(b.idx);
+      b.text.push(humanizeEventCategory(raw));
     }
 
-    const traces = [];
+    const eventTraces = buildSessionBoundaryTraces(sess, -0.6, Math.max(0, topCats.length - 1) + 0.6);
     for (const rawCat of topCats){
       const b = buckets.get(rawCat);
       if (!b || !b.x.length) continue;
-      traces.push({
+      eventTraces.push({
         x: b.x,
         y: b.y,
         type:'scatter',
         mode:'markers',
-        marker:{ size:9, color: colors[b.idx % colors.length], line:{width:1,color:'rgba(0,0,0,.35)'} },
+        marker:{ size:9, color: eventColor(rawCat, b.idx), line:{width:1,color:'rgba(0,0,0,.35)'} },
         name: humanizeEventCategory(rawCat),
         text: b.text,
         hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
       });
     }
-    if (otherX.length){
-      traces.push({
-        x: otherX,
-        y: otherY,
-        type:'scatter',
-        mode:'markers',
-        marker:{ size:8, color:'rgba(180,188,198,.88)', line:{width:1,color:'rgba(0,0,0,.35)'} },
-        name:'Other',
-        text: otherText,
-        hovertemplate:'%{x|%Y-%m-%d %H:%M:%S}<br><b>%{text}</b><extra></extra>'
-      });
-    }
+    Plotly.newPlot(els.plotEvents, eventTraces, layout, plotConfig);
 
-    Plotly.newPlot(els.plotEvents, traces, layout, plotConfig);
-
+    renderEventsLegend(counts, sess);
 
     const top = ranked.slice(0,5)
-      .map(([k,v])=>`• ${escapeHtml(humanizeEventCategory(k))}: <b>${v}</b>`).join('<br/>');
-    const rangeLabel = state.selectedRange?.startISO && state.selectedRange?.endISO ? `${state.selectedRange.startISO} → ${state.selectedRange.endISO}` : (state.current.session?.label || 'Selected session');
-    const perHour = st.usageHrs && st.usageHrs > 0 ? (ev.t.length / st.usageHrs) : null;
+      .map(([k,v])=>`${escapeHtml(humanizeEventCategory(k))}: <b>${v}</b>`).join('<br/>');
     els.eventsNarrative.innerHTML = `
-      <b>Events explained:</b> each dot is one parsed annotation event, grouped by category (including decoded device event codes where possible).<br/>
-      Scale meaning: this chart is event timing + category (not pressure strength). Higher rows are different categories, not “more severe” by height.<br/><br/>
-      • Range: <b>${escapeHtml(rangeLabel)}</b><br/>
-      • Total events: <b>${ev.t.length}</b><br/>
-      • Events/hour (raw): <b>${perHour != null ? perHour.toFixed(2) : '—'}</b><br/>
-      • AHI (est): <b>${st.ahiEst != null ? st.ahiEst.toFixed(2) : '—'}</b><br/><br/>
-      <b>Top event types</b><br/>
+      <b>Events:</b> each marker is one parsed annotation, grouped by event type. The two vertical dashed markers show when the selected session started and stopped.<br/>
+      The Y-axis is categorical, not severity-based. A higher row means “different type,” not “worse event.”<br/>
+      Session window: <b>${escapeHtml(actualRange)}</b><br/>
+      Total parsed events: <b>${ev.t.length}</b><br/>
+      Raw events per hour: <b>${st.eventsPerHour != null ? st.eventsPerHour.toFixed(2) : '—'}</b><br/>
+      AHI-like events per hour: <b>${st.ahiEst != null ? st.ahiEst.toFixed(2) : '—'}</b><br/><br/>
+      <b>Most common event types</b><br/>
       ${top || 'No event labels found.'}
     `;
   } else {
-    Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
-      {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
-    els.eventsNarrative.innerHTML = `<b>No annotations parsed.</b> If EDF has “EDF Annotations”, map it on the left.`;
+    const boundaryTraces = buildSessionBoundaryTraces(sess, -0.5, 0.5);
+    if (boundaryTraces.length){
+      Plotly.newPlot(els.plotEvents, boundaryTraces, {
+        ...CALM_LAYOUT('Session boundaries (no parsed events)'),
+        yaxis: { ...CALM_LAYOUT('').yaxis, tickmode:'array', tickvals:[0], ticktext:['Session'], range:[-0.6, 0.6] }
+      }, plotConfig);
+    } else {
+      Plotly.newPlot(els.plotEvents, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
+        {...CALM_LAYOUT('Events (not found/mapped)')}, plotConfig);
+    }
+    renderEventsLegend({}, sess);
+    els.eventsNarrative.innerHTML = `<b>No annotations parsed for this selection.</b> The boundary markers still show when the loaded session started and stopped. If your EDF contains event annotations, map them in the panel on the left.`;
   }
 }
 
@@ -3290,7 +4351,7 @@ const startupOptions = getStartupOptions();
 state.skipOnboarding = startupOptions.skipOnboarding;
 if (startupOptions.demo){
   closeOnboarding();
-  loadDemoData({ tabId: resolveTabId(startupOptions.tab), skipToast:true });
+  loadDemoData({ tabId: resolveTabId(startupOptions.tab), skipToast:true, datasetId: startupOptions.demoSet });
 } else {
   const startupTabId = resolveTabId(startupOptions.tab);
   if (startupTabId) setActiveTab(startupTabId);
