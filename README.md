@@ -1,7 +1,6 @@
 # CalmCPAP
 
-Sleep is serious. This app is not trying to act like serious medical software.
-
+Sleep is serious. This app is not.
 CalmCPAP is a small browser app that turns CPAP data into charts, plain-English notes, and a simple PDF. The point is to make sleep data feel less stiff, less intimidating, and a little more interesting to explore.
 
 ## The Short Version
