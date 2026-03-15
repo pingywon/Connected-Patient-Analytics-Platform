@@ -4954,7 +4954,7 @@ function renderPlotsAndText(){
       x:s.tidalVolume.t, y:s.tidalVolume.y, type:'scatter', mode:'lines',
       name:'Tidal Volume', line:{ color:'rgba(186,148,255,.95)', width:2.1 }
     }], layTv, plotConfig);
-    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> this is the air moved with each normal breath.<br/>Think of it as “air per breath” rather than “air per minute.” The dotted reference lines are rough resting-ballpark guides, not pass/fail targets, and your own comfortable baseline matters most.`;
+    els.tidalNarrative.innerHTML = `<b>Tidal Volume:</b> this is the air moved with each normal breath.<br/>Think of it as “air per breath” rather than “air per minute.” The dotted reference lines are rough resting-ballpark guides. 500mL for men and 400mL for women not pass/fail targets, and your own comfortable baseline matters most.`;
   } else {
     Plotly.newPlot(els.plotTidalVolume, [{x:[0,1],y:[0,0],type:'scatter',mode:'lines',hoverinfo:'skip'}],
       {...CALM_LAYOUT('Tidal Volume (not mapped)')}, plotConfig);
