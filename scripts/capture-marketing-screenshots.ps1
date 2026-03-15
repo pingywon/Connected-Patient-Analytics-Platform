@@ -137,7 +137,7 @@ $shots = @(
 )
 
 foreach ($shot in $shots) {
-  $url = "$indexUri#demo=1&skipOnboarding=1&tab=$($shot.Tab)"
+  $url = "$indexUri#demo=1&demoSet=1&skipOnboarding=1&tab=$($shot.Tab)"
   $outputPath = Join-Path $OutputDir $shot.Name
   $profileDir = Join-Path $env:TEMP ("calmcpap-headless-" + [guid]::NewGuid().ToString())
 
