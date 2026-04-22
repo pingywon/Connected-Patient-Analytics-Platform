@@ -1,5 +1,4 @@
 #SampleTestData
 .SampleTestData/
-/scripts/
-./scripts/
+scripts/
 finaldirectives.txt
