@@ -96,6 +96,25 @@
       border-radius:10px;
     }
     .navLink:hover{ color: var(--text); background: rgba(255,255,255,.04); }
+    .versionPill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 11px;
+      border-radius:999px;
+      border:1px solid rgba(127,212,207,.32);
+      background: linear-gradient(135deg, rgba(97,212,195,.14), rgba(122,167,255,.14));
+      color: rgba(231,246,246,.95);
+      font-size:11.5px;
+      font-weight:800;
+      letter-spacing:.22px;
+      white-space:nowrap;
+    }
+    .versionPill .dot{
+      width:6px; height:6px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(127,212,207,.18);
+    }
 
     /* --- Buttons --- */
     .btn{
@@ -296,41 +315,84 @@
     .sectionHead.centered{ text-align:center; }
     .sectionHead.centered .sectionLead{ margin-left:auto; margin-right:auto; }
 
-    /* --- Gallery --- */
-    .gallery{
+    /* --- Feature tour --- */
+    .featureTour{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:18px;
-      margin-top: 12px;
+      gap:64px;
+      margin-top:12px;
     }
-    .shot{
+    .featureRow{
+      display:flex;
+      gap:40px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .featureRow > .featureShot,
+    .featureRow > .featureBody{
+      flex: 1 1 360px;
+      min-width:0;
+    }
+    .featureRow.reverse{ flex-direction: row-reverse; }
+    .featureShot{
       border:1px solid rgba(255,255,255,.10);
       background: rgba(11,42,49,.55);
       backdrop-filter: blur(10px);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
-      display:flex;
-      flex-direction:column;
     }
-    .shot img{
+    .featureShot img{
       display:block;
       width:100%;
       height:auto;
-      border-bottom:1px solid rgba(255,255,255,.06);
     }
-    .shotMeta{
-      padding:12px 14px 14px;
+    .featureBody .tabTag{
+      display:inline-block;
+      font-size:10.5px;
+      letter-spacing:.3em;
+      text-transform:uppercase;
+      color: var(--accent);
+      font-weight:800;
+      margin-bottom:12px;
     }
-    .shotMeta h4{
-      margin:0 0 4px;
+    .featureBody h3{
+      margin:0 0 12px;
+      font-family:'Lora', Georgia, serif;
+      font-weight:400;
+      font-size: clamp(22px, 2.6vw, 30px);
+      letter-spacing:-.005em;
+      line-height:1.18;
+    }
+    .featureBody h3 em{ font-style:italic; font-weight:500; color: var(--accent); }
+    .featureBody p{
+      margin:0 0 12px;
+      color: var(--muted);
+      font-size:15px;
+      line-height:1.65;
+    }
+    .featureBody p:last-child{ margin-bottom:0; }
+    .featureBody strong{ color: var(--text); font-weight:700; }
+    .featureHint{
+      margin-top:18px;
+      padding:10px 14px;
+      border-left:3px solid rgba(127,212,207,.5);
+      background: rgba(127,212,207,.06);
+      border-radius: 0 12px 12px 0;
+      color: rgba(231,246,246,.86);
       font-size:13.5px;
-      color: rgba(231,246,246,.98);
-      letter-spacing:.18px;
+      line-height:1.55;
     }
-    .shotMeta p{ margin:0; color: var(--muted); font-size:12.5px; line-height:1.5; }
+    .featureHint b{
+      color: var(--accent);
+      font-weight:800;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      font-size:11px;
+      margin-right:6px;
+    }
     @media (max-width: 780px){
-      .gallery{ grid-template-columns: 1fr; }
+      .featureTour{ gap:40px; }
+      .featureRow, .featureRow.reverse{ flex-direction: column; gap:22px; }
     }
 
     /* --- Signals grid --- */
@@ -407,11 +469,12 @@
       border:1px solid rgba(127,212,207,.32);
       background: linear-gradient(160deg, rgba(97,212,195,.09), rgba(122,167,255,.06));
       border-radius: var(--radius);
-      padding: 26px;
-      display:grid;
-      grid-template-columns: auto 1fr;
-      gap:20px;
-      align-items:start;
+      padding: 32px 26px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:18px;
     }
     .privacy .pIcon{
       width:48px; height:48px; border-radius:14px;
@@ -420,45 +483,41 @@
       border:1px solid rgba(127,212,207,.4);
       color: var(--accent);
     }
+    .privacyBody{ width:100%; max-width: 720px; }
     .privacy h3{
-      margin:0 0 8px;
+      margin:0 0 14px;
       font-size:15px;
       letter-spacing:.22px;
       text-transform:uppercase;
       color: rgba(231,246,246,.98);
     }
-    .privacy ul{ margin:0; padding:0; list-style:none; display:grid; gap:6px; }
+    .privacy ul{
+      margin:0 auto;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+      max-width:620px;
+    }
     .privacy li{
       color: var(--muted);
       font-size:13.5px;
-      line-height:1.55;
-      padding-left:20px;
-      position:relative;
-    }
-    .privacy li::before{
-      content:'';
-      position:absolute;
-      left:0; top:9px;
-      width:7px; height:7px;
-      border-radius:50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 3px rgba(127,212,207,.18);
+      line-height:1.6;
     }
     .privacy li b{ color: var(--text); font-weight:700; }
-    @media (max-width: 620px){
-      .privacy{ grid-template-columns: 1fr; }
-    }
 
     /* --- Disclaimer --- */
     .disclaimer{
-      margin-top:22px;
-      border-left:4px solid rgba(243,201,124,.72);
+      margin:24px auto 0;
+      max-width:640px;
+      border:1px solid rgba(243,201,124,.36);
       background: rgba(243,201,124,.08);
       padding: 14px 18px;
       border-radius: 12px;
       color: rgba(252,238,210,.94);
       font-size:13px;
       line-height:1.6;
+      text-align:center;
     }
     .disclaimer b{ color: var(--warn); font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-right:6px; }
 
@@ -507,67 +566,6 @@
     .footerLinks a:hover{ color: var(--accent); }
     .fineprint{ margin-top:12px; font-size:11.5px; color: var(--muted2); max-width:720px; }
 
-    /* --- Download notice bar --- */
-    .downloadNotice{
-      border-bottom:1px solid rgba(243,201,124,.22);
-      background:
-        linear-gradient(180deg, rgba(243,201,124,.10), rgba(243,201,124,.04)),
-        rgba(11,42,49,.55);
-      backdrop-filter: blur(10px);
-    }
-    .downloadNoticeInner{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      padding:12px 0;
-      flex-wrap:wrap;
-    }
-    .downloadIcon{
-      width:32px; height:32px;
-      flex-shrink:0;
-      border-radius:10px;
-      display:grid; place-items:center;
-      background: rgba(243,201,124,.16);
-      border:1px solid rgba(243,201,124,.42);
-      color: var(--warn);
-    }
-    .downloadText{
-      flex:1 1 320px;
-      min-width:0;
-      font-size:13px;
-      line-height:1.5;
-      color: rgba(252,238,210,.94);
-    }
-    .downloadText b{
-      color: var(--warn);
-      font-weight:800;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      margin-right:6px;
-      font-size:11.5px;
-    }
-    .downloadText strong{ color: var(--text); font-weight:700; }
-    .downloadCta{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 14px;
-      border-radius:999px;
-      border:1px solid rgba(243,201,124,.50);
-      background: rgba(243,201,124,.10);
-      color: var(--warn);
-      font-weight:800;
-      font-size:13px;
-      white-space:nowrap;
-      text-decoration:none;
-      transition: background .12s ease, color .12s ease, border-color .12s ease;
-    }
-    .downloadCta:hover{
-      background: rgba(243,201,124,.18);
-      color: #ffe5b3;
-      border-color: rgba(243,201,124,.72);
-    }
-    .downloadCta svg{ width:14px; height:14px; }
   </style>
 </head>
 <body>
@@ -582,33 +580,16 @@
       <a class="navLink" href="#features">Features</a>
       <a class="navLink" href="#gallery">Screenshots</a>
       <a class="navLink" href="#privacy">Privacy</a>
+      <span class="versionPill"><span class="dot"></span>Version 2.0</span>
       <a class="btn ghost" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer" aria-label="View source on GitHub">
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
       </a>
-      <a class="btn" href="CPAP.html">Open the App</a>
     </div>
   </div>
 </nav>
 
-<div class="downloadNotice">
-  <div class="wrap downloadNoticeInner">
-    <div class="downloadIcon" aria-hidden="true">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-    </div>
-    <div class="downloadText">
-      <b>Run it local</b>
-      To actually read your own CPAP data, <strong>download this project from GitHub</strong> and open <code>CPAP.html</code> from your own computer. This page is a preview — running the app off your hard drive is what keeps your data local and off any server.
-    </div>
-    <a class="downloadCta" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer">
-      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      Download from GitHub
-    </a>
-  </div>
-</div>
-
 <header class="hero wrap">
-  <span class="eyebrow"><span class="dot"></span> Version 2.0 · Tested on ResMed AirSense 11</span>
   <h1 class="wordmark">
     <span class="wm-main">
       <span class="wm-a">Connected</span>
@@ -617,17 +598,8 @@
     <span class="wm-c">Analytics Platform</span>
   </h1>
   <p class="tagline">
-    Open your CPAP SD-card ZIP, pick a night, and read leak, pressure, flow, and events as plain-language charts —
-    <b>entirely in your browser</b>. No upload. No account. No cloud.
+    Your CPAP machine records <b>dozens of signals per second</b> every night you sleep. The factory app gives you a usage score and a single AHI number. This one opens the <b>raw signal</b> — leak, pressure, flow, snore, events, every sample — and plots it as something you can actually read.
   </p>
-  <div class="heroCtas">
-    <a class="btn" href="CPAP.html">
-      Open the App
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-    </a>
-    <a class="btn ghost" href="CPAP.html#demo=1&skipOnboarding=1">Try the Demo</a>
-  </div>
-  <div class="heroNote">One self-contained file. Load and work offline once it's open.</div>
 </header>
 
 <!-- Pillars -->
@@ -635,24 +607,24 @@
   <div class="pillars">
     <div class="pillar">
       <div class="icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
       </div>
-      <h3>Local Only</h3>
-      <p>Everything happens in your browser. Your ZIP never leaves your computer — there's no server to send it to.</p>
+      <h3>More than a score</h3>
+      <p>The manufacturer app surfaces three numbers. This one parses the EDF files on the card and plots every sample — pressure ramps, leak excursions, event annotations, the lot.</p>
+    </div>
+    <div class="pillar">
+      <div class="icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      </div>
+      <h3>Reads like English</h3>
+      <p>Every tab writes its own summary for the night you picked — usage hours, leak behavior, where the pressure settled, event counts. No jargon to decode.</p>
     </div>
     <div class="pillar">
       <div class="icon" aria-hidden="true">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
       </div>
-      <h3>One File</h3>
-      <p>The whole app ships as a single <code>CPAP.html</code>. Double-click to open. No install, no build, no dependencies.</p>
-    </div>
-    <div class="pillar">
-      <div class="icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-      </div>
-      <h3>Ten Views</h3>
-      <p>Leak, pressure, flow, snore, respiratory rate, tidal volume, EPR, events, compare, and a plain-language overview.</p>
+      <h3>Nothing to install</h3>
+      <p>One HTML file. Double-click it. Works offline, works in five years, works whether or not the server this site lives on is still up.</p>
     </div>
   </div>
 </section>
@@ -686,66 +658,85 @@
   </div>
 </section>
 
-<!-- Gallery -->
+<!-- Feature tour -->
 <section class="section" id="gallery">
   <div class="wrap">
     <div class="sectionHead centered">
-      <span class="sectionLabel">Screenshots</span>
-      <h2 class="sectionTitle">What a night looks like, <em>one tab at a time</em>.</h2>
-      <p class="sectionLead">All screenshots come from the built-in demo mode. They are not real patient data.</p>
+      <span class="sectionLabel">A tour of one night</span>
+      <h2 class="sectionTitle">Same ZIP, <em>ten different ways</em> to read it.</h2>
+      <p class="sectionLead">Four of the tabs, in the order a curious sleeper usually hits them. Screenshots are from the built-in demo — not real patient data.</p>
     </div>
-    <div class="gallery">
-      <figure class="shot">
-        <img src="assets/cpap-overview.png" alt="Overview tab showing leak and pressure across a session, with embedded demo data" loading="lazy" />
-        <figcaption class="shotMeta">
-          <h4>Overview</h4>
-          <p>Leak vs pressure at a glance for the selected night, with a plain-language narrative.</p>
-        </figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="assets/cpap-pressure.png" alt="Pressure tab showing therapy pressure over time, with embedded demo data" loading="lazy" />
-        <figcaption class="shotMeta">
-          <h4>Pressure</h4>
-          <p>Therapy pressure across the detected session, sampled straight from the EDF data.</p>
-        </figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="assets/cpap-compare.png" alt="Compare tab overlaying multiple signals on one plot, with embedded demo data" loading="lazy" />
-        <figcaption class="shotMeta">
-          <h4>Compare</h4>
-          <p>Overlay several signals on a single plot, normalized or raw, and see how they move together.</p>
-        </figcaption>
-      </figure>
-      <figure class="shot">
-        <img src="assets/cpap-events.png" alt="Events tab showing parsed annotations and full event glossary, with embedded demo data" loading="lazy" />
-        <figcaption class="shotMeta">
-          <h4>Events</h4>
-          <p>Parsed annotations with session-boundary markers and a full event glossary underneath.</p>
-        </figcaption>
-      </figure>
+
+    <div class="featureTour">
+
+      <div class="featureRow">
+        <div class="featureShot">
+          <img src="assets/cpap-overview.png" alt="Overview tab showing leak and pressure across a session, with a plain-language narrative underneath" loading="lazy" />
+        </div>
+        <div class="featureBody">
+          <span class="tabTag">Tab 01 · Overview</span>
+          <h3>The whole night, <em>in one look</em>.</h3>
+          <p>Leak and pressure plotted together across the detected session — so you can see at a glance whether the mask held, where the pressure settled, and whether the two ever argued with each other.</p>
+          <p>Underneath, a plain-language summary writes itself for every night you pick: usage hours, 95th-percentile leak, median pressure, and how many events the machine flagged.</p>
+          <div class="featureHint"><b>Why it matters</b>If something looks off in the narrative, the tabs that follow are where you go to find out what.</div>
+        </div>
+      </div>
+
+      <div class="featureRow reverse">
+        <div class="featureShot">
+          <img src="assets/cpap-pressure.png" alt="Pressure tab showing therapy pressure over time" loading="lazy" />
+        </div>
+        <div class="featureBody">
+          <span class="tabTag">Tab 03 · Pressure</span>
+          <h3>Therapy pressure, <em>straight from the EDF</em>.</h3>
+          <p>The factory app shows you an average. This plots every sample the machine recorded — the ramp-up, the holds, and the responses to breathing events as they happened.</p>
+          <p>Especially honest on APAP: you can see whether the machine actually adjusted all night, or quietly parked at one pressure and stayed there.</p>
+        </div>
+      </div>
+
+      <div class="featureRow">
+        <div class="featureShot">
+          <img src="assets/cpap-compare.png" alt="Compare tab overlaying multiple signals on a single plot" loading="lazy" />
+        </div>
+        <div class="featureBody">
+          <span class="tabTag">Tab 10 · Compare</span>
+          <h3>Overlay signals that normally live on <em>separate tabs</em>.</h3>
+          <p>Pick any combination of leak, pressure, flow, snore, respiratory rate, tidal volume, or exhalation pressure and stack them on one plot — normalized to the same axis, or kept raw — to see how they move together through the night.</p>
+          <div class="featureHint"><b>Use case</b>Leak spike at 3 a.m.? Pull up leak and pressure on the same plot and see exactly what the machine did about it.</div>
+        </div>
+      </div>
+
+      <div class="featureRow reverse">
+        <div class="featureShot">
+          <img src="assets/cpap-events.png" alt="Events tab showing parsed annotations and a full event glossary" loading="lazy" />
+        </div>
+        <div class="featureBody">
+          <span class="tabTag">Tab 09 · Events</span>
+          <h3>Every annotation your machine wrote down, <em>decoded</em>.</h3>
+          <p>Obstructive apneas, hypopneas, RERAs, central pauses, flow limitations — whatever the machine chose to flag that night is parsed out of the EDF annotations, grouped by code, and charted with session-boundary markers.</p>
+          <p>A glossary underneath translates each tag into plain English, so you're not googling <strong>"CSR"</strong> at 2 a.m.</p>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- Features / Signals -->
+<!-- The other six tabs -->
 <section class="section" id="features">
   <div class="wrap">
     <div class="sectionHead">
-      <span class="sectionLabel">Signals</span>
-      <h2 class="sectionTitle">Ten plots from the same <em>ZIP you already have</em>.</h2>
-      <p class="sectionLead">No manual setup. The app inventories what's in the archive and lights up the tabs it can plot.</p>
+      <span class="sectionLabel">The other six tabs</span>
+      <h2 class="sectionTitle">Pulled from the same archive, <em>no extra setup</em>.</h2>
+      <p class="sectionLead">Whatever the machine recorded that night shows up as its own tab. You don't pick them — the app inventories the ZIP and lights up whatever's there.</p>
     </div>
     <div class="signalGrid">
-      <div class="signal"><div class="name">Overview</div><div class="desc">Leak and pressure together for a plain-language read of the night.</div></div>
-      <div class="signal"><div class="name">Leak</div><div class="desc">Mask-seal behavior and time above the large-leak guide line.</div></div>
-      <div class="signal"><div class="name">Pressure</div><div class="desc">Therapy pressure across the detected session.</div></div>
-      <div class="signal"><div class="name">Flow</div><div class="desc">Breathing waveform, shape changes, and pauses.</div></div>
-      <div class="signal"><div class="name">Snore</div><div class="desc">Vibration-based snore activity signal.</div></div>
-      <div class="signal"><div class="name">Respiratory Rate</div><div class="desc">Breaths per minute over time.</div></div>
-      <div class="signal"><div class="name">Tidal Volume</div><div class="desc">Air moved per breath, with male/female baseline references.</div></div>
-      <div class="signal"><div class="name">EPR</div><div class="desc">Therapy vs exhalation pressure, with derived relief amount.</div></div>
-      <div class="signal"><div class="name">Events</div><div class="desc">Parsed annotations, deduplicated per code, with a full glossary.</div></div>
-      <div class="signal"><div class="name">Compare</div><div class="desc">Overlay several signals on one plot, normalized or raw.</div></div>
+      <div class="signal"><div class="name">Leak</div><div class="desc">Mask-seal behavior with the large-leak guide line drawn in — so you can see how long the seal was compromised, not just the average.</div></div>
+      <div class="signal"><div class="name">Flow</div><div class="desc">The raw breathing waveform. Flow-limited breaths and pauses jump out of the shape before the machine ever flags them.</div></div>
+      <div class="signal"><div class="name">Snore</div><div class="desc">The vibration-based snore channel the machine records but the factory app doesn't graph.</div></div>
+      <div class="signal"><div class="name">Respiratory Rate</div><div class="desc">Breaths per minute through the night. Central pauses and arousals both leave a fingerprint here.</div></div>
+      <div class="signal"><div class="name">Tidal Volume</div><div class="desc">Air moved per breath, overlaid with male and female baseline reference lines so you know where "normal" is.</div></div>
+      <div class="signal"><div class="name">EPR</div><div class="desc">Therapy pressure vs. exhalation pressure with derived relief amount — the honest view of what EPR is actually doing on your curve.</div></div>
     </div>
   </div>
 </section>
@@ -762,7 +753,7 @@
       <div class="pIcon" aria-hidden="true">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
       </div>
-      <div>
+      <div class="privacyBody">
         <h3>What stays where</h3>
         <ul>
           <li><b>Runs locally in your browser.</b> No data leaves your computer.</li>
@@ -778,29 +769,11 @@
   </div>
 </section>
 
-<!-- CTA -->
-<section class="section">
-  <div class="wrap">
-    <div class="ctaBand">
-      <h2>Open your ZIP. <em>Read your night.</em></h2>
-      <p>No upload, no install — just a single page that turns your CPAP export into readable charts.</p>
-      <div class="heroCtas" style="margin-top:0;">
-        <a class="btn" href="CPAP.html">
-          Open the App
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-        </a>
-        <a class="btn ghost" href="CPAP.html#demo=1&skipOnboarding=1">Try the Demo</a>
-      </div>
-    </div>
-  </div>
-</section>
-
 <footer>
   <div class="wrap">
     <div class="footerRow">
       <span class="footerMark">Connected <em>Patient</em> Analytics Platform · v2.0</span>
       <div class="footerLinks">
-        <a href="CPAP.html">Open the App</a>
         <a href="#how">How it works</a>
         <a href="#privacy">Privacy</a>
         <a href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer">GitHub</a>
