@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-palette="parchment">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Connected Patient Analytics Platform — CPAP exports, read locally</title>
-  <meta name="description" content="A local-only browser app for opening CPAP SD-card ZIP exports and reading the results as plain-language charts. No upload, no account, no cloud." />
+  <meta name="description" content="A local-only browser app for opening CPAP SD-card ZIP exports and reading the results as readable charts. No upload, no account, no cloud." />
 
   <link rel="icon" type="image/svg+xml" href="assets/cpap-mask-badge.svg" />
   <link rel="icon" type="image/png" sizes="16x16" href="assets/cpap-mask-badge-16.png" />
@@ -13,450 +13,600 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" />
 
   <style>
-    :root{
-      --bg0:#06161d; --bg1:#0a202a;
-      --card:#0d2b36; --card2:#0a2530;
-      --text:#e5f1f3; --muted:#b3d0d2; --muted2:#87b4b5;
-      --accent:#7fd4cf; --accent2:#8aadff;
-      --warn:#f3c97c; --bad:#f27481; --good:#7ce3a8;
-      --line: rgba(255,255,255,.09);
-      --shadow: 0 18px 40px rgba(0,0,0,.48);
-      --radius: 20px; --radius2: 14px;
-      --focus: rgba(127,212,207,.9);
+    /* =========================================================
+       PALETTE — three variants. Default is "parchment".
+       To roll back: change <html data-palette="parchment">
+       to "obsidian" (dark + amber) or "steel" (cool slate + indigo).
+       ========================================================= */
+
+    :root,
+    [data-palette="parchment"]{
+      --paper:       #f4ecd8;
+      --paper-soft:  #ebe2c6;
+      --paper-band:  #e4d8b4;
+      --paper-edge:  #d6c898;
+      --ink:         #1c2520;
+      --ink-2:       #4a5550;
+      --ink-3:       #7a8078;
+      --rule:        rgba(30,37,32,.18);
+      --rule-soft:   rgba(30,37,32,.10);
+      --accent:      #0f6a62;
+      --accent-2:    #a16322;
+      --warn:        #9a5017;
+      --highlight:   rgba(232, 198, 112, .55);
+      --shadow:      0 20px 40px rgba(80,60,24,.12);
+      --card-bg:     #faf3de;
+      --pos:         #3d7a4e;
     }
+
+    [data-palette="obsidian"]{
+      --paper:       #0a0d0b;
+      --paper-soft:  #13191a;
+      --paper-band:  #18201f;
+      --paper-edge:  rgba(237,233,217,.14);
+      --ink:         #ede9d9;
+      --ink-2:       #bcb7a4;
+      --ink-3:       #898374;
+      --rule:        rgba(237,233,217,.14);
+      --rule-soft:   rgba(237,233,217,.07);
+      --accent:      #e6b45a;
+      --accent-2:    #b67c2a;
+      --warn:        #d9833a;
+      --highlight:   rgba(230,180,90,.28);
+      --shadow:      0 20px 40px rgba(0,0,0,.55);
+      --card-bg:     #121816;
+      --pos:         #95c692;
+    }
+
+    [data-palette="steel"]{
+      --paper:       #e3e8ed;
+      --paper-soft:  #d0d8df;
+      --paper-band:  #bcc6cf;
+      --paper-edge:  #a7b2bc;
+      --ink:         #141a22;
+      --ink-2:       #424c58;
+      --ink-3:       #6c7682;
+      --rule:        rgba(20,26,34,.16);
+      --rule-soft:   rgba(20,26,34,.08);
+      --accent:      #2a4a8c;
+      --accent-2:    #6b8abf;
+      --warn:        #8c5a1a;
+      --highlight:   rgba(120,150,200,.28);
+      --shadow:      0 20px 40px rgba(30,50,80,.14);
+      --card-bg:     #edf1f5;
+      --pos:         #23557a;
+    }
+
     *{ box-sizing:border-box; }
     html,body{ margin:0; }
     html{ scroll-behavior:smooth; }
     body{
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--text);
-      background:
-        radial-gradient(1100px 520px at 20% 10%, rgba(97,212,195,.18), transparent 60%),
-        radial-gradient(1000px 620px at 82% 12%, rgba(122,167,255,.14), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--ink);
+      background: var(--paper);
+      background-image:
+        radial-gradient(1200px 600px at 10% -10%, rgba(161,99,34,.05), transparent 55%),
+        radial-gradient(1000px 500px at 90% 0%, rgba(15,106,98,.06), transparent 55%),
+        repeating-linear-gradient(
+          0deg,
+          rgba(30,37,32,.015) 0,
+          rgba(30,37,32,.015) 1px,
+          transparent 1px,
+          transparent 3px
+        );
       background-attachment: fixed;
-      min-height:100vh;
-      line-height:1.55;
+      min-height: 100vh;
+      line-height: 1.6;
+      font-size: 16px;
     }
+    [data-palette="obsidian"] body{
+      background-image:
+        radial-gradient(1200px 600px at 10% -10%, rgba(230,180,90,.06), transparent 55%),
+        radial-gradient(1000px 500px at 90% 0%, rgba(230,180,90,.04), transparent 55%);
+    }
+    [data-palette="steel"] body{
+      background-image:
+        radial-gradient(1200px 600px at 10% -10%, rgba(42,74,140,.06), transparent 55%),
+        radial-gradient(1000px 500px at 90% 0%, rgba(107,138,191,.05), transparent 55%);
+    }
+
     :focus{ outline:none; }
     :focus-visible{
-      outline: 3px solid var(--focus);
+      outline: 2px solid var(--accent);
       outline-offset: 3px;
-      border-radius: 14px;
+      border-radius: 6px;
     }
     @media (prefers-reduced-motion: reduce){
       *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
     }
 
-    a{ color: var(--accent); text-decoration:none; }
-    a:hover{ color:#a5e4e0; }
+    a{ color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+    a:hover{ color: var(--ink); }
 
-    .wrap{ max-width:1120px; margin:0 auto; padding:0 22px; }
+    .wrap{ max-width: 1120px; margin: 0 auto; padding: 0 28px; }
 
-    /* --- Top bar --- */
+    /* Hairline rule */
+    .hr{
+      height:1px;
+      background: var(--rule);
+      border:0;
+      margin: 0;
+    }
+
+    /* =========================================================
+       TOP BAR — masthead style, sticky, thin
+       ========================================================= */
     .topbar{
-      position:sticky;
-      top:0;
-      z-index:30;
-      background: rgba(11,42,49,.55);
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid rgba(255,255,255,.08);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+    }
+    .topbar::after{
+      content:'';
+      display:block;
+      height:2px;
+      background:
+        linear-gradient(90deg, transparent, var(--rule) 18%, var(--rule) 82%, transparent);
     }
     .topbarInner{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:14px;
-      padding:12px 0;
+      padding: 12px 0;
     }
     .miniMark{
       display:inline-flex;
       align-items:baseline;
       gap:0.28em;
       font-family:'Lora', Georgia, serif;
-      font-size:18px;
-      letter-spacing:-0.008em;
-      color: var(--text);
+      font-size: 18px;
+      letter-spacing: -0.006em;
+      color: var(--ink);
+      text-decoration:none;
     }
+    .miniMark .mm-a{ font-weight: 400; }
     .miniMark .mm-b em{
-      font-style:italic;
-      font-weight:500;
-      color:var(--accent);
-      background: linear-gradient(transparent 72%, rgba(127,212,207,.28) 72%, rgba(127,212,207,.28) 94%, transparent 94%);
-      padding:0 0.04em;
+      font-style: italic;
+      font-weight: 500;
+      color: var(--accent);
+      background: linear-gradient(transparent 64%, var(--highlight) 64%, var(--highlight) 92%, transparent 92%);
+      padding: 0 0.05em;
     }
-    .topbarRight{ display:flex; gap:10px; align-items:center; }
-    .navLink{
-      color: var(--muted);
-      font-size:13px;
-      padding:8px 10px;
-      border-radius:10px;
-    }
-    .navLink:hover{ color: var(--text); background: rgba(255,255,255,.04); }
-    .versionPill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:5px 11px;
-      border-radius:999px;
-      border:1px solid rgba(127,212,207,.32);
-      background: linear-gradient(135deg, rgba(97,212,195,.14), rgba(122,167,255,.14));
-      color: rgba(231,246,246,.95);
-      font-size:11.5px;
-      font-weight:800;
-      letter-spacing:.22px;
-      white-space:nowrap;
-    }
-    .versionPill .dot{
-      width:6px; height:6px; border-radius:50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 3px rgba(127,212,207,.18);
+    .miniMark .mm-c{
+      margin-left: 10px;
+      padding-left: 10px;
+      border-left: 1px solid var(--rule);
+      color: var(--ink-3);
+      font-family: 'Inter', sans-serif;
+      font-size: 10.5px;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      font-weight: 600;
     }
 
-    /* --- Buttons --- */
-    .btn{
+    .topbarRight{ display:flex; gap: 14px; align-items:center; }
+    .navLink{
+      color: var(--ink-2);
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      padding: 6px 2px;
+      border-bottom: 1px solid transparent;
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .navLink:hover{ color: var(--ink); border-bottom-color: var(--accent); }
+
+    .topActions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .topGh{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-      cursor:pointer;
-      border:none;
-      border-radius:999px;
-      padding:12px 20px;
-      font-weight:900;
-      font-size:14px;
-      color:#062026;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      box-shadow: 0 12px 22px rgba(97,212,195,.14);
-      transition: transform .12s ease, filter .12s ease;
-      user-select:none;
-      white-space:nowrap;
+      width:32px;
+      height:32px;
+      border:1px solid var(--rule);
+      border-radius: 50%;
+      color: var(--ink-2);
+      background: transparent;
       text-decoration:none;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
-    .btn:hover{ transform: translateY(-1px); filter:brightness(1.05); color:#062026; }
-    .btn:active{ transform: translateY(0); filter:brightness(.98); }
-    .btn.ghost{
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.14);
-      color: var(--text);
-      box-shadow:none;
-    }
-    .btn.ghost:hover{ color: var(--text); background: rgba(255,255,255,.1); }
-    .btn svg{ width:16px; height:16px; }
+    .topGh:hover{ color: var(--accent); border-color: var(--accent); background: var(--card-bg); }
+    .topGh svg{ width:15px; height:15px; fill:currentColor; }
 
-    /* --- Hero --- */
-    .hero{
-      padding: 72px 0 56px;
-      text-align:center;
-      position:relative;
-    }
-    .eyebrow{
+    /* Download button — top bar version (obvious but refined) */
+    .downloadBtn{
       display:inline-flex;
       align-items:center;
-      gap:8px;
-      padding:6px 12px;
-      border-radius:999px;
-      border:1px solid rgba(97,212,195,.42);
-      background: linear-gradient(135deg, rgba(97,212,195,.14), rgba(122,167,255,.14));
-      color: rgba(231,246,246,.96);
-      font-size:12px;
-      font-weight:800;
-      letter-spacing:.18px;
-      margin-bottom:22px;
-    }
-    .eyebrow .dot{
-      width:7px; height:7px; border-radius:50%;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
       background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(127,212,207,.18);
+      color: var(--paper);
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-decoration: none;
+      transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+      white-space: nowrap;
+    }
+    .downloadBtn:hover{
+      transform: translateY(-1px);
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+      box-shadow: 0 8px 16px rgba(0,0,0,.12);
+    }
+    [data-palette="obsidian"] .downloadBtn{ color: var(--paper); }
+    [data-palette="obsidian"] .downloadBtn:hover{ color: var(--paper); }
+    .downloadBtn svg{
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+    .downloadBtn.ghost{
+      background: transparent;
+      color: var(--accent);
+    }
+    .downloadBtn.ghost:hover{
+      background: var(--accent);
+      color: var(--paper);
+      border-color: var(--accent);
+    }
+
+    /* =========================================================
+       MASTHEAD / HERO
+       ========================================================= */
+    .masthead{
+      position: relative;
+      padding: 72px 0 44px;
+      text-align: center;
     }
     .wordmark{
-      margin:0 auto;
-      font-family:'Lora', Georgia, 'Times New Roman', serif;
-      font-weight:400;
-      color:var(--text);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:4px;
-      line-height:1.05;
-      max-width: 960px;
+      margin: 0 auto;
+      font-family: 'Lora', Georgia, 'Times New Roman', serif;
+      font-weight: 400;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.02;
+      max-width: 980px;
     }
     .wordmark .wm-main{
       display:inline-flex;
       align-items:baseline;
-      gap:0.28em;
-      font-size:clamp(40px, 6.8vw, 82px);
-      letter-spacing:-0.012em;
+      gap: 0.22em;
+      font-size: clamp(44px, 7.2vw, 92px);
+      letter-spacing: -0.018em;
     }
-    .wordmark .wm-a{ font-weight:300; color:var(--text); }
+    .wordmark .wm-a{ font-weight: 300; }
     .wordmark .wm-b em{
-      font-style:italic;
-      font-weight:500;
-      color:var(--accent);
-      background: linear-gradient(transparent 72%, rgba(127,212,207,.28) 72%, rgba(127,212,207,.28) 94%, transparent 94%);
-      padding:0 0.04em;
+      font-style: italic;
+      font-weight: 500;
+      color: var(--accent);
+      background: linear-gradient(transparent 64%, var(--highlight) 64%, var(--highlight) 92%, transparent 92%);
+      padding: 0 0.04em;
     }
     .wordmark .wm-c{
-      font-family:'Lora', Georgia, serif;
-      font-weight:400;
-      font-size:clamp(11px, 1.25vw, 14px);
-      letter-spacing:0.36em;
-      text-transform:uppercase;
-      color: var(--muted2);
-      margin-top:10px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: clamp(10.5px, 1vw, 12px);
+      letter-spacing: 0.44em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 14px;
     }
-    .wordmark::before,
-    .wordmark::after{
-      content:'';
-      display:block;
-      width:80px;
-      height:1px;
-      background: linear-gradient(90deg, transparent, rgba(127,212,207,.55), transparent);
-      margin:0 auto;
-    }
-    .wordmark::before{ margin-bottom:12px; }
-    .wordmark::after{ margin-top:10px; }
 
     .tagline{
-      margin: 28px auto 0;
-      max-width: 700px;
-      color: var(--muted);
-      font-size: clamp(15px, 1.6vw, 18px);
-      line-height:1.55;
+      max-width: 640px;
+      margin: 32px auto 0;
+      color: var(--ink-2);
+      font-family: 'Lora', Georgia, serif;
+      font-size: clamp(16px, 1.6vw, 19px);
+      line-height: 1.6;
+      font-style: italic;
+      font-weight: 400;
     }
-    .tagline b{ color: var(--text); font-weight:700; }
+    .tagline strong{ color: var(--ink); font-weight: 600; font-style: normal; }
 
     .heroCtas{
-      margin-top: 30px;
-      display:flex;
-      gap:12px;
-      justify-content:center;
-      flex-wrap:wrap;
+      margin-top: 36px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
     .heroNote{
-      margin-top:18px;
-      font-size:12px;
-      color: var(--muted2);
-      letter-spacing:.2px;
+      margin-top: 18px;
+      font-size: 11.5px;
+      color: var(--ink-3);
+      letter-spacing: .06em;
     }
 
-    /* --- Pillars --- */
-    .pillars{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:14px;
-      margin: 30px 0 56px;
-    }
-    .pillar{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(15,50,58,.55);
-      backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px 20px 18px;
-    }
-    .pillar .icon{
-      width:36px;
-      height:36px;
-      border-radius:10px;
-      display:grid; place-items:center;
-      margin-bottom:12px;
-      background: linear-gradient(135deg, rgba(97,212,195,.22), rgba(122,167,255,.22));
-      border:1px solid rgba(127,212,207,.35);
-      color: var(--accent);
-    }
-    .pillar h3{
-      margin:0 0 6px;
-      font-size:15px;
-      letter-spacing:.28px;
-      color: rgba(231,246,246,.98);
-      text-transform:uppercase;
-    }
-    .pillar p{ margin:0; color: var(--muted); font-size:13.5px; line-height:1.55; }
-    @media (max-width: 780px){
-      .pillars{ grid-template-columns: 1fr; }
-    }
+    /* =========================================================
+       SECTION SCAFFOLDING
+       ========================================================= */
+    .section{ padding: 56px 0; }
+    .section + .section{ border-top: 1px solid var(--rule); }
 
-    /* --- Section scaffolding --- */
-    .section{ padding: 48px 0; }
-    .section + .section{ border-top:1px solid rgba(255,255,255,.06); }
     .sectionLabel{
-      display:inline-block;
-      font-size:11px;
-      letter-spacing:.24em;
-      text-transform:uppercase;
+      display: inline-block;
+      font-size: 10.5px;
+      letter-spacing: .34em;
+      text-transform: uppercase;
       color: var(--accent);
-      font-weight:700;
-      margin-bottom:10px;
+      font-weight: 700;
+      margin-bottom: 14px;
     }
     .sectionTitle{
-      margin: 0 0 10px;
+      margin: 0 0 14px;
       font-family:'Lora', Georgia, serif;
-      font-weight:400;
-      font-size: clamp(26px, 3.2vw, 36px);
-      letter-spacing:-.005em;
-      color: var(--text);
+      font-weight: 400;
+      font-size: clamp(28px, 3.6vw, 42px);
+      letter-spacing: -.008em;
+      line-height: 1.14;
+      color: var(--ink);
     }
     .sectionTitle em{
-      font-style:italic;
-      font-weight:500;
+      font-style: italic;
+      font-weight: 500;
       color: var(--accent);
     }
     .sectionLead{
-      max-width:640px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height:1.6;
-      margin: 0 0 28px;
+      max-width: 640px;
+      color: var(--ink-2);
+      font-size: 15.5px;
+      line-height: 1.7;
+      margin: 0 0 32px;
     }
-    .sectionHead.centered{ text-align:center; }
-    .sectionHead.centered .sectionLead{ margin-left:auto; margin-right:auto; }
+    .sectionHead.centered{ text-align: center; }
+    .sectionHead.centered .sectionLead{ margin-left: auto; margin-right: auto; }
 
-    /* --- Feature tour --- */
+    /* =========================================================
+       PILLARS — three-column paper cards
+       ========================================================= */
+    .pillars{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .pillar{
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 22px 22px 20px;
+      position: relative;
+    }
+    .pillar::before{
+      content:'';
+      position:absolute;
+      left: 22px;
+      right: 22px;
+      top: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: .9;
+    }
+    .pillar .pNum{
+      display: inline-block;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 10px;
+    }
+    .pillar h3{
+      margin: 0 0 8px;
+      font-family: 'Lora', Georgia, serif;
+      font-weight: 500;
+      font-size: 18px;
+      letter-spacing: -.005em;
+      color: var(--ink);
+    }
+    .pillar p{
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    @media (max-width: 860px){
+      .pillars{ grid-template-columns: 1fr; }
+    }
+
+    /* =========================================================
+       FEATURE TOUR
+       ========================================================= */
     .featureTour{
       display:grid;
-      gap:64px;
-      margin-top:12px;
+      gap: 72px;
+      margin-top: 16px;
     }
     .featureRow{
       display:flex;
-      gap:40px;
+      gap: 48px;
       align-items:center;
       flex-wrap:wrap;
     }
     .featureRow > .featureShot,
     .featureRow > .featureBody{
-      flex: 1 1 360px;
-      min-width:0;
+      flex: 1 1 380px;
+      min-width: 0;
     }
     .featureRow.reverse{ flex-direction: row-reverse; }
     .featureShot{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(11,42,49,.55);
-      backdrop-filter: blur(10px);
-      border-radius: var(--radius);
+      background: var(--card-bg);
+      border: 1px solid var(--paper-edge);
+      border-radius: 2px;
+      padding: 10px;
       box-shadow: var(--shadow);
-      overflow:hidden;
+      position: relative;
+    }
+    .featureShot::before{
+      content:'';
+      position:absolute;
+      inset: 10px;
+      border: 1px solid var(--rule);
+      pointer-events:none;
     }
     .featureShot img{
-      display:block;
-      width:100%;
-      height:auto;
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 1px;
     }
     .featureBody .tabTag{
-      display:inline-block;
-      font-size:10.5px;
-      letter-spacing:.3em;
-      text-transform:uppercase;
-      color: var(--accent);
-      font-weight:800;
-      margin-bottom:12px;
+      display: inline-block;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 11.5px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule);
     }
     .featureBody h3{
-      margin:0 0 12px;
-      font-family:'Lora', Georgia, serif;
-      font-weight:400;
+      margin: 0 0 14px;
+      font-family: 'Lora', Georgia, serif;
+      font-weight: 400;
       font-size: clamp(22px, 2.6vw, 30px);
-      letter-spacing:-.005em;
-      line-height:1.18;
+      letter-spacing: -.006em;
+      line-height: 1.2;
+      color: var(--ink);
     }
-    .featureBody h3 em{ font-style:italic; font-weight:500; color: var(--accent); }
+    .featureBody h3 em{ font-style: italic; font-weight: 500; color: var(--accent); }
     .featureBody p{
-      margin:0 0 12px;
-      color: var(--muted);
-      font-size:15px;
-      line-height:1.65;
+      margin: 0 0 12px;
+      color: var(--ink-2);
+      font-size: 15px;
+      line-height: 1.7;
     }
-    .featureBody p:last-child{ margin-bottom:0; }
-    .featureBody strong{ color: var(--text); font-weight:700; }
+    .featureBody p:last-child{ margin-bottom: 0; }
+    .featureBody strong{ color: var(--ink); font-weight: 600; }
     .featureHint{
-      margin-top:18px;
-      padding:10px 14px;
-      border-left:3px solid rgba(127,212,207,.5);
-      background: rgba(127,212,207,.06);
-      border-radius: 0 12px 12px 0;
-      color: rgba(231,246,246,.86);
-      font-size:13.5px;
-      line-height:1.55;
+      margin-top: 20px;
+      padding: 12px 16px 12px 18px;
+      border-left: 3px solid var(--accent);
+      background: var(--card-bg);
+      border-radius: 0 4px 4px 0;
+      color: var(--ink-2);
+      font-size: 13.5px;
+      line-height: 1.6;
+      font-family: 'Lora', serif;
+      font-style: italic;
     }
     .featureHint b{
       color: var(--accent);
-      font-weight:800;
-      letter-spacing:.16em;
-      text-transform:uppercase;
-      font-size:11px;
-      margin-right:6px;
+      font-weight: 700;
+      font-style: normal;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      margin-right: 10px;
     }
-    @media (max-width: 780px){
-      .featureTour{ gap:40px; }
-      .featureRow, .featureRow.reverse{ flex-direction: column; gap:22px; }
+    @media (max-width: 820px){
+      .featureTour{ gap: 48px; }
+      .featureRow, .featureRow.reverse{ flex-direction: column; gap: 26px; }
     }
 
-    /* --- Signals grid --- */
+    /* =========================================================
+       SIGNAL GRID
+       ========================================================= */
     .signalGrid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap:10px;
-      margin-top:12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 22px;
     }
     .signal{
-      padding: 14px 14px 12px;
-      border-radius: var(--radius2);
-      background: rgba(11,42,49,.55);
-      border:1px solid rgba(255,255,255,.08);
+      padding: 16px 16px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      position: relative;
+    }
+    .signal::before{
+      content:'';
+      position: absolute;
+      left: 16px;
+      top: 0;
+      width: 22px;
+      height: 2px;
+      background: var(--accent-2);
     }
     .signal .name{
-      color: rgba(231,246,246,.98);
-      font-weight:800;
-      font-size:13.5px;
-      letter-spacing:.15px;
+      color: var(--ink);
+      font-family: 'Lora', serif;
+      font-weight: 500;
+      font-size: 16px;
+      margin-top: 2px;
     }
     .signal .desc{
-      color: var(--muted);
-      font-size:12.5px;
-      margin-top:4px;
-      line-height:1.5;
+      color: var(--ink-2);
+      font-size: 13px;
+      margin-top: 6px;
+      line-height: 1.55;
     }
 
-    /* --- How it works --- */
+    /* =========================================================
+       HOW IT WORKS — numbered steps
+       ========================================================= */
     .steps{
-      display:grid;
+      display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap:14px;
-      margin-top:14px;
+      gap: 16px;
+      margin-top: 22px;
       counter-reset: step;
     }
     .step{
-      padding:18px 16px 16px;
-      border-radius: var(--radius2);
-      background: rgba(11,42,49,.55);
-      border:1px solid rgba(255,255,255,.08);
-      position:relative;
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 22px 20px 20px;
+      position: relative;
     }
     .step::before{
       counter-increment: step;
-      content: counter(step);
-      position:absolute;
-      top:14px; right:14px;
-      width:26px; height:26px;
-      border-radius:50%;
-      display:grid; place-items:center;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color:#062026;
-      font-weight:900;
-      font-size:12px;
+      content: counter(step, decimal-leading-zero);
+      display: block;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-weight: 500;
+      font-size: 26px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      line-height: 1;
     }
     .step h4{
-      margin:0 0 6px;
-      font-size:13.5px;
-      color: rgba(231,246,246,.98);
-      letter-spacing:.18px;
-      padding-right:32px;
+      margin: 0 0 6px;
+      font-family: 'Lora', Georgia, serif;
+      font-weight: 500;
+      font-size: 15.5px;
+      color: var(--ink);
     }
-    .step p{ margin:0; color: var(--muted); font-size:12.5px; line-height:1.5; }
+    .step p{
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 13px;
+      line-height: 1.55;
+    }
     @media (max-width: 980px){
       .steps{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -464,213 +614,400 @@
       .steps{ grid-template-columns: 1fr; }
     }
 
-    /* --- Compare block --- */
+    /* =========================================================
+       COMPARE TABLE
+       ========================================================= */
     .compareTable{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(11,42,49,.55);
-      backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      margin-top:16px;
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 22px;
     }
     .compareHead,
     .compareRow{
-      display:grid;
+      display: grid;
       grid-template-columns: 1fr 1fr;
     }
     .compareRow + .compareRow,
     .compareHead + .compareRow{
-      border-top:1px solid rgba(255,255,255,.06);
+      border-top: 1px solid var(--rule-soft);
     }
     .compareHead{
-      background: rgba(7,26,31,.55);
-      border-bottom:1px solid rgba(255,255,255,.10);
+      background: var(--paper-band);
+      border-bottom: 1px solid var(--rule);
     }
     .compareHeadCell{
-      padding:14px 18px;
-      font-size:10.5px;
-      font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.26em;
+      padding: 14px 20px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .28em;
     }
-    .compareHeadCell.muted{ color: var(--muted2); }
+    .compareHeadCell.muted{ color: var(--ink-3); }
     .compareHeadCell.accent{
       color: var(--accent);
-      border-left:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(180deg, rgba(97,212,195,.08), rgba(122,167,255,.04));
+      border-left: 1px solid var(--rule);
     }
     .compareCell{
-      padding:16px 18px;
-      display:flex;
-      gap:12px;
-      align-items:flex-start;
-      font-size:14px;
-      line-height:1.5;
+      padding: 18px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      font-size: 14px;
+      line-height: 1.55;
     }
     .compareCell.muted{
-      color: var(--muted);
+      color: var(--ink-2);
     }
     .compareCell.accent{
-      color: rgba(231,246,246,.96);
-      border-left:1px solid rgba(255,255,255,.06);
-      background: linear-gradient(180deg, rgba(97,212,195,.04), rgba(122,167,255,.02));
+      color: var(--ink);
+      border-left: 1px solid var(--rule-soft);
+      background: linear-gradient(180deg, rgba(15,106,98,.04), transparent);
     }
-    .compareCell strong{ color: var(--text); font-weight:700; }
-    .compareBullet{
-      flex-shrink:0;
-      width:14px;
-      height:14px;
-      border-radius:50%;
-      margin-top:3px;
+    .compareCell strong{ color: var(--ink); font-weight: 600; }
+    .compareGlyph{
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 10px;
+      margin-top: 2px;
     }
-    .compareBullet.neg{
-      border:1.5px solid rgba(255,255,255,.26);
+    .compareGlyph.neg{
+      border: 1px solid var(--ink-3);
+      color: var(--ink-3);
       background: transparent;
     }
-    .compareBullet.pos{
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border:1px solid rgba(127,212,207,.55);
-      box-shadow: 0 0 0 3px rgba(127,212,207,.12);
+    .compareGlyph.pos{
+      background: var(--accent);
+      color: var(--paper);
     }
-    @media (max-width: 620px){
+    [data-palette="obsidian"] .compareGlyph.pos{ color: #1a1f1d; }
+    @media (max-width: 680px){
       .compareHead,
       .compareRow{
         grid-template-columns: 1fr;
       }
       .compareHeadCell.accent,
       .compareCell.accent{
-        border-left:none;
-        border-top:1px solid rgba(255,255,255,.08);
+        border-left: none;
+        border-top: 1px solid var(--rule);
       }
     }
 
-    /* --- Privacy panel --- */
+    /* =========================================================
+       PRIVACY PANEL — pull-quote style
+       ========================================================= */
     .privacy{
-      border:1px solid rgba(127,212,207,.32);
-      background: linear-gradient(160deg, rgba(97,212,195,.09), rgba(122,167,255,.06));
-      border-radius: var(--radius);
-      padding: 32px 26px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      text-align:center;
-      gap:18px;
+      padding: 40px 28px;
+      background:
+        radial-gradient(600px 300px at 50% 0%, rgba(15,106,98,.08), transparent 70%),
+        var(--card-bg);
+      border: 1px solid var(--paper-edge);
+      border-radius: 2px;
+      position: relative;
+      margin-top: 16px;
     }
-    .privacy .pIcon{
-      width:48px; height:48px; border-radius:14px;
-      display:grid; place-items:center;
-      background: rgba(127,212,207,.14);
-      border:1px solid rgba(127,212,207,.4);
+    .privacy::before{
+      content:'“';
+      position: absolute;
+      top: 8px;
+      left: 22px;
+      font-family: 'Lora', serif;
+      font-size: 80px;
+      line-height: 1;
       color: var(--accent);
+      opacity: .32;
+      font-style: italic;
     }
-    .privacyBody{ width:100%; max-width: 720px; }
+    .privacyBody{
+      margin: 0 auto;
+      max-width: 720px;
+      text-align: center;
+    }
     .privacy h3{
-      margin:0 0 14px;
-      font-size:15px;
-      letter-spacing:.22px;
-      text-transform:uppercase;
-      color: rgba(231,246,246,.98);
+      margin: 0 0 18px;
+      font-family: 'Lora', serif;
+      font-weight: 400;
+      font-size: 22px;
+      color: var(--ink);
     }
     .privacy ul{
-      margin:0 auto;
-      padding:0;
-      list-style:none;
-      display:grid;
-      gap:10px;
-      max-width:620px;
+      margin: 0 auto;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+      max-width: 600px;
+      text-align: left;
     }
     .privacy li{
-      color: var(--muted);
-      font-size:13.5px;
-      line-height:1.6;
+      color: var(--ink-2);
+      font-size: 14px;
+      line-height: 1.65;
+      padding-left: 22px;
+      position: relative;
     }
-    .privacy li b{ color: var(--text); font-weight:700; }
+    .privacy li::before{
+      content:'';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 8px;
+      height: 2px;
+      background: var(--accent);
+    }
+    .privacy li b{ color: var(--ink); font-weight: 600; }
 
-    /* --- Disclaimer --- */
     .disclaimer{
-      margin:24px auto 0;
-      max-width:640px;
-      border:1px solid rgba(243,201,124,.36);
-      background: rgba(243,201,124,.08);
+      margin: 28px auto 0;
+      max-width: 640px;
+      border: 1px solid var(--warn);
+      background: rgba(154,80,23,.06);
       padding: 14px 18px;
-      border-radius: 12px;
-      color: rgba(252,238,210,.94);
-      font-size:13px;
-      line-height:1.6;
-      text-align:center;
+      border-radius: 2px;
+      color: var(--ink-2);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
     }
-    .disclaimer b{ color: var(--warn); font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-right:6px; }
+    [data-palette="obsidian"] .disclaimer{ background: rgba(217,131,58,.08); color: var(--ink); }
+    .disclaimer b{
+      color: var(--warn);
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin-right: 6px;
+      font-size: 11px;
+    }
 
-    /* --- CTA band --- */
+    /* =========================================================
+       DOWNLOAD CTA BAND (bottom) — prominent
+       ========================================================= */
     .ctaBand{
-      margin-top: 8px;
-      padding: 40px 26px;
-      text-align:center;
-      border-radius: var(--radius);
-      border:1px solid rgba(255,255,255,.10);
+      margin-top: 20px;
+      padding: 52px 32px;
+      text-align: center;
       background:
-        radial-gradient(520px 260px at 30% 20%, rgba(97,212,195,.18), transparent 60%),
-        radial-gradient(520px 260px at 75% 80%, rgba(122,167,255,.18), transparent 60%),
-        rgba(11,42,49,.55);
-      backdrop-filter: blur(10px);
-      box-shadow: var(--shadow);
+        radial-gradient(600px 260px at 50% 0%, rgba(15,106,98,.12), transparent 65%),
+        var(--card-bg);
+      border: 1px solid var(--paper-edge);
+      border-top: 3px solid var(--accent);
+      border-radius: 2px;
+      position: relative;
+    }
+    .ctaBand::before,
+    .ctaBand::after{
+      content:'';
+      position: absolute;
+      top: 0;
+      width: 40px;
+      height: 3px;
+      background: var(--accent-2);
+    }
+    .ctaBand::before{ left: -1px; transform: translateY(-3px); }
+    .ctaBand::after{ right: -1px; transform: translateY(-3px); }
+    .ctaBand .ctaEyebrow{
+      display: inline-block;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 13px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 10px;
     }
     .ctaBand h2{
-      margin:0 0 8px;
-      font-family:'Lora', Georgia, serif;
-      font-weight:400;
-      font-size: clamp(22px, 2.6vw, 30px);
+      margin: 0 0 10px;
+      font-family: 'Lora', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(26px, 3vw, 38px);
+      color: var(--ink);
     }
-    .ctaBand h2 em{ color: var(--accent); font-style:italic; font-weight:500; }
-    .ctaBand p{ margin: 0 auto 22px; color: var(--muted); max-width:560px; }
+    .ctaBand h2 em{ color: var(--accent); font-style: italic; font-weight: 500; }
+    .ctaBand p{
+      margin: 0 auto 28px;
+      color: var(--ink-2);
+      max-width: 560px;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    .ctaBand .downloadBtn{
+      font-size: 14px;
+      padding: 14px 26px;
+    }
+    .ctaBand .downloadBtn svg{ width: 16px; height: 16px; }
+    .ctaRow{
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctaTiny{
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: var(--ink-3);
+      letter-spacing: .06em;
+    }
+    .ctaTip{
+      margin: 0 auto 22px;
+      max-width: 620px;
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--ink-2);
+      padding: 12px 18px;
+      border-top: 1px dashed var(--rule);
+      border-bottom: 1px dashed var(--rule);
+    }
+    .ctaTip b{
+      color: var(--accent);
+      font-style: normal;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-size: 11px;
+      margin-right: 8px;
+    }
+    .ctaTip code{
+      font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      background: var(--paper-band);
+      padding: 1px 6px;
+      border-radius: 2px;
+      border: 1px solid var(--rule-soft);
+      color: var(--ink);
+      font-style: normal;
+    }
+    .downloadSteps{
+      list-style: none;
+      padding: 0;
+      margin: 22px auto 28px;
+      max-width: 620px;
+      display: grid;
+      gap: 12px;
+      text-align: left;
+    }
+    .downloadSteps li{
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+    }
+    .downloadSteps .stepNum{
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-weight: 500;
+      font-size: 22px;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+    .downloadSteps .stepBody{
+      color: var(--ink-2);
+      font-size: 14px;
+      line-height: 1.6;
+      padding-top: 2px;
+    }
+    .downloadSteps .stepBody b{
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .downloadSteps code{
+      font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      background: var(--paper-band);
+      padding: 1px 6px;
+      border-radius: 2px;
+      border: 1px solid var(--rule-soft);
+      color: var(--ink);
+    }
 
-    /* --- Footer --- */
+    /* =========================================================
+       FOOTER — thin, editorial
+       ========================================================= */
     footer{
-      margin-top:40px;
-      padding: 28px 0 40px;
-      border-top:1px solid rgba(255,255,255,.06);
-      color: var(--muted2);
+      margin-top: 48px;
+      padding: 36px 0 44px;
+      border-top: 1px solid var(--rule);
+      color: var(--ink-3);
       font-size: 12.5px;
     }
     .footerRow{
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      gap:14px;
-      align-items:center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
     }
-    .footerMark{ color: var(--muted); font-family:'Lora', Georgia, serif; font-size:14px; }
-    .footerMark em{ color: var(--accent); font-style:italic; font-weight:500; }
-    .footerLinks{ display:flex; gap:16px; flex-wrap:wrap; }
-    .footerLinks a{ color: var(--muted); }
-    .footerLinks a:hover{ color: var(--accent); }
-    .fineprint{ margin-top:12px; font-size:11.5px; color: var(--muted2); max-width:720px; }
+    .footerMark{
+      color: var(--ink-2);
+      font-family:'Lora', Georgia, serif;
+      font-size: 14px;
+    }
+    .footerMark em{ color: var(--accent); font-style: italic; font-weight: 500; }
+    .footerLinks{ display: flex; gap: 18px; flex-wrap: wrap; }
+    .footerLinks a{
+      color: var(--ink-2);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--rule);
+      padding-bottom: 1px;
+    }
+    .footerLinks a:hover{ color: var(--accent); border-bottom-color: var(--accent); }
+    .fineprint{
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: var(--ink-3);
+      max-width: 720px;
+      line-height: 1.6;
+    }
 
+    /* Small screens */
+    @media (max-width: 860px){
+      .topbar .navLink{ display:none; }
+      .topbar .miniMark .mm-c{ display:none; }
+    }
+    @media (max-width: 560px){
+      .masthead{ padding: 52px 0 32px; }
+    }
   </style>
 </head>
 <body>
 
 <nav class="topbar">
   <div class="wrap topbarInner">
-    <span class="miniMark">
+    <a class="miniMark" href="#top" aria-label="Connected Patient Analytics Platform">
       <span class="mm-a">Connected</span>
       <span class="mm-b"><em>Patient</em></span>
-    </span>
+      <span class="mm-c">Analytics Platform</span>
+    </a>
     <div class="topbarRight">
-      <a class="navLink" href="#features">Features</a>
+      <a class="navLink" href="#how">How it works</a>
       <a class="navLink" href="#gallery">Screenshots</a>
+      <a class="navLink" href="#compare">vs. Default</a>
       <a class="navLink" href="#privacy">Privacy</a>
-      <span class="versionPill"><span class="dot"></span>Version 2.0</span>
-      <a class="btn ghost" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer" aria-label="View source on GitHub">
-        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
+      <div class="topActions">
+        <a class="topGh" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer" aria-label="View source on GitHub">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+        <a class="downloadBtn" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a.75.75 0 0 1 .75.75v6.69l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.53a.75.75 0 1 1 1.06-1.06l1.97 1.97V1.75A.75.75 0 0 1 8 1Zm-5.25 11.5a.75.75 0 0 1 .75.75V14h9v-.75a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-.75.75h-10.5a.75.75 0 0 1-.75-.75v-1.5a.75.75 0 0 1 .75-.75Z"/></svg>
+          Download
+        </a>
+      </div>
     </div>
   </div>
 </nav>
 
-<header class="hero wrap">
+<header class="masthead wrap" id="top">
   <h1 class="wordmark">
     <span class="wm-main">
       <span class="wm-a">Connected</span>
@@ -679,31 +1016,33 @@
     <span class="wm-c">Analytics Platform</span>
   </h1>
   <p class="tagline">
-    Your CPAP machine records <b>dozens of signals per second</b> every night you sleep. The factory app gives you a usage score and a single AHI number. This one opens the <b>raw signal</b> — leak, pressure, flow, snore, events, every sample — and plots it as something you can actually read.
+    Your CPAP records <strong>dozens of signals per second</strong> each night. Other apps give you a usage score and a single AHI. Connected <em>Patient</em> Analytics Platform opens the <strong>raw signal</strong> — leak, pressure, flow, snore, events, every sample — and plots it as something you can actually read.
   </p>
+  <div class="heroCtas">
+    <a class="downloadBtn" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a.75.75 0 0 1 .75.75v6.69l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.53a.75.75 0 1 1 1.06-1.06l1.97 1.97V1.75A.75.75 0 0 1 8 1Zm-5.25 11.5a.75.75 0 0 1 .75.75V14h9v-.75a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-.75.75h-10.5a.75.75 0 0 1-.75-.75v-1.5a.75.75 0 0 1 .75-.75Z"/></svg>
+      Download the app
+    </a>
+    <a class="downloadBtn ghost" href="#gallery">See what it shows</a>
+  </div>
+  <p class="heroNote">One HTML file · Free and open source · Runs locally in your browser</p>
 </header>
 
 <!-- Pillars -->
 <section class="wrap">
   <div class="pillars">
     <div class="pillar">
-      <div class="icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-      </div>
+      <span class="pNum">No. 01</span>
       <h3>More than a score</h3>
-      <p>The manufacturer app surfaces three numbers. This one parses the EDF files on the card and plots every sample — pressure ramps, leak excursions, event annotations, the lot.</p>
+      <p>Other apps surface three numbers. CPAP parses the EDF files on the card and plots every sample — pressure ramps, leak excursions, event annotations, the lot.</p>
     </div>
     <div class="pillar">
-      <div class="icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-      </div>
-      <h3>Reads like English</h3>
+      <span class="pNum">No. 02</span>
+      <h3>Written, not just charted</h3>
       <p>Every tab writes its own summary for the night you picked — usage hours, leak behavior, where the pressure settled, event counts. No jargon to decode.</p>
     </div>
     <div class="pillar">
-      <div class="icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-      </div>
+      <span class="pNum">No. 03</span>
       <h3>Nothing to install</h3>
       <p>One HTML file. Double-click it. Works offline, works in five years, works whether or not the server this site lives on is still up.</p>
     </div>
@@ -745,20 +1084,20 @@
     <div class="sectionHead centered">
       <span class="sectionLabel">A tour of one night</span>
       <h2 class="sectionTitle">Same ZIP, <em>ten different ways</em> to read it.</h2>
-      <p class="sectionLead">Four of the tabs, in the order a curious sleeper usually hits them. Screenshots are from the built-in demo — not real patient data.</p>
+      <p class="sectionLead">Four tabs, in the order a curious sleeper usually hits them. Screenshots are from the built-in demo — not real patient data.</p>
     </div>
 
     <div class="featureTour">
 
       <div class="featureRow">
         <div class="featureShot">
-          <img src="assets/cpap-overview.png" alt="Overview tab showing leak and pressure across a session, with a plain-language narrative underneath" loading="lazy" />
+          <img src="assets/cpap-overview.png" alt="Overview tab showing leak and pressure across a session, with a written narrative underneath" loading="lazy" />
         </div>
         <div class="featureBody">
-          <span class="tabTag">Tab 01 · Overview</span>
+          <span class="tabTag">Tab 01 &middot; Overview</span>
           <h3>The whole night, <em>in one look</em>.</h3>
           <p>Leak and pressure plotted together across the detected session — so you can see at a glance whether the mask held, where the pressure settled, and whether the two ever argued with each other.</p>
-          <p>Underneath, a plain-language summary writes itself for every night you pick: usage hours, 95th-percentile leak, median pressure, and how many events the machine flagged.</p>
+          <p>Underneath, a summary writes itself for every night you pick: usage hours, 95th-percentile leak, median pressure, and how many events the machine flagged.</p>
           <div class="featureHint"><b>Why it matters</b>If something looks off in the narrative, the tabs that follow are where you go to find out what.</div>
         </div>
       </div>
@@ -768,9 +1107,9 @@
           <img src="assets/cpap-pressure.png" alt="Pressure tab showing therapy pressure over time" loading="lazy" />
         </div>
         <div class="featureBody">
-          <span class="tabTag">Tab 03 · Pressure</span>
+          <span class="tabTag">Tab 03 &middot; Pressure</span>
           <h3>Therapy pressure, <em>straight from the EDF</em>.</h3>
-          <p>The factory app shows you an average. This plots every sample the machine recorded — the ramp-up, the holds, and the responses to breathing events as they happened.</p>
+          <p>Other apps show you an average. CPAP plots every sample the machine recorded — the ramp-up, the holds, and the responses to breathing events as they happened.</p>
           <p>Especially honest on APAP: you can see whether the machine actually adjusted all night, or quietly parked at one pressure and stayed there.</p>
         </div>
       </div>
@@ -780,8 +1119,8 @@
           <img src="assets/cpap-compare.png" alt="Compare tab overlaying multiple signals on a single plot" loading="lazy" />
         </div>
         <div class="featureBody">
-          <span class="tabTag">Tab 10 · Compare</span>
-          <h3>Overlay signals that normally live on <em>separate tabs</em>.</h3>
+          <span class="tabTag">Tab 10 &middot; Compare</span>
+          <h3>Overlay signals from <em>separate tabs</em>.</h3>
           <p>Pick any combination of leak, pressure, flow, snore, respiratory rate, tidal volume, or exhalation pressure and stack them on one plot — normalized to the same axis, or kept raw — to see how they move together through the night.</p>
           <div class="featureHint"><b>Use case</b>Leak spike at 3 a.m.? Pull up leak and pressure on the same plot and see exactly what the machine did about it.</div>
         </div>
@@ -792,10 +1131,10 @@
           <img src="assets/cpap-events.png" alt="Events tab showing parsed annotations and a full event glossary" loading="lazy" />
         </div>
         <div class="featureBody">
-          <span class="tabTag">Tab 09 · Events</span>
+          <span class="tabTag">Tab 09 &middot; Events</span>
           <h3>Every annotation your machine wrote down, <em>decoded</em>.</h3>
           <p>Obstructive apneas, hypopneas, RERAs, central pauses, flow limitations — whatever the machine chose to flag that night is parsed out of the EDF annotations, grouped by code, and charted with session-boundary markers.</p>
-          <p>A glossary underneath translates each tag into plain English, so you're not googling <strong>"CSR"</strong> at 2 a.m.</p>
+          <p>A glossary underneath translates each tag, so you're not googling <strong>"CSR"</strong> at 2 a.m.</p>
         </div>
       </div>
 
@@ -804,7 +1143,7 @@
 </section>
 
 <!-- The other six tabs -->
-<section class="section" id="features">
+<section class="section">
   <div class="wrap">
     <div class="sectionHead">
       <span class="sectionLabel">The other six tabs</span>
@@ -814,7 +1153,7 @@
     <div class="signalGrid">
       <div class="signal"><div class="name">Leak</div><div class="desc">Mask-seal behavior with the large-leak guide line drawn in — so you can see how long the seal was compromised, not just the average.</div></div>
       <div class="signal"><div class="name">Flow</div><div class="desc">The raw breathing waveform. Flow-limited breaths and pauses jump out of the shape before the machine ever flags them.</div></div>
-      <div class="signal"><div class="name">Snore</div><div class="desc">The vibration-based snore channel the machine records but the factory app doesn't graph.</div></div>
+      <div class="signal"><div class="name">Snore</div><div class="desc">The vibration-based snore channel the machine records but other apps don't graph.</div></div>
       <div class="signal"><div class="name">Respiratory Rate</div><div class="desc">Breaths per minute through the night. Central pauses and arousals both leave a fingerprint here.</div></div>
       <div class="signal"><div class="name">Tidal Volume</div><div class="desc">Air moved per breath, overlaid with male and female baseline reference lines so you know where "normal" is.</div></div>
       <div class="signal"><div class="name">EPR</div><div class="desc">Therapy pressure vs. exhalation pressure with derived relief amount — the honest view of what EPR is actually doing on your curve.</div></div>
@@ -822,40 +1161,40 @@
   </div>
 </section>
 
-<!-- Compared to the default app -->
+<!-- Compared to other apps -->
 <section class="section" id="compare">
   <div class="wrap">
     <div class="sectionHead centered">
       <span class="sectionLabel">What you gain</span>
-      <h2 class="sectionTitle">Compared to the <em>default app</em>.</h2>
-      <p class="sectionLead">The app that came with your machine gives you summary numbers. This one gives you the signal those numbers were summarized from.</p>
+      <h2 class="sectionTitle">Compared to <em>other apps</em>.</h2>
+      <p class="sectionLead">Other apps give you summary numbers. Connected Patient Analytics Platform gives you the signal those numbers were summarized from.</p>
     </div>
 
     <div class="compareTable">
       <div class="compareHead">
-        <div class="compareHeadCell muted">The default app</div>
-        <div class="compareHeadCell accent">This one</div>
+        <div class="compareHeadCell muted">Other apps</div>
+        <div class="compareHeadCell accent">Connected Patient</div>
       </div>
 
       <div class="compareRow">
-        <div class="compareCell muted"><span class="compareBullet neg"></span>One AHI number for the whole night</div>
-        <div class="compareCell accent"><span class="compareBullet pos"></span>Every annotation the machine logged, grouped by code and decoded in plain English</div>
+        <div class="compareCell muted"><span class="compareGlyph neg">×</span>One AHI number for the whole night</div>
+        <div class="compareCell accent"><span class="compareGlyph pos">✓</span>Every annotation the machine logged, grouped by code and decoded with a glossary</div>
       </div>
       <div class="compareRow">
-        <div class="compareCell muted"><span class="compareBullet neg"></span>A usage badge</div>
-        <div class="compareCell accent"><span class="compareBullet pos"></span>Every sample of leak, pressure, and flow, plotted over the night</div>
+        <div class="compareCell muted"><span class="compareGlyph neg">×</span>A usage badge</div>
+        <div class="compareCell accent"><span class="compareGlyph pos">✓</span>Every sample of leak, pressure, and flow, plotted over the night</div>
       </div>
       <div class="compareRow">
-        <div class="compareCell muted"><span class="compareBullet neg"></span>An average or 95th-percentile pressure</div>
-        <div class="compareCell accent"><span class="compareBullet pos"></span>The full pressure curve — ramp-up, holds, and responses to breathing events</div>
+        <div class="compareCell muted"><span class="compareGlyph neg">×</span>An average or 95th-percentile pressure</div>
+        <div class="compareCell accent"><span class="compareGlyph pos">✓</span>The full pressure curve — ramp-up, holds, and responses to breathing events</div>
       </div>
       <div class="compareRow">
-        <div class="compareCell muted"><span class="compareBullet neg"></span>Cloud sync required</div>
-        <div class="compareCell accent"><span class="compareBullet pos"></span>Runs from your own drive — your ZIP never leaves the computer</div>
+        <div class="compareCell muted"><span class="compareGlyph neg">×</span>Cloud sync required</div>
+        <div class="compareCell accent"><span class="compareGlyph pos">✓</span>Runs from your own drive — your ZIP never leaves the computer</div>
       </div>
       <div class="compareRow">
-        <div class="compareCell muted"><span class="compareBullet neg"></span>Online account required</div>
-        <div class="compareCell accent"><span class="compareBullet pos"></span>No account, no sign-in, no email collected</div>
+        <div class="compareCell muted"><span class="compareGlyph neg">×</span>Online account required</div>
+        <div class="compareCell accent"><span class="compareGlyph pos">✓</span>No account, no sign-in, no email collected</div>
       </div>
     </div>
   </div>
@@ -864,35 +1203,66 @@
 <!-- Privacy -->
 <section class="section" id="privacy">
   <div class="wrap">
-    <div class="sectionHead">
+    <div class="sectionHead centered">
       <span class="sectionLabel">Privacy &amp; Scope</span>
       <h2 class="sectionTitle">No upload. <em>No account.</em> No cloud.</h2>
       <p class="sectionLead">This is a single local file. Your data is read into your browser and never sent anywhere.</p>
     </div>
     <div class="privacy">
-      <div class="pIcon" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-      </div>
       <div class="privacyBody">
         <h3>What stays where</h3>
         <ul>
           <li><b>Runs locally in your browser.</b> No data leaves your computer.</li>
           <li><b>No backend, no account, no telemetry.</b> There's nothing to sign up for.</li>
-          <li><b>Tested on ResMed AirSense 11</b> SD exports. Other devices may load partially or not at all.</li>
           <li><b>Ships as one self-contained file</b> so you can audit, archive, or open it offline.</li>
+          <li><b>Free and open source.</b> The whole project is on GitHub for anyone to read or fork.</li>
         </ul>
         <div class="disclaimer">
-          <b>Not medical advice.</b> Intended for exploration and curiosity — not diagnosis or treatment. Don't rely on it for treatment decisions. If something looks off, talk to your doctor or sleep specialist.
+          <b>Not medical advice.</b> Intended for exploration and curiosity — not diagnosis or treatment. If something looks off, talk to your doctor or sleep specialist.
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- Bottom download CTA -->
+<section class="wrap" style="padding: 24px 28px 0;">
+  <div class="ctaBand">
+    <span class="ctaEyebrow">How to get it</span>
+    <h2>Ready to read your <em>own</em> nights?</h2>
+    <p>The whole app ships as a single HTML file in the public repository on GitHub.</p>
+
+    <ol class="downloadSteps">
+      <li>
+        <span class="stepNum">01</span>
+        <div class="stepBody"><b>Open the repository.</b> Click the GitHub link below to visit the project on GitHub.</div>
+      </li>
+      <li>
+        <span class="stepNum">02</span>
+        <div class="stepBody"><b>Click the green <code>&lt;&gt; Code</code> button,</b> then choose <b>Download ZIP</b>.</div>
+      </li>
+      <li>
+        <span class="stepNum">03</span>
+        <div class="stepBody"><b>Extract the ZIP.</b> You only need <code>CPAP.html</code> to run the whole app — double-click it to open in your browser.</div>
+      </li>
+    </ol>
+
+    <p class="ctaTip"><b>Tip:</b> Drop <code>CPAP.html</code> directly on your CPAP's SD card. All you need is the SD card, a PC, and a web browser — the app and your data travel together.</p>
+
+    <div class="ctaRow">
+      <a class="downloadBtn" href="https://github.com/pingywon/Connected-Patient-Analytics-Platform" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a.75.75 0 0 1 .75.75v6.69l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.53a.75.75 0 1 1 1.06-1.06l1.97 1.97V1.75A.75.75 0 0 1 8 1Zm-5.25 11.5a.75.75 0 0 1 .75.75V14h9v-.75a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-.75.75h-10.5a.75.75 0 0 1-.75-.75v-1.5a.75.75 0 0 1 .75-.75Z"/></svg>
+        Download on GitHub
+      </a>
+    </div>
+    <p class="ctaTiny">Free and open source</p>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="footerRow">
-      <span class="footerMark">Connected <em>Patient</em> Analytics Platform · v2.0</span>
+      <span class="footerMark">Connected <em>Patient</em> Analytics Platform</span>
       <div class="footerLinks">
         <a href="#how">How it works</a>
         <a href="#privacy">Privacy</a>
