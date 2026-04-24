@@ -1,8 +1,8 @@
 # Connected Patient Analytics Platform
 
-A single-file, local-only browser application for parsing ResMed AirSense 11 SD-card exports and rendering each night as interactive charts. No backend, no account, no network upload of patient data.
+A single-file, local-only browser application for parsing CPAP SD-card exports and rendering each night as interactive charts. No backend, no account, no network upload of patient data.
 
-**Version 2.0** · Tested on ResMed AirSense 11.
+**Version 2.0** · Tested only on ResMed AirSense 11. Other devices may load partially or not at all.
 
 <p align="center">
   <img src="assets/cpap-overview.png" alt="Overview tab: leak and pressure plotted across the detected session" width="48%" />
@@ -41,9 +41,9 @@ scripts/
 
 ## How it works
 
-### Input: ResMed SD-card archive
+### Input: SD-card archive
 
-The app expects a ZIP produced from the root of a ResMed AirSense 11 SD card. The archive is inventoried for:
+The app expects a ZIP produced from the root of a CPAP SD card. The archive is inventoried for:
 
 | Path / family            | Purpose                                                           |
 | ------------------------ | ----------------------------------------------------------------- |
@@ -129,7 +129,6 @@ CPAP.html#demo=1&demoSet=1&skipOnboarding=1&tab=overview
 
 - Runs locally in your browser. The ZIP is decoded in memory and nothing is uploaded.
 - The app loads two third-party scripts from public CDNs at page open — `jszip@3.10.1` and `plotly-2.30.0` — so a first-time launch needs internet. Everything after that stays local. For fully offline use, vendor those two scripts next to `CPAP.html` and swap the `<script src="…">` tags to relative paths.
-- Tested only on ResMed AirSense 11 SD exports. Other devices may load partially or not at all.
 - Intended for exploration and curiosity. **Not a medical device. Not a clinical tool. Not medical advice.** Do not rely on it for treatment decisions — talk to your doctor or sleep specialist.
 
 ## Dependencies
