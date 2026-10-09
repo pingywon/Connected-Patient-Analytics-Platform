@@ -2,7 +2,7 @@
 
 A single-file, local-only browser application for parsing CPAP SD-card exports and rendering each night as interactive charts. No backend, no account, no network upload of patient data.
 
-**Version 2.0** · Tested only on ResMed AirSense 11. Other devices may load partially or not at all.
+**Version 2.1** · Tested only on ResMed AirSense 11. Other devices may load partially or not at all.
 
 <p align="center">
   <img src="assets/cpap-overview.png" alt="Overview tab: leak and pressure plotted across the detected session" width="48%" />
@@ -106,7 +106,9 @@ Tip: `CPAP.html` is self-contained — you can drop the file onto the SD card it
 
 ### Demo mode
 
-The build embeds five transformed sessions generated from a sample archive. `Load demo` randomizes across the five; a full page refresh re-rolls. Identifiers, dates, and all signal values are shifted before display; the demo serial uses a same-length fake sequence.
+The build embeds five made-up sessions, named `demo1` to `demo5`. Their values were generated at random once and are fixed in the file, so each one looks the same on every load. `Load demo` picks one of the five at random; a full page refresh re-rolls. The loaded session's name shows in the badge beside the upload button and in each chart title. The demo serial is a fake sequence.
+
+A live copy runs at https://cpap-demo.pingywon.workers.dev (see `deploy/worker/`).
 
 ### URL hash parameters
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Connected Patient Analytics Platform — 2.0</title>
+  <title>Connected Patient Analytics Platform — 2.1</title>
   <link rel="icon" type="image/svg+xml" href="assets/cpap-mask-badge.svg" />
   <link rel="icon" type="image/png" sizes="16x16" href="assets/cpap-mask-badge-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/cpap-mask-badge-32.png" />
@@ -1700,7 +1700,7 @@
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         <span class="hlLabel">GitHub</span>
       </a>
-      <span class="versionTag" id="headerVersion">v2.0</span>
+      <span class="versionTag" id="headerVersion">v2.1</span>
     </div>
   </header>
 
@@ -1993,7 +1993,7 @@
 
 <script>
 /* ============================
-   Connected Patient Analytics Platform 2.0 (AirSense 11 SD)
+   Connected Patient Analytics Platform 2.1 (AirSense 11 SD)
    Browser-based CPAP viewer with embedded demo datasets
    ============================ */
 
@@ -2646,119 +2646,113 @@ els.applyMappingBtn.addEventListener('click', async ()=>{
 const DEMO_DATASETS = [
   {
     id: 1,
-    title: 'Demo Night 1',
-    fakeDateISO: '2026-03-03',
-    sourceAnchorISO: '2026-01-01',
-    sourceSessionStamp: '20260102_001058',
-    startOffsetSeconds: 87058,
-    durationSeconds: 25440,
-    pressureMedian: 10.7,
-    exhaleMedian: 7.7,
+    title: 'demo1',
+    rngSeed: 3966995206,
+    fakeDateISO: '2026-08-13',
+    startOffsetSeconds: 89037,
+    durationSeconds: 24900,
+    pressureMedian: 11.11,
+    exhaleMedian: 8.11,
     reliefMedian: 3,
-    leakP95: 15.6,
-    respMedian: 17.4,
-    tidalMedianMl: 480,
-    pulseMedian: 66,
-    spo2Median: 96,
+    leakP95: 9.4,
+    respMedian: 17.8,
+    tidalMedianMl: 470,
+    pulseMedian: 58,
+    spo2Median: 96.9,
     eventMix: [
+      ['Obstructive Apnea', 9],
       ['Hypopnea', 9],
-      ['Obstructive Apnea', 8],
-      ['Central Apnea', 3],
-      ['RERA', 2],
-      ['Arousal', 1]
+      ['Central Apnea', 4],
+      ['RERA', 3]
     ]
   },
   {
     id: 2,
-    title: 'Demo Night 2',
-    fakeDateISO: '2026-03-08',
-    sourceAnchorISO: '2026-01-03',
-    sourceSessionStamp: '20260104_024824',
-    startOffsetSeconds: 96504,
-    durationSeconds: 21660,
-    pressureMedian: 10.34,
-    exhaleMedian: 7.34,
+    title: 'demo2',
+    rngSeed: 3628567268,
+    fakeDateISO: '2026-08-27',
+    startOffsetSeconds: 79366,
+    durationSeconds: 28260,
+    pressureMedian: 11.77,
+    exhaleMedian: 8.77,
     reliefMedian: 3,
-    leakP95: 12.0,
-    respMedian: 16.4,
+    leakP95: 12.4,
+    respMedian: 15.3,
     tidalMedianMl: 480,
-    pulseMedian: 67,
-    spo2Median: 95.8,
+    pulseMedian: 60,
+    spo2Median: 95.7,
     eventMix: [
-      ['Obstructive Apnea', 6],
+      ['Hypopnea', 10],
+      ['Obstructive Apnea', 7],
       ['Central Apnea', 5],
-      ['Hypopnea', 4],
-      ['Arousal', 2],
-      ['RERA', 1]
+      ['RERA', 3],
+      ['Arousal', 1]
     ]
   },
   {
     id: 3,
-    title: 'Demo Night 3',
-    fakeDateISO: '2026-03-14',
-    sourceAnchorISO: '2026-01-02',
-    sourceSessionStamp: '20260103_071252',
-    startOffsetSeconds: 112372,
-    durationSeconds: 11040,
-    pressureMedian: 10.0,
-    exhaleMedian: 7.0,
+    title: 'demo3',
+    rngSeed: 1541235162,
+    fakeDateISO: '2026-09-05',
+    startOffsetSeconds: 88143,
+    durationSeconds: 30360,
+    pressureMedian: 11.34,
+    exhaleMedian: 8.34,
     reliefMedian: 3,
-    leakP95: 3.6,
-    respMedian: 15.2,
-    tidalMedianMl: 460,
-    pulseMedian: 64,
-    spo2Median: 96.4,
+    leakP95: 3.0,
+    respMedian: 15.7,
+    tidalMedianMl: 520,
+    pulseMedian: 60,
+    spo2Median: 95.8,
     eventMix: [
       ['Obstructive Apnea', 6],
-      ['Hypopnea', 3],
+      ['Hypopnea', 5],
+      ['RERA', 3],
       ['Central Apnea', 2],
-      ['RERA', 1]
+      ['Arousal', 1]
     ]
   },
   {
     id: 4,
-    title: 'Demo Night 4',
-    fakeDateISO: '2026-03-21',
-    sourceAnchorISO: '2026-01-03',
-    sourceSessionStamp: '20260104_085435',
-    startOffsetSeconds: 118475,
-    durationSeconds: 6840,
-    pressureMedian: 10.38,
-    exhaleMedian: 7.38,
+    title: 'demo4',
+    rngSeed: 3012139095,
+    fakeDateISO: '2026-09-09',
+    startOffsetSeconds: 89804,
+    durationSeconds: 29760,
+    pressureMedian: 11.62,
+    exhaleMedian: 8.62,
     reliefMedian: 3,
-    leakP95: 4.8,
-    respMedian: 17.4,
-    tidalMedianMl: 520,
-    pulseMedian: 65,
-    spo2Median: 95.6,
+    leakP95: 18.3,
+    respMedian: 16.3,
+    tidalMedianMl: 560,
+    pulseMedian: 69,
+    spo2Median: 95.4,
     eventMix: [
-      ['Obstructive Apnea', 7],
-      ['Central Apnea', 6],
-      ['Hypopnea', 3],
-      ['RERA', 2]
+      ['Obstructive Apnea', 12],
+      ['Hypopnea', 10],
+      ['Central Apnea', 3],
+      ['RERA', 3]
     ]
   },
   {
     id: 5,
-    title: 'Demo Night 5',
-    fakeDateISO: '2026-03-29',
-    sourceAnchorISO: '2026-01-02',
-    sourceSessionStamp: '20260103_101926',
-    startOffsetSeconds: 123566,
-    durationSeconds: 6000,
-    pressureMedian: 10.0,
-    exhaleMedian: 7.0,
+    title: 'demo5',
+    rngSeed: 3460284311,
+    fakeDateISO: '2026-09-12',
+    startOffsetSeconds: 85503,
+    durationSeconds: 18420,
+    pressureMedian: 9.43,
+    exhaleMedian: 6.43,
     reliefMedian: 3,
-    leakP95: 1.2,
-    respMedian: 15.6,
-    tidalMedianMl: 500,
-    pulseMedian: 68,
-    spo2Median: 95.4,
+    leakP95: 18.9,
+    respMedian: 18.1,
+    tidalMedianMl: 440,
+    pulseMedian: 69,
+    spo2Median: 95.0,
     eventMix: [
-      ['Obstructive Apnea', 11],
-      ['Hypopnea', 3],
-      ['Central Apnea', 2],
-      ['RERA', 1],
+      ['Obstructive Apnea', 8],
+      ['Hypopnea', 2],
+      ['RERA', 2],
       ['Arousal', 1]
     ]
   }
@@ -2870,7 +2864,7 @@ function buildDemoCatalog(signals){
   return rows;
 }
 function materializeDemoDataset(seed){
-  const rng = mulberry32(9000 + seed.id * 97);
+  const rng = mulberry32(seed.rngSeed);
   const anchorStart = new Date(`${seed.fakeDateISO}T00:00:00`);
   const start = new Date(anchorStart.getTime() + (seed.startOffsetSeconds || 0) * 1000);
   const durationSeconds = seed.durationSeconds || 0;
@@ -2959,7 +2953,7 @@ function materializeDemoDataset(seed){
   const files = makeDemoFiles(dateISO);
   const sess = {
     key: `${dateISO}__DEMO`,
-    label: `${dateISO} — Demo session`,
+    label: `${dateISO} — ${seed.title}`,
     anchorDateISO: dateISO,
     start,
     end: new Date(start.getTime() + durationSeconds * 1000),
@@ -3006,24 +3000,23 @@ function loadDemoData({ tabId='', skipToast=false, datasetId=null } = {}){
   };
   state.current.raw = {
     'embedded-demo': {
-      note:`Embedded demo dataset ${seed.id} uses transformed values on a shifted copy of a real sample session window.`,
+      note:`Embedded demo dataset ${seed.title} is made-up data, generated at random once and the same on every load.`,
       sourceFamilies: DEMO_SOURCE_COUNTS,
       fakeDateISO: seed.fakeDateISO,
-      sourceAnchorISO: seed.sourceAnchorISO,
-      sourceSessionStamp: seed.sourceSessionStamp,
+      rngSeed: seed.rngSeed,
       startOffsetSeconds: seed.startOffsetSeconds,
       durationSeconds: seed.durationSeconds,
       serialNumber: fakeSerial(11)
     }
   };
   state.notes = [
-    'Demo data loaded.',
-    'Displayed demo values are transformed, and displayed dates are shifted away from the original sample dates.'
+    `${seed.title} loaded.`,
+    'Demo values are made up. They were generated at random once and are the same on every load.'
   ];
 
   setStatus('Demo','good');
-  els.zipStats.textContent = 'demo mode';
-  progress('Demo', 100, 'Loaded transformed demo data with shifted sample-session timing.');
+  els.zipStats.textContent = seed.title;
+  progress('Demo', 100, `Loaded ${seed.title}: made-up data, the same on every load.`);
 
   renderIdentification(state.identification);
   renderCurrentSettings(state.currentSettings);
@@ -3038,7 +3031,7 @@ function loadDemoData({ tabId='', skipToast=false, datasetId=null } = {}){
   analyzeAndRender();
   autoOpenLoadComplete();
   if (tabId) setActiveTab(tabId);
-  if (!skipToast) toast('Demo data ready ✔️');
+  if (!skipToast) toast(`${seed.title} ready ✔️`);
 }
 els.demoBtn.addEventListener('click', ()=>{
   updateHashParams({ demo:1, demoSet:null, tab:getActiveTabKey() || null });
