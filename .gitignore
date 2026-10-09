@@ -4,3 +4,6 @@ finaldirectives.txt
 
 # Local Claude Code tooling
 .claude/
+
+# Built by deploy/worker/publish.sh
+deploy/worker/site/
